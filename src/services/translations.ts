@@ -121,7 +121,7 @@ export const translations = {
     gnssCoords: "Koordinaten",
     
     // HA Integration Tab
-    haTitle: "Home Assistant Integration (zte_ng_router)",
+    haTitle: "Home Assistant Integration (zte_5g_router)",
     haSubtitle: "Best Practices, HACS-Konformität und Architekturübersicht",
     hacsCompliant: "HACS Standard Konform",
     qualityScale: "Home Assistant Quality Scale: Platinum Ready",
@@ -135,7 +135,7 @@ export const translations = {
     bp4Title: "Sichere SMS AES-GCM Verschlüsselung",
     bp4Desc: "Automatische Erkennung und Entschlüsselung für MC7510/G51F Firmware ohne unverschlüsselte Fallbacks.",
     downloadZip: "HACS Integration als .ZIP herunterladen",
-    downloadZipDesc: "custom_components/zte_ng_router direkt in Home Assistant installieren",
+    downloadZipDesc: "custom_components/zte_5g_router direkt in Home Assistant installieren",
   },
   en: {
     appTitle: "ZTE 5G Router Manager",
@@ -257,7 +257,7 @@ export const translations = {
     gnssCoords: "Coordinates",
     
     // HA Integration Tab
-    haTitle: "Home Assistant Integration (zte_ng_router)",
+    haTitle: "Home Assistant Integration (zte_5g_router)",
     haSubtitle: "Best Practices, HACS Compliance, and Architectural Design",
     hacsCompliant: "HACS Standard Compliant",
     qualityScale: "Home Assistant Quality Scale: Platinum Ready",
@@ -271,6 +271,6 @@ export const translations = {
     bp4Title: "Secure SMS AES-GCM Encryption",
     bp4Desc: "Automatic detection and decryption for MC7510/G51F firmwares without insecure plain-text fallbacks.",
     downloadZip: "Download HACS Integration (.ZIP)",
-    downloadZipDesc: "Install custom_components/zte_ng_router directly into your Home Assistant instance",
+    downloadZipDesc: "Install custom_components/zte_5g_router directly into your Home Assistant instance",
   }
 };

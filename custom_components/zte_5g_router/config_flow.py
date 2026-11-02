@@ -14,6 +14,7 @@ from .const import (
     DOMAIN,
     CONF_NAME,
     CONF_VERIFY_TLS,
+    CONF_TLS_FINGERPRINT,
     CONF_ALLOW_INSECURE_HTTP,
     DEFAULT_ROUTER_URL,
     DEFAULT_VERIFY_TLS,
@@ -31,6 +32,18 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _validate_tls_fingerprint(value: str) -> tuple[str | None, str | None]:
+    """Validate an optional SHA-256 certificate fingerprint."""
+    fingerprint = value.strip().replace(":", "").lower()
+    if not fingerprint:
+        return "", None
+    if len(fingerprint) != 64 or any(
+        character not in "0123456789abcdef" for character in fingerprint
+    ):
+        return None, "invalid_tls_fingerprint"
+    return fingerprint, None
 
 
 def _validate_router_url(
@@ -86,19 +99,27 @@ class ZteNgRouterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 user_input[CONF_HOST],
                 allow_insecure_http=allow_insecure_http,
             )
+            tls_fingerprint, fingerprint_error = _validate_tls_fingerprint(
+                user_input.get(CONF_TLS_FINGERPRINT, "")
+            )
             name = user_input[CONF_NAME]
             scan_interval = user_input[CONF_SCAN_INTERVAL]
             fast_scan_interval = user_input.get(CONF_FAST_SCAN_INTERVAL, DEFAULT_FAST_SCAN_INTERVAL)
 
             if host_error:
                 errors["base"] = host_error
+            elif fingerprint_error:
+                errors["base"] = fingerprint_error
+            elif tls_fingerprint and urlsplit(host or "").scheme != "https":
+                errors["base"] = "tls_fingerprint_requires_https"
             elif scan_interval < MIN_SCAN_INTERVAL or scan_interval > MAX_SCAN_INTERVAL:
                 errors["base"] = "invalid_scan_interval"
             elif fast_scan_interval < MIN_FAST_SCAN_INTERVAL or fast_scan_interval > MAX_FAST_SCAN_INTERVAL:
                 errors["base"] = "invalid_fast_scan_interval"
             else:
                 assert host is not None
-                await self.async_set_unique_id(f"zte_ng_router_{host}")
+                assert tls_fingerprint is not None
+                await self.async_set_unique_id(f"zte_5g_router_{host}")
                 self._abort_if_unique_id_configured()
                 return self.async_create_entry(
                     title=name,
@@ -107,6 +128,7 @@ class ZteNgRouterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_HOST: host,
                         CONF_PASSWORD: user_input[CONF_PASSWORD],
                         CONF_VERIFY_TLS: user_input[CONF_VERIFY_TLS],
+                        CONF_TLS_FINGERPRINT: tls_fingerprint,
                         CONF_ALLOW_INSECURE_HTTP: allow_insecure_http,
                         CONF_SCAN_INTERVAL: scan_interval,
                         CONF_FAST_SCAN_INTERVAL: fast_scan_interval,
@@ -123,6 +145,7 @@ class ZteNgRouterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_HOST, default=DEFAULT_ROUTER_URL): str,
                 vol.Required(CONF_PASSWORD): str,
                 vol.Optional(CONF_VERIFY_TLS, default=DEFAULT_VERIFY_TLS): bool,
+                vol.Optional(CONF_TLS_FINGERPRINT, default=""): str,
                 vol.Optional(CONF_ALLOW_INSECURE_HTTP, default=False): bool,
                 vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.All(
                     vol.Coerce(int),
@@ -168,12 +191,19 @@ class ZteNgRouterOptionsFlow(config_entries.OptionsFlow):
                 user_input[CONF_HOST],
                 allow_insecure_http=allow_insecure_http,
             )
-            if host_error:
-                errors["base"] = host_error
+            tls_fingerprint, fingerprint_error = _validate_tls_fingerprint(
+                user_input.get(CONF_TLS_FINGERPRINT, "")
+            )
+            if host_error or fingerprint_error:
+                errors["base"] = host_error or fingerprint_error
+            elif tls_fingerprint and urlsplit(host or "").scheme != "https":
+                errors["base"] = "tls_fingerprint_requires_https"
             else:
                 assert host is not None
+                assert tls_fingerprint is not None
                 existing = dict(self._config_entry.options)
                 existing[CONF_HOST] = host
+                existing[CONF_TLS_FINGERPRINT] = tls_fingerprint
                 existing[CONF_ALLOW_INSECURE_HTTP] = allow_insecure_http
 
                 new_password = user_input.get(CONF_PASSWORD, "")
@@ -200,6 +230,10 @@ class ZteNgRouterOptionsFlow(config_entries.OptionsFlow):
             CONF_ALLOW_INSECURE_HTTP,
             data.get(CONF_ALLOW_INSECURE_HTTP, _uses_http(current_host)),
         )
+        current_tls_fingerprint = options.get(
+            CONF_TLS_FINGERPRINT,
+            data.get(CONF_TLS_FINGERPRINT, ""),
+        )
         # We never show the current password in plain text; user can overwrite it if needed.
         current_verify_tls = options.get(
             CONF_VERIFY_TLS,
@@ -223,6 +257,10 @@ class ZteNgRouterOptionsFlow(config_entries.OptionsFlow):
                 vol.Optional(
                     CONF_PASSWORD,
                     default="",
+                ): str,
+                vol.Optional(
+                    CONF_TLS_FINGERPRINT,
+                    default=current_tls_fingerprint,
                 ): str,
                 vol.Optional(
                     CONF_ALLOW_INSECURE_HTTP,

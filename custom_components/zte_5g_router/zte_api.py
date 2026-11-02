@@ -15,10 +15,18 @@ from typing import Any, Optional
 from urllib.parse import urlsplit, urlunsplit
 
 import aiohttp
-from aiohttp import ClientError, ClientSession, CookieJar
+from aiohttp import ClientSession, CookieJar
 from homeassistant.core import HomeAssistant
 
 _LOGGER = logging.getLogger(__name__)
+
+
+class UnsupportedLoginProtocol(RuntimeError):
+    """Raised when a router does not expose the UBUS web-login protocol."""
+
+
+class RouterResponseError(RuntimeError):
+    """Raised when a router response does not match the requested API."""
 
 
 class ZteRouterApi:
@@ -55,6 +63,7 @@ class ZteRouterApi:
         base_url: str = "",
         password: str = "",
         verify_tls: bool = True,
+        tls_fingerprint: str | None = None,
         allow_insecure_http: bool = False,
         session: ClientSession | None = None,
         track_clients: bool = False,
@@ -65,6 +74,9 @@ class ZteRouterApi:
         self._browser_base_url = self._strip_url_userinfo(self.base_url)
         self.password = password
         self.verify_tls = verify_tls
+        self.tls_fingerprint = (tls_fingerprint or "").replace(":", "").strip().lower()
+        if self.tls_fingerprint and not re.fullmatch(r"[0-9a-f]{64}", self.tls_fingerprint):
+            raise ValueError("TLS fingerprint must be a SHA-256 certificate fingerprint")
         self.allow_insecure_http = allow_insecure_http
         scheme = urlsplit(self.base_url).scheme.lower()
         if scheme == "http" and not allow_insecure_http:
@@ -76,6 +88,8 @@ class ZteRouterApi:
             _LOGGER.warning(
                 "Router connection uses unencrypted HTTP; credentials and session traffic are exposed"
             )
+        elif scheme == "https" and self.tls_fingerprint:
+            _LOGGER.info("Router TLS certificate is pinned by SHA-256 fingerprint")
         elif scheme == "https" and not verify_tls:
             _LOGGER.warning(
                 "Router TLS certificate verification is disabled; the connection is vulnerable to interception"
@@ -91,7 +105,7 @@ class ZteRouterApi:
             # ZTE write ACL checks depend on the router cookie jar, not only the
             # explicit webtoken header. Home Assistant's shared client session
             # uses a dummy cookie jar, so use a dedicated router session.
-            connector = aiohttp.TCPConnector(ssl=verify_tls)
+            connector = aiohttp.TCPConnector(ssl=self._tls_validation())
             jar = CookieJar(unsafe=True)
             self._session = aiohttp.ClientSession(connector=connector, cookie_jar=jar)
 
@@ -121,6 +135,12 @@ class ZteRouterApi:
             "Referer": self._browser_base_url + "/",
         }
 
+    def _tls_validation(self) -> bool | aiohttp.Fingerprint:
+        """Return CA validation or an explicit certificate pin for aiohttp."""
+        if self.tls_fingerprint:
+            return aiohttp.Fingerprint(bytes.fromhex(self.tls_fingerprint))
+        return self.verify_tls
+
     # --------------------------------------------------------------------
     # Helper: ubus URL
     # --------------------------------------------------------------------
@@ -144,6 +164,16 @@ class ZteRouterApi:
         rpc_id = self._rpc_id
         self._rpc_id += 1
         return rpc_id
+
+    @property
+    def is_logged_in(self) -> bool:
+        """Return whether an authenticated router session is active."""
+        return self._logged_in
+
+    @property
+    def login_method(self) -> str | None:
+        """Return the active protocol without exposing session identifiers."""
+        return self._api_mode if self._logged_in else None
 
     @staticmethod
     def _normalize_pem(text: str) -> str:
@@ -187,6 +217,53 @@ class ZteRouterApi:
             cur = cur.__cause__ or cur.__context__
 
         return False
+
+    @staticmethod
+    def _safe_exception_summary(exc: BaseException) -> str:
+        """Describe request failures without logging request or credential data."""
+        exception_name = type(exc).__name__
+        if isinstance(exc, asyncio.TimeoutError):
+            return "request timed out"
+        if (
+            "Certificate" in exception_name
+            or "CERTIFICATE_VERIFY_FAILED" in str(exc)
+        ):
+            return (
+                "TLS certificate validation failed; trust the router certificate "
+                "or explicitly disable verification for this trusted router"
+            )
+        status = getattr(exc, "status", None)
+        if status is not None:
+            return f"HTTP {status}"
+        if "Connector" in exception_name or "Connection" in exception_name:
+            return "could not connect to router"
+        if isinstance(exc, json.JSONDecodeError):
+            return "router returned invalid JSON"
+        return f"{exception_name} during router request"
+
+    @classmethod
+    def safe_error_summary(cls, exc: BaseException) -> str:
+        """Return safe actionable errors from this client, hiding arbitrary payloads."""
+        if isinstance(exc, (UnsupportedLoginProtocol, RouterResponseError)):
+            return str(exc)
+        if isinstance(exc, RuntimeError) and str(exc).startswith(
+            ("UBUS ", "GoForm ", "Login failed:")
+        ):
+            return str(exc)
+        return cls._safe_exception_summary(exc)
+
+    @staticmethod
+    def _describe_rpc_failure(error: Any) -> str:
+        """Return a safe summary of a UBUS error without echoing router text."""
+        if not isinstance(error, dict):
+            return "invalid UBUS error response"
+        if error.get("kind") == "transport":
+            return str(error.get("message") or "transport request failed")
+        if isinstance(error.get("status"), int):
+            return f"HTTP {error['status']}"
+        if isinstance(error.get("code"), int):
+            return f"RPC error {error['code']}"
+        return "router returned an error without a code"
 
     def _mark_session_stale(self) -> None:
         """Drop authentication state before a real re-login."""
@@ -505,45 +582,41 @@ class ZteRouterApi:
     # --------------------------------------------------------------------
     # Authentication
     # --------------------------------------------------------------------
-    async def async_init_session(self) -> None:
-        """Fetch the start page to get cookies/CSRF (if any)."""
-        url = self.base_url + "/"
-        try:
-            async with self._session.get(url, timeout=10) as resp:
-                await resp.read()
-                _LOGGER.debug("async_init_session: status=%s", resp.status)
-        except (ClientError, asyncio.TimeoutError, OSError) as exc:
-            _LOGGER.warning("async_init_session GET %s failed: %s", url, exc)
-
     async def async_login(self) -> None:
-        """Perform login.
-
-        Try UBUS first for compatibility/performance. If UBUS is unavailable on this
-        firmware (or otherwise fails), always attempt GoForm as fallback.
-        """
-        ubus_exc: Exception | None = None
-
+        """Log in over UBUS, falling back only when that protocol is unsupported."""
         try:
             await self._async_ubus_login()
             self._api_mode = "ubus"
+            _LOGGER.info(
+                "ZTE router login successful: method=ubus endpoint=/ubus/ session=established"
+            )
             return
+        except UnsupportedLoginProtocol as ubus_exc:
+            _LOGGER.info(
+                "ZTE router login protocol unavailable: method=ubus endpoint=/ubus/; trying=goform reason=%s",
+                ubus_exc,
+            )
         except Exception as exc:
-            ubus_exc = exc
-            _LOGGER.info("UBUS login failed (%s), trying GoForm fallback", exc)
+            _LOGGER.error(
+                "ZTE router login failed: method=ubus endpoint=/ubus/ error=%s",
+                self.safe_error_summary(exc),
+            )
+            raise
 
         try:
             await self._async_goform_login()
             return
         except Exception as goform_exc:
-            if ubus_exc is None:
-                raise RuntimeError(f"GoForm login failed: {goform_exc}") from goform_exc
             raise RuntimeError(
-                f"Login failed: UBUS={ubus_exc}; GoForm={goform_exc}"
+                f"Login failed: UBUS protocol unsupported; GoForm={goform_exc}"
             ) from goform_exc
 
     async def _async_ubus_login(self) -> None:
         """Perform UBUS-based web_login to ZTE router and store ubus session ID."""
 
+        _LOGGER.debug(
+            "Starting router login: method=ubus endpoint=/ubus/ stage=challenge"
+        )
         # 1) get salt
         salt_req = {
             "service": "zwrt_web",
@@ -556,15 +629,31 @@ class ZteRouterApi:
             retry_on_access_denied=False,
         )
 
-        if salt_res.get("error"):
+        if not salt_res.get("success"):
+            error = salt_res.get("error")
+            if (
+                isinstance(error, dict)
+                and (
+                    error.get("code") == -32601
+                    or error.get("status") in {404, 405, 501}
+                )
+            ):
+                raise UnsupportedLoginProtocol(
+                    "web_login_info endpoint is not available"
+                )
             raise RuntimeError(
-                f"UBUS web_login_info failed: {salt_res['error']}"
+                "UBUS web_login_info failed: "
+                f"{self._describe_rpc_failure(error)}"
             )
-        data = salt_res.get("data") or {}
-        salt = data.get("zte_web_sault")
-        if not salt:
-            raise RuntimeError(
-                "UBUS web_login_info response did not contain zte_web_sault"
+        data = salt_res.get("data")
+        if not isinstance(data, dict):
+            raise UnsupportedLoginProtocol(
+                "web_login_info response was not a JSON object"
+            )
+        salt = data.get("zte_web_sault") or data.get("salt")
+        if not isinstance(salt, str) or not salt:
+            raise UnsupportedLoginProtocol(
+                "web_login_info response did not contain a recognized salt"
             )
 
         # 2) final hash = SHA256(SHA256(password) + salt)
@@ -582,14 +671,22 @@ class ZteRouterApi:
             session_id="0" * 32,
             retry_on_access_denied=False,
         )
-        d = login_res.get("data") or {}
-        sid = d.get("ubus_rpc_session")
-        if not sid:
-            raise RuntimeError(f"Login failed, response: {d}")
+        if not login_res.get("success"):
+            raise RuntimeError(
+                "UBUS web_login failed: "
+                f"{self._describe_rpc_failure(login_res.get('error'))}"
+            )
+        d = login_res.get("data")
+        sid = d.get("ubus_rpc_session") if isinstance(d, dict) else None
+        if not isinstance(sid, str) or not sid:
+            keys = sorted(d) if isinstance(d, dict) else []
+            raise RuntimeError(
+                "UBUS web_login response did not contain ubus_rpc_session "
+                f"(response fields: {keys})"
+            )
 
         self._session_id = sid
         self._logged_in = True
-        _LOGGER.info("ZTE 5G Router UBUS login successful")
         await self._async_setup_http_encryption()
 
     async def _async_setup_http_encryption(self) -> None:
@@ -677,12 +774,13 @@ class ZteRouterApi:
                 _LOGGER.debug("ZTE web_http_enstr_set successful")
             else:
                 _LOGGER.warning(
-                    "ZTE web_http_enstr_set did not succeed: result=%s error=%s",
-                    set_data,
-                    set_res.get("error"),
+                    "ZTE web HTTP encryption setup failed: endpoint=/ubus/ method=web_http_enstr_set",
                 )
         except Exception as exc:
-            _LOGGER.debug("Failed to setup ZTE web HTTP encryption: %s", exc)
+            _LOGGER.debug(
+                "ZTE web HTTP encryption setup failed: error=%s",
+                self._safe_exception_summary(exc),
+            )
 
     # --------------------------------------------------------------------
     # GoForm helpers
@@ -690,8 +788,7 @@ class ZteRouterApi:
     async def _async_get_goform_session(self) -> aiohttp.ClientSession:
         """Return (creating if needed) a dedicated aiohttp session with unsafe cookie jar."""
         if self._goform_session is None:
-            ssl_ctx: bool = False if not self.verify_tls else True
-            connector = aiohttp.TCPConnector(ssl=ssl_ctx)
+            connector = aiohttp.TCPConnector(ssl=self._tls_validation())
             jar = aiohttp.CookieJar(unsafe=True)
             self._goform_session = aiohttp.ClientSession(connector=connector, cookie_jar=jar)
         return self._goform_session
@@ -723,16 +820,34 @@ class ZteRouterApi:
                 url, params=params, headers=headers,
                 timeout=aiohttp.ClientTimeout(total=15)
             ) as resp:
+                _LOGGER.debug(
+                    "GoForm response: endpoint=/goform/goform_get_cmd_process cmd=%s status=%s",
+                    cmd,
+                    resp.status,
+                )
                 if raise_errors:
                     resp.raise_for_status()
+                    if getattr(resp, "content_type", None) == "text/html":
+                        raise RouterResponseError(
+                            "router returned HTML instead of GoForm JSON; "
+                            "the request may have been redirected to a login page"
+                        )
                 payload = await resp.json(content_type=None)
                 if raise_errors and not isinstance(payload, dict):
                     raise RuntimeError("response was not a JSON object")
                 return payload
         except Exception as exc:
             if raise_errors:
-                raise RuntimeError(f"GoForm GET {cmd} failed: {exc}") from exc
-            _LOGGER.warning("GoForm GET %s failed: %s", cmd, exc)
+                if isinstance(exc, RouterResponseError):
+                    raise
+                raise RuntimeError(
+                    f"GoForm GET {cmd} failed: {self._safe_exception_summary(exc)}"
+                ) from exc
+            _LOGGER.warning(
+                "GoForm request failed: method=GET cmd=%s error=%s",
+                cmd,
+                self._safe_exception_summary(exc),
+            )
             return {}
 
     async def _async_goform_set(
@@ -751,16 +866,31 @@ class ZteRouterApi:
                 url, data=data, headers=headers,
                 timeout=aiohttp.ClientTimeout(total=15)
             ) as resp:
+                _LOGGER.debug(
+                    "GoForm response: endpoint=/goform/goform_set_cmd_process status=%s",
+                    resp.status,
+                )
                 if raise_errors:
                     resp.raise_for_status()
+                    if getattr(resp, "content_type", None) == "text/html":
+                        raise RouterResponseError(
+                            "router returned HTML instead of a GoForm response"
+                        )
                 payload = await resp.json(content_type=None)
                 if raise_errors and not isinstance(payload, dict):
                     raise RuntimeError("response was not a JSON object")
                 return payload
         except Exception as exc:
             if raise_errors:
-                raise RuntimeError(f"GoForm POST failed: {exc}") from exc
-            _LOGGER.warning("GoForm POST failed: %s", exc)
+                if isinstance(exc, RouterResponseError):
+                    raise
+                raise RuntimeError(
+                    f"GoForm POST failed: {self._safe_exception_summary(exc)}"
+                ) from exc
+            _LOGGER.warning(
+                "GoForm request failed: method=POST error=%s",
+                self._safe_exception_summary(exc),
+            )
             return {}
 
     async def _async_goform_init_session(self, *, raise_errors: bool = False) -> None:
@@ -775,12 +905,21 @@ class ZteRouterApi:
                 _LOGGER.debug("GoForm session init: status=%s", resp.status)
         except Exception as exc:
             if raise_errors:
-                raise RuntimeError(f"GoForm session init failed: {exc}") from exc
-            _LOGGER.warning("GoForm session init GET %s failed: %s", url, exc)
+                raise RuntimeError(
+                    "GoForm session init failed: "
+                    f"{self._safe_exception_summary(exc)}"
+                ) from exc
+            _LOGGER.warning(
+                "GoForm session init failed: endpoint=/index.html error=%s",
+                self._safe_exception_summary(exc),
+            )
 
     async def _async_goform_login(self) -> None:
         """Login via GoForm API (SHA256(SHA256(password).upper() + LD))."""
         import hashlib
+        _LOGGER.debug(
+            "Starting router login: method=goform endpoint=/goform/ stage=session"
+        )
         # 1. Establish session cookie
         await self._async_goform_init_session(raise_errors=True)
         # 2. Get LD nonce
@@ -798,8 +937,8 @@ class ZteRouterApi:
             "password": final,
         }, raise_errors=True)
         result = login_resp.get("result", "")
-        if result != "0":
-            raise RuntimeError(f"GoForm login failed: result={result!r}")
+        if str(result) != "0":
+            raise RuntimeError("GoForm login was rejected by the router")
         self._logged_in = True
         self._api_mode = "goform"
         _LOGGER.info("ZTE GoForm login successful")
@@ -833,19 +972,6 @@ class ZteRouterApi:
             return field, value
 
         return dict(await asyncio.gather(*(_fetch(field) for field in fields)))
-
-    @staticmethod
-    def _redact_ubus_batch_for_log(requests: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        """Return a log-safe copy of a UBUS batch without session tokens."""
-        redacted: list[dict[str, Any]] = []
-        for request in requests:
-            log_request = dict(request)
-            params = list(request.get("params") or [])
-            if params:
-                params[0] = "<redacted>"
-            log_request["params"] = params
-            redacted.append(log_request)
-        return redacted
 
     async def _async_goform_update_all(self) -> dict[str, Any]:
         """Fetch all router data via GoForm API using SINGLE-field queries.
@@ -1140,7 +1266,6 @@ class ZteRouterApi:
                     pass
                 self._goform_session = None
 
-            await self.async_init_session()
             await self.async_login()
 
     # --------------------------------------------------------------------
@@ -1191,18 +1316,13 @@ class ZteRouterApi:
 
         url = self._ubus_url()
         try:
-            try:
-                sid_preview = (session_id or "")[:8]
-            except Exception:
-                sid_preview = ""
             service = str(call.get("service") or "")
             method = str(call.get("method") or "")
 
             _LOGGER.debug(
-                "ubus call: service=%s method=%s sid=%s",
+                "UBUS request: endpoint=/ubus/ service=%s method=%s session=present",
                 service,
                 method,
-                sid_preview,
             )
             headers = dict(self._base_headers)
             # Match WebUI behavior: Z-Mode=1 only for authenticated calls
@@ -1233,10 +1353,24 @@ class ZteRouterApi:
                 headers=headers,
                 timeout=10,
             ) as resp:
+                _LOGGER.debug(
+                    "UBUS response: endpoint=/ubus/ service=%s method=%s status=%s",
+                    service,
+                    method,
+                    resp.status,
+                )
                 resp.raise_for_status()
                 res_list = await resp.json(content_type=None)
         except Exception as exc:
-            _LOGGER.warning("HTTP error while calling ubus: %s", exc)
+            error_summary = self._safe_exception_summary(exc)
+            status = getattr(exc, "status", None)
+            _LOGGER.warning(
+                "UBUS request failed: endpoint=/ubus/ service=%s method=%s status=%s error=%s",
+                call.get("service"),
+                call.get("method"),
+                status or "unavailable",
+                error_summary,
+            )
 
             # Handle TCP reset-by-peer (errno 104) with a single retry
             if retry_on_connreset_104 and self._is_conn_reset_104(exc):
@@ -1247,8 +1381,17 @@ class ZteRouterApi:
                 try:
                     await self._async_ensure_logged_in(force=True)
                 except Exception as exc2:
-                    _LOGGER.error("Re-login failed after 104: %s", exc2)
-                    return {"success": False, "data": None, "error": {"message": str(exc2)}}
+                    summary = self._safe_exception_summary(exc2)
+                    _LOGGER.error("UBUS re-login failed after connection reset: %s", summary)
+                    return {
+                        "success": False,
+                        "data": None,
+                        "error": {
+                            "message": summary,
+                            "kind": "transport",
+                            "exception": type(exc2).__name__,
+                        },
+                    }
 
                 return await self.async_call_ubus(
                     call,
@@ -1262,7 +1405,16 @@ class ZteRouterApi:
             # triggers a re-login (e.g. router sent HTML redirect after a browser
             # login invalidated the HA session).
             self._mark_session_stale()
-            return {"success": False, "data": None, "error": {"message": str(exc)}}
+            return {
+                "success": False,
+                "data": None,
+                "error": {
+                    "message": error_summary,
+                    "kind": "transport",
+                    "status": status,
+                    "exception": type(exc).__name__,
+                },
+            }
 
         if not isinstance(res_list, list) or not res_list:
             _LOGGER.warning("Invalid JSON from ubus – marking session as stale for re-login")
@@ -1270,6 +1422,14 @@ class ZteRouterApi:
             return {"success": False, "data": None, "error": {"message": "invalid_json"}}
 
         res0 = res_list[0]
+        if not isinstance(res0, dict):
+            _LOGGER.warning("Invalid UBUS response shape; marking session stale")
+            self._mark_session_stale()
+            return {
+                "success": False,
+                "data": None,
+                "error": {"message": "invalid_response_shape"},
+            }
 
         _LOGGER.debug(
             "ubus response: service=%s method=%s has_error=%s",
@@ -1281,17 +1441,15 @@ class ZteRouterApi:
         # Error case
         if "error" in res0:
             err = res0["error"]
-            code = err.get("code")
-            msg = err.get("message")
+            code = err.get("code") if isinstance(err, dict) else None
 
             # Access denied → re-login (expected on some firmwares when session expires)
             if code == -32002 and retry_on_access_denied:
                 _LOGGER.debug(
-                    "ubus access denied: service=%s method=%s code=%s msg=%s; attempting re-login",
+                    "UBUS access denied: service=%s method=%s code=%s; attempting re-login",
                     call.get("service"),
                     call.get("method"),
                     code,
-                    msg,
                 )
 
                 # Mark current session as invalid and perform a single forced re-login.
@@ -1300,8 +1458,17 @@ class ZteRouterApi:
                 try:
                     await self._async_ensure_logged_in(force=True)
                 except Exception as exc:
-                    _LOGGER.error("Re-login failed: %s", exc)
-                    return {"success": False, "data": None, "error": {"message": str(exc)}}
+                    summary = self._safe_exception_summary(exc)
+                    _LOGGER.error("UBUS re-login failed: %s", summary)
+                    return {
+                        "success": False,
+                        "data": None,
+                        "error": {
+                            "message": summary,
+                            "kind": "transport",
+                            "exception": type(exc).__name__,
+                        },
+                    }
 
                 return await self.async_call_ubus(
                     call,
@@ -1315,19 +1482,17 @@ class ZteRouterApi:
             if code == -32002:
                 # Avoid log spam: this can happen even after a re-login attempt on some firmwares.
                 _LOGGER.debug(
-                    "ubus access denied: service=%s method=%s code=%s msg=%s (no further retry)",
+                    "ubus access denied: service=%s method=%s code=%s (no further retry)",
                     call.get("service"),
                     call.get("method"),
                     code,
-                    msg,
                 )
             else:
                 _LOGGER.warning(
-                    "ubus error: service=%s method=%s code=%s msg=%s",
+                    "UBUS response error: endpoint=/ubus/ service=%s method=%s code=%s",
                     call.get("service"),
                     call.get("method"),
                     code,
-                    msg,
                 )
             return {"success": False, "data": None, "error": err}
 
@@ -1351,7 +1516,6 @@ class ZteRouterApi:
         *,
         batch_name: str | None = None,
         z_mode_override: str | None = None,
-        log_raw_response: bool = True,
         retry_on_connreset_104: bool = True,
         retry_on_access_denied: bool = True,
     ) -> list[dict[str, Any]]:
@@ -1389,19 +1553,14 @@ class ZteRouterApi:
 
         url = self._ubus_url()
         try:
-            sid_preview = (session_id or "")[:8]
             _LOGGER.debug(
-                "ubus batch call: name=%s n=%s sid=%s", batch_name or "-", len(req), sid_preview
+                "UBUS batch request: endpoint=/ubus/ name=%s calls=%s session=present",
+                batch_name or "-",
+                len(req),
             )
             headers = dict(self._base_headers)
             headers["Z-Mode"] = z_mode_override if z_mode_override is not None else "1"
             headers.setdefault("X-Requested-With", "XMLHttpRequest")
-            if _LOGGER.isEnabledFor(logging.DEBUG):
-                try:
-                    log_req = self._redact_ubus_batch_for_log(req)
-                    _LOGGER.debug("ubus batch request payload: %s", json.dumps(log_req))
-                except Exception:
-                    pass
             async with self._session.post(
                 url,
                 data=json.dumps(req, separators=(",", ":")),
@@ -1410,14 +1569,12 @@ class ZteRouterApi:
             ) as resp:
                 resp.raise_for_status()
                 raw_text = await resp.text()
-                if log_raw_response:
-                    _LOGGER.debug("ubus batch raw response: %s", raw_text)
-                else:
-                    _LOGGER.debug(
-                        "ubus batch raw response omitted: name=%s bytes=%s",
-                        batch_name or "-",
-                        len(raw_text),
-                    )
+                _LOGGER.debug(
+                    "UBUS batch response: endpoint=/ubus/ name=%s status=%s bytes=%s",
+                    batch_name or "-",
+                    resp.status,
+                    len(raw_text),
+                )
                 res_list = json.loads(raw_text)
                 # If the session expired, the router may return -32002 for batch items.
                 if retry_on_access_denied and isinstance(res_list, list):
@@ -1437,17 +1594,14 @@ class ZteRouterApi:
                             calls,
                             batch_name=batch_name,
                             z_mode_override=z_mode_override,
-                            log_raw_response=log_raw_response,
                             retry_on_connreset_104=retry_on_connreset_104,
                             retry_on_access_denied=False,
                         )
         except Exception as exc:
-            exc_name = type(exc).__name__
             _LOGGER.warning(
-                "HTTP error while calling ubus batch '%s': %s: %s",
+                "UBUS batch request failed: endpoint=/ubus/ name=%s error=%s",
                 batch_name or "-",
-                exc_name,
-                exc,
+                self._safe_exception_summary(exc),
             )
 
             # Handle TCP reset-by-peer (errno 104) with a single retry
@@ -1457,13 +1611,23 @@ class ZteRouterApi:
                 try:
                     await self._async_ensure_logged_in(force=True)
                 except Exception as exc2:
-                    _LOGGER.error("Re-login failed after 104 during batch: %s", exc2)
-                    return [{"success": False, "data": None, "error": {"message": str(exc2)}} for _ in calls]
+                    _LOGGER.error(
+                        "UBUS batch re-login failed after connection reset: %s",
+                        self._safe_exception_summary(exc2),
+                    )
+                    message = self._safe_exception_summary(exc2)
+                    return [
+                        {
+                            "success": False,
+                            "data": None,
+                            "error": {"message": message, "kind": "transport"},
+                        }
+                        for _ in calls
+                    ]
                 return await self.async_call_ubus_batch(
                     calls,
                     batch_name=batch_name,
                     z_mode_override=z_mode_override,
-                    log_raw_response=log_raw_response,
                     retry_on_connreset_104=False,
                     retry_on_access_denied=retry_on_access_denied,
                 )
@@ -1472,7 +1636,20 @@ class ZteRouterApi:
             # triggers a re-login (e.g. router sent HTML redirect after a browser
             # login invalidated the HA session).
             self._mark_session_stale()
-            return [{"success": False, "data": None, "error": {"message": str(exc)}} for _ in calls]
+            message = self._safe_exception_summary(exc)
+            status = getattr(exc, "status", None)
+            return [
+                {
+                    "success": False,
+                    "data": None,
+                    "error": {
+                        "message": message,
+                        "kind": "transport",
+                        "status": status,
+                    },
+                }
+                for _ in calls
+            ]
 
         if not isinstance(res_list, list):
             _LOGGER.warning("Invalid JSON from ubus batch – marking session as stale for re-login")
@@ -1515,7 +1692,20 @@ class ZteRouterApi:
         for call, result in zip(calls, results, strict=False):
             if result.get("success"):
                 continue
-            failed.append(f"{call.get('service')}.{call.get('method')}")
+            error = result.get("error")
+            failure = "unknown error"
+            if isinstance(error, dict):
+                if isinstance(error.get("status"), int):
+                    failure = f"HTTP {error['status']}"
+                elif isinstance(error.get("code"), int):
+                    failure = f"RPC {error['code']}"
+                elif error.get("kind") == "transport":
+                    failure = "transport error"
+                elif "message" in error:
+                    failure = "router error without code"
+            failed.append(
+                f"{call.get('service')}.{call.get('method')} ({failure})"
+            )
 
         if failed:
             _LOGGER.warning(
@@ -1594,11 +1784,10 @@ class ZteRouterApi:
         if not res.get("success"):
             err = res.get("error") or {}
             _LOGGER.warning(
-                "ZTE action ubus failed: service=%s method=%s code=%s msg=%s",
+                "ZTE action UBUS request failed: service=%s method=%s code=%s",
                 call.get("service"),
                 call.get("method"),
                 err.get("code"),
-                err.get("message") or err,
             )
             return False
 
@@ -1608,10 +1797,9 @@ class ZteRouterApi:
                 result = str(data.get("result")).lower()
                 if result in {"failure", "fail", "false"}:
                     _LOGGER.warning(
-                        "ZTE action returned failure: service=%s method=%s result=%s",
+                        "ZTE action returned failure: service=%s method=%s",
                         call.get("service"),
                         call.get("method"),
-                        data,
                     )
                     return False
             return True
@@ -1643,12 +1831,16 @@ class ZteRouterApi:
         service = action.get("service")
         method = action.get("method")
         if not service or not method:
-            _LOGGER.warning("Invalid action definition (missing service/method): %s", action)
+            _LOGGER.warning("Invalid action definition: service or method is missing")
             return False
 
         params = action.get("params")
         if params is not None and not isinstance(params, dict):
-            _LOGGER.warning("Invalid action definition (params must be dict): %s", action)
+            _LOGGER.warning(
+                "Invalid action definition: params must be an object service=%s method=%s",
+                service,
+                method,
+            )
             return False
 
         call = self.build_ubus_call(service, method, params)
@@ -1661,8 +1853,9 @@ class ZteRouterApi:
                 success_values = {str(x) for x in success_values}
             else:
                 _LOGGER.warning(
-                    "Invalid action definition (success_values must be list/tuple/set): %s",
-                    action,
+                    "Invalid action definition: success_values must be a sequence service=%s method=%s",
+                    service,
+                    method,
                 )
                 success_values = None
 
@@ -1675,7 +1868,7 @@ class ZteRouterApi:
                         "ZTE action re-login failed before write: service=%s method=%s error=%s",
                         service,
                         method,
-                        exc,
+                        self._safe_exception_summary(exc),
                     )
                     return False
 
@@ -1704,7 +1897,10 @@ class ZteRouterApi:
         """Never replay an update command after an ambiguous transport failure."""
         result = await self.async_call_ubus(call, retry_on_connreset_104=False)
         if not result.get("success"):
-            _LOGGER.warning("Firmware command %s failed: %s", call["method"], result.get("error"))
+            _LOGGER.warning(
+                "Firmware command failed: method=%s",
+                call["method"],
+            )
             return False
         data = result.get("data")
         if isinstance(data, dict) and "result" in data:
@@ -1760,7 +1956,10 @@ class ZteRouterApi:
             try:
                 return await self._async_goform_update_fast()
             except Exception as exc:
-                _LOGGER.warning("GoForm fast update failed, retrying with re-login: %s", exc)
+                _LOGGER.warning(
+                    "GoForm fast update failed, retrying with re-login: error=%s",
+                    self._safe_exception_summary(exc),
+                )
                 self._mark_session_stale()
                 await self._async_ensure_logged_in(force=True)
                 return await self._async_goform_update_fast()
@@ -1866,7 +2065,7 @@ class ZteRouterApi:
         calls.append(self.build_ubus_call("zwrt_router.api", "router_get_user_list_num"))
         results = await self.async_call_ubus_batch(
             calls, batch_name="network_clients", z_mode_override="0",
-            log_raw_response=False, retry_on_access_denied=False,
+            retry_on_access_denied=False,
         )
         if len(results) != len(calls) or not results[-1].get("success"):
             return None
@@ -1924,7 +2123,10 @@ class ZteRouterApi:
             try:
                 return await self._async_goform_update_all()
             except Exception as exc:
-                _LOGGER.warning("GoForm full update failed, retrying with re-login: %s", exc)
+                _LOGGER.warning(
+                    "GoForm full update failed, retrying with re-login: error=%s",
+                    self._safe_exception_summary(exc),
+                )
                 self._mark_session_stale()
                 await self._async_ensure_logged_in(force=True)
                 return await self._async_goform_update_all()
@@ -1996,7 +2198,6 @@ class ZteRouterApi:
             ],
             batch_name="firmware_gnss",
             z_mode_override="0",
-            log_raw_response=False,
             retry_on_access_denied=False,
         )
         # Coordinates are private; never put the metadata batch into raw debug logs.
@@ -2014,7 +2215,6 @@ class ZteRouterApi:
             sms_batch_calls,
             batch_name="sms",
             z_mode_override="0",
-            log_raw_response=False,
         )
 
         self._log_batch_failures("core", core_batch_calls, core_results)

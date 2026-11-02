@@ -91,11 +91,18 @@ Beide Intervalle können in den Integrations-Optionen angepasst werden.
 4. Suche nach `ZTE 5G Router` und klicke auf **Herunterladen**.
 5. Starte Home Assistant neu.
 
+> **Breaking Change in 2.0.0:** Die Integrations-Domain wurde von
+> `zte_ng_router` in `zte_5g_router` umbenannt. Home Assistant migriert den
+> bisherigen Eintrag nicht automatisch. Entferne den alten Integrationseintrag
+> und das Verzeichnis `custom_components/zte_ng_router`, installiere die neue
+> Integration unter `custom_components/zte_5g_router` und richte den Router
+> erneut ein. Prüfe danach Entity-IDs und Automationen.
+
 ### Variante 2: Manuelle Installation
-1. Lade das Release-Archiv `zte_ng_router.zip` herunter.
+1. Lade das Release-Archiv `zte_5g_router.zip` herunter.
 2. Entpacke den Ordner in dein Home Assistant Konfigurationsverzeichnis:
    ```
-   <config_dir>/custom_components/zte_ng_router/
+   <config_dir>/custom_components/zte_5g_router/
    ```
 3. Starte Home Assistant neu.
 
@@ -109,12 +116,60 @@ Beide Intervalle können in den Integrations-Optionen angepasst werden.
    - **Name:** Eindeutiger Name (z. B. `ZTE 5G Router`)
    - **Router-URL:** `https://192.168.0.1` (oder der HTTPS-Ursprung deines Routers)
    - **Passwort:** Admin-Passwort der Router-Weboberfläche
-   - **TLS prüfen:** Standardmäßig aktiviert; nur bei einem lokal vertrauten selbstsignierten Routerzertifikat deaktivieren
+   - **TLS prüfen:** Standardmäßig aktiviert. Bei selbstsigniertem TLS den SHA-256-Fingerabdruck des Zertifikats aus einer vertrauenswürdigen Quelle verifizieren und eintragen; exakt dieses Zertifikat wird dann gepinnt.
+   - **TLS-Fingerabdruck:** Optionaler SHA-256-Zertifikat-Fingerabdruck mit 64 Hex-Zeichen (Doppelpunkte sind erlaubt). Leer lassen für die normale Prüfung über Zertifizierungsstellen. TLS-Prüfung möglichst nicht deaktivieren.
    - **Unsicheres HTTP erlauben:** Nur aktivieren, wenn der Router kein HTTPS unterstützt. Zugangsdaten und Sitzung werden unverschlüsselt übertragen.
    - **Langsames Abfrageintervall:** 60 Sekunden (Standard)
    - **Schnelles Abfrageintervall:** 5 Sekunden (Standard)
    - **Netzwerkgeräte verfolgen:** Aktivieren für WLAN-/LAN-Tracker
    - **Abwesenheitsfrist:** 180 Sekunden (Standard)
+
+### Reale Router-Diagnose
+
+Die optionalen Werkzeuge in `tools/` verwenden standardmäßig den echten Router
+unter `https://192.168.0.1`. Verwende Python mit installiertem `aiohttp`
+(zum Beispiel die Python-Umgebung von Home Assistant). Setze `ZTEPWD` als
+Umgebungsvariable, niemals als Kommandozeilenargument. Bei einem selbstsignierten Zertifikat setze
+`ZTE_TLS_FINGERPRINT` auf den unabhängig verifizierten SHA-256-Fingerabdruck
+aus der Zertifikatsanzeige. Der Fingerabdruck gehört nur zu diesem Router und
+darf nicht für andere Geräte übernommen werden.
+
+```powershell
+$env:ZTEPWD = "<Router-Passwort>"
+$env:ZTE_TLS_FINGERPRINT = "<64-stelliger-SHA-256-Fingerabdruck>"
+python tools/router_probe.py
+python tools/api_discovery.py
+python tools/login_debug.py
+python tools/api_discovery.py --authenticate
+```
+
+Authentifizierte Befehle melden sich einmal an und lesen Routerdaten, geben
+aber keine Antwortinhalte, Passwörter, Cookies oder Tokens aus. Die
+automatisierten Hardwaretests sind nur mit `RUN_REAL_ROUTER_TESTS=1` aktiv:
+
+```powershell
+$env:RUN_REAL_ROUTER_TESTS = "1"
+python -m unittest discover -s tests\integration -v
+```
+
+Ein GoForm-Login wird nur mit dem expliziten Schalter `ZTE_TEST_GOFORM=1`
+versucht. Router-Neustarts werden von diesen Werkzeugen nie ausgelöst.
+Home-Assistant-Neustarts benötigen die separate explizite Freigabe weiter unten.
+
+Für einen Live-Test des Home-Assistant-Config-Flows und der Entitäten nutze
+`tools/ha_e2e.py` mit `HA_URL` und `HA_TOKEN` als Umgebungsvariablen. Das Skript
+erstellt den neuen Integrationseintrag, falls noch keiner existiert. Home
+Assistant wird nur neu gestartet, wenn sowohl `--restart` als auch
+`HA_ALLOW_RESTART=1` gesetzt sind:
+
+```powershell
+python tools/ha_e2e.py
+# Nur während eines freigegebenen Wartungsfensters:
+$env:HA_ALLOW_RESTART = "1"
+python tools/ha_e2e.py --restart
+```
+
+`HA_TOKEN` und `ZTEPWD` niemals in Reports oder Chats einfügen.
 
 ---
 

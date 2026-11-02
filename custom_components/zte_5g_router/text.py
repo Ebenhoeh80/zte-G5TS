@@ -4,16 +4,17 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.text import TextEntity, TextEntityDescription
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, SMS_COMPOSE_DEFAULT
 from .zte_api import ZteRouterApi
+if TYPE_CHECKING:
+    from . import ZteNgRouterConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -50,16 +51,24 @@ TEXTS: tuple[ZteTextDescription, ...] = (
 )
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities) -> None:
-    data = hass.data[DOMAIN][entry.entry_id]
-    api = data["api"]
-    coordinator = data["coordinator"]
-    name = data.get("name", "ZTE Router")
-    if not data.get("sms_compose"):
-        data["sms_compose"] = SMS_COMPOSE_DEFAULT
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ZteNgRouterConfigEntry,
+    async_add_entities,
+) -> None:
+    runtime_data = entry.runtime_data
+    if not runtime_data.sms_compose:
+        runtime_data.sms_compose = SMS_COMPOSE_DEFAULT
 
     async_add_entities([
-        ZteTextEntity(hass, coordinator, api, entry, name, desc)
+        ZteTextEntity(
+            hass,
+            runtime_data.coordinator,
+            runtime_data.api,
+            entry,
+            runtime_data.name,
+            desc,
+        )
         for desc in TEXTS
     ])
 
@@ -82,12 +91,13 @@ class ZteTextEntity(CoordinatorEntity, TextEntity):
         hass: HomeAssistant,
         coordinator,
         api: ZteRouterApi,
-        entry: ConfigEntry,
+        entry: ZteNgRouterConfigEntry,
         device_name: str,
         description: ZteTextDescription,
     ) -> None:
         super().__init__(coordinator)
         self.hass = hass
+        self._entry = entry
         self.entity_description = description
         self._api = api
         self._entry_id = entry.entry_id
@@ -137,8 +147,9 @@ class ZteTextEntity(CoordinatorEntity, TextEntity):
     @property
     def native_value(self) -> str:
         if self._kind == "sms":
-            data = self.hass.data.get(DOMAIN, {}).get(self._entry_id, {})
-            return str(data.get("sms_compose") or SMS_COMPOSE_DEFAULT)
+            return str(
+                self._entry.runtime_data.sms_compose or SMS_COMPOSE_DEFAULT
+            )
 
         netinfo = self._netinfo()
 
@@ -170,7 +181,7 @@ class ZteTextEntity(CoordinatorEntity, TextEntity):
             ZteRouterApi.parse_5g_cell_lock_input(value)
         else:
             ZteRouterApi.parse_sms_compose_input(value)
-            self.hass.data[DOMAIN][self._entry_id]["sms_compose"] = value
+            self._entry.runtime_data.sms_compose = value
             self.async_write_ha_state()
             return
 
@@ -183,7 +194,7 @@ class ZteTextEntity(CoordinatorEntity, TextEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         if self._kind == "sms":
-            value = self.hass.data.get(DOMAIN, {}).get(self._entry_id, {}).get("sms_compose", "")
+            value = self._entry.runtime_data.sms_compose
             attrs: dict[str, Any] = {
                 "format": "number,message",
                 "example": "+43123456789,Test message",

@@ -2,16 +2,17 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.button import ButtonEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, SMS_COMPOSE_DEFAULT
+if TYPE_CHECKING:
+    from . import ZteNgRouterConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -57,17 +58,20 @@ BUTTON_DEFS: list[ZteActionButtonDef] = [
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: ZteNgRouterConfigEntry,
     async_add_entities,
 ) -> None:
-    data = hass.data[DOMAIN][entry.entry_id]
-    api = data["api"]
-    coordinator = data["coordinator"]
-    name = data.get("name", "ZTE Router")
+    runtime_data = entry.runtime_data
 
     async_add_entities(
         [
-            ZteActionButton(coordinator, api, entry, name, btn_def)
+            ZteActionButton(
+                runtime_data.coordinator,
+                runtime_data.api,
+                entry,
+                runtime_data.name,
+                btn_def,
+            )
             for btn_def in BUTTON_DEFS
         ]
     )
@@ -80,12 +84,13 @@ class ZteActionButton(CoordinatorEntity, ButtonEntity):
         self,
         coordinator,
         api,
-        entry: ConfigEntry,
+        entry: ZteNgRouterConfigEntry,
         device_name: str,
         btn_def: ZteActionButtonDef,
     ) -> None:
         super().__init__(coordinator)
         self.hass = coordinator.hass
+        self._entry = entry
         self._entry_id = entry.entry_id
         self._api = api
         self._btn_def = btn_def
@@ -132,15 +137,17 @@ class ZteActionButton(CoordinatorEntity, ButtonEntity):
             return
 
         if self._btn_def.kind == "send_sms":
-            data = self.hass.data.get(DOMAIN, {}).get(self._entry_id, {})
-            compose_value = str(data.get("sms_compose") or "")
+            compose_value = str(self._entry.runtime_data.sms_compose or "")
             if compose_value.strip() == SMS_COMPOSE_DEFAULT:
                 _LOGGER.warning("Cannot send SMS, compose value is still default helper text")
                 return
             try:
                 number, message = self._api.parse_sms_compose_input(compose_value)
             except ValueError as exc:
-                _LOGGER.warning("Cannot send SMS, invalid compose value: %s", exc)
+                _LOGGER.warning(
+                    "Cannot send SMS: invalid compose value error_type=%s",
+                    type(exc).__name__,
+                )
                 return
 
             try:

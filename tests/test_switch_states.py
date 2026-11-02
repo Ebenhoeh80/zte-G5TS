@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 
 def load_switches():
-    root = Path(__file__).resolve().parents[1] / "custom_components/zte_ng_router"
+    root = Path(__file__).resolve().parents[1] / "custom_components/zte_5g_router"
     package = types.ModuleType("zte_switch_test")
     package.__path__ = [str(root)]
     modules = {"zte_switch_test": package}

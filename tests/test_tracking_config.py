@@ -10,7 +10,7 @@ from unittest.mock import patch
 import voluptuous as vol
 
 
-ROOT = Path(__file__).resolve().parents[1] / "custom_components/zte_ng_router"
+ROOT = Path(__file__).resolve().parents[1] / "custom_components/zte_5g_router"
 
 
 def load_flow():
@@ -64,12 +64,49 @@ class TrackingConfigTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(values["verify_tls"])
         self.assertFalse(values["allow_insecure_http"])
         self.assertEqual(values["host"], "https://192.0.2.1")
+        self.assertEqual(values["tls_fingerprint"], "")
         self.assertEqual(values["client_consider_home"], 180)
         values.update(track_wifi_clients=True, client_consider_home=120)
         result = await config.async_step_user(values)
         self.assertTrue(result["data"]["track_wifi_clients"])
         self.assertTrue(result["data"]["verify_tls"])
         self.assertEqual(result["data"]["client_consider_home"], 120)
+        self.assertEqual(result["data"]["tls_fingerprint"], "")
+
+    async def test_tls_fingerprint_is_validated_and_normalized(self):
+        fingerprint = "AA" * 32
+        colon_separated = ":".join(
+            fingerprint[index:index + 2] for index in range(0, 64, 2)
+        )
+        normalized, error = flow._validate_tls_fingerprint(colon_separated)
+        self.assertEqual(normalized, fingerprint.lower())
+        self.assertIsNone(error)
+
+        normalized, error = flow._validate_tls_fingerprint("not-a-fingerprint")
+        self.assertIsNone(normalized)
+        self.assertEqual(error, "invalid_tls_fingerprint")
+
+        config = flow.ZteNgRouterConfigFlow()
+        form = await config.async_step_user()
+        values = form["data_schema"]({
+            "name": "Router",
+            "host": "https://192.0.2.1",
+            "password": "test",
+            "tls_fingerprint": fingerprint,
+        })
+        result = await config.async_step_user(values)
+        self.assertEqual(result["data"]["tls_fingerprint"], fingerprint.lower())
+
+        http_config = flow.ZteNgRouterConfigFlow()
+        http_values = form["data_schema"]({
+            "name": "Router",
+            "host": "http://192.0.2.1",
+            "password": "test",
+            "allow_insecure_http": True,
+            "tls_fingerprint": fingerprint,
+        })
+        rejected = await http_config.async_step_user(http_values)
+        self.assertEqual(rejected["errors"]["base"], "tls_fingerprint_requires_https")
 
     async def test_http_requires_explicit_opt_in(self):
         config = flow.ZteNgRouterConfigFlow()
@@ -135,6 +172,7 @@ class TrackingConfigTests(unittest.IsolatedAsyncioTestCase):
                 self.assertIn("track_wifi_clients", labels)
                 self.assertIn("client_consider_home", labels)
                 self.assertIn("verify_tls", labels)
+                self.assertIn("tls_fingerprint", labels)
                 self.assertIn("allow_insecure_http", labels)
 
 

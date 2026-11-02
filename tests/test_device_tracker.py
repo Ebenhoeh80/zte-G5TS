@@ -11,7 +11,7 @@ from test_sms import api, ZteRouterApi
 
 
 def load_trackers():
-    root = Path(__file__).resolve().parents[1] / "custom_components/zte_ng_router"
+    root = Path(__file__).resolve().parents[1] / "custom_components/zte_5g_router"
     package = types.ModuleType("zte_tracker_test")
     package.__path__ = [str(root)]
     modules = {"zte_tracker_test": package}
@@ -96,7 +96,7 @@ class TrackerApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([c["params"] for c in call.args[0][:-1]],
                          [{"start_id": 1, "end_id": 64}, {"start_id": 65, "end_id": 128}])
         self.assertEqual(call.args[0][-1]["method"], "router_get_user_list_num")
-        self.assertFalse(call.kwargs["log_raw_response"])
+        self.assertNotIn("log_raw_response", call.kwargs)
         self.assertFalse(call.kwargs["retry_on_access_denied"])
         self.assertEqual(call.kwargs["z_mode_override"], "0")
 
@@ -346,11 +346,15 @@ class TrackerPlatformTests(unittest.IsolatedAsyncioTestCase):
             return lambda: listeners.remove(listener)
 
         coordinator = types.SimpleNamespace(data=data or {}, last_update_success=True, async_add_listener=listen)
-        store = {"coordinator": coordinator, "name": "Router"}
-        hass = types.SimpleNamespace(data={"zte_ng_router": {"entry": store}}, registry=registry or [])
+        store = types.SimpleNamespace(
+            coordinator=coordinator,
+            name="Router",
+            reset_client_absence=None,
+        )
+        hass = types.SimpleNamespace(registry=registry or [])
         unloads = []
         entry = types.SimpleNamespace(entry_id="entry", data={}, options={"track_wifi_clients": enabled},
-                                      async_on_unload=unloads.append)
+                                      runtime_data=store, async_on_unload=unloads.append)
         return hass, entry, coordinator, store, listeners, unloads
 
     async def test_opt_out_does_not_discover_or_subscribe(self):
@@ -359,7 +363,7 @@ class TrackerPlatformTests(unittest.IsolatedAsyncioTestCase):
         await trackers.async_setup_entry(hass, entry, entities.extend)
         self.assertEqual(entities, [])
         self.assertEqual(listeners, [])
-        self.assertNotIn("reset_client_absence", store)
+        self.assertIsNone(store.reset_client_absence)
 
     async def test_dynamic_discovery_unique_ids_disabled_default_and_cleanup(self):
         hass, entry, coordinator, store, listeners, unloads = self.setup(data={"network_clients": snapshot()})
@@ -388,7 +392,7 @@ class TrackerPlatformTests(unittest.IsolatedAsyncioTestCase):
         for unload in unloads:
             unload()
         self.assertEqual(listeners, [])
-        self.assertNotIn("reset_client_absence", store)
+        self.assertIsNone(store.reset_client_absence)
 
     async def test_pause_hook_restarts_grace_and_discovery_continues(self):
         hass, entry, coordinator, store, listeners, _ = self.setup(data={"network_clients": snapshot()})
@@ -398,7 +402,7 @@ class TrackerPlatformTests(unittest.IsolatedAsyncioTestCase):
         coordinator.data = {"network_clients": snapshot(60, False)}
         with patch.object(trackers.time, "monotonic", return_value=60):
             listeners[0]()
-        store["reset_client_absence"]()
+        store.reset_client_absence()
         coordinator.data = {"network_clients": snapshot(600, False)}
         with patch.object(trackers.time, "monotonic", return_value=600):
             listeners[0]()
@@ -434,7 +438,7 @@ class TrackerPlatformTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(entities), 1)
 
     async def test_offline_registered_trackers_reappear_and_restore_metadata_not_presence(self):
-        registry = [types.SimpleNamespace(domain="device_tracker", platform="zte_ng_router",
+        registry = [types.SimpleNamespace(domain="device_tracker", platform="zte_5g_router",
                                          unique_id="entry_wifi_021234567890")]
         hass, entry, _, _, _, _ = self.setup(data={"network_clients": snapshot(0, False)}, registry=registry)
         entities = []

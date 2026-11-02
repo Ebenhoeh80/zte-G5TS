@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.device_tracker import ScannerEntity, SourceType
 from homeassistant.core import callback
@@ -17,6 +17,8 @@ from .const import (
     DEFAULT_CLIENT_CONSIDER_HOME,
 )
 from .zte_api import ZteRouterApi
+if TYPE_CHECKING:
+    from . import ZteNgRouterConfigEntry
 
 
 @dataclass
@@ -88,12 +90,16 @@ class NetworkClientTracking:
                 client.connected = False
 
 
-async def async_setup_entry(hass, entry, async_add_entities) -> None:
+async def async_setup_entry(
+    hass,
+    entry: ZteNgRouterConfigEntry,
+    async_add_entities,
+) -> None:
     """Discover WLAN/LAN clients only when the user opts in."""
     if not entry.options.get(CONF_TRACK_CLIENTS, entry.data.get(CONF_TRACK_CLIENTS, False)):
         return
-    store = hass.data[DOMAIN][entry.entry_id]
-    coordinator = store["coordinator"]
+    runtime_data = entry.runtime_data
+    coordinator = runtime_data.coordinator
     tracking = NetworkClientTracking(entry.options.get(
         CONF_CLIENT_CONSIDER_HOME, entry.data.get(CONF_CLIENT_CONSIDER_HOME, DEFAULT_CLIENT_CONSIDER_HOME)
     ))
@@ -116,12 +122,18 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
         if new:
             added.update(new)
             async_add_entities([
-                ZteNetworkClientTracker(coordinator, tracking, mac, entry.entry_id, store["name"])
+                ZteNetworkClientTracker(
+                    coordinator,
+                    tracking,
+                    mac,
+                    entry.entry_id,
+                    runtime_data.name,
+                )
                 for mac in sorted(new)
             ])
 
-    store["reset_client_absence"] = tracking.reset_absence
-    entry.async_on_unload(lambda: store.pop("reset_client_absence", None))
+    runtime_data.reset_client_absence = tracking.reset_absence
+    entry.async_on_unload(lambda: setattr(runtime_data, "reset_client_absence", None))
     entry.async_on_unload(coordinator.async_add_listener(update_clients))
     update_clients()
 

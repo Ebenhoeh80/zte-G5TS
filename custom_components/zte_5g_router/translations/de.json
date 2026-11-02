@@ -9,6 +9,7 @@
           "host": "Router-URL / IP-Adresse",
           "password": "WebUI Administrator-Passwort",
           "verify_tls": "TLS-Zertifikat prüfen",
+          "tls_fingerprint": "TLS-Zertifikat-Fingerabdruck (SHA-256, optional)",
           "allow_insecure_http": "Unsicheres HTTP erlauben (nicht empfohlen)",
           "scan_interval": "Langsames Abfrageintervall (Sekunden)",
           "fast_scan_interval": "Schnelles Abfrageintervall (Sekunden)",
@@ -18,6 +19,7 @@
         "data_description": {
           "host": "Verwende den HTTPS-Ursprung des Routers, z. B. https://192.168.0.1. HTTP erfordert die ausdrückliche Freigabe für unsicheres HTTP.",
           "verify_tls": "Prüft das Routerzertifikat bei HTTPS. Nur bei einem selbstsignierten, lokal vertrauten Zertifikat deaktivieren.",
+          "tls_fingerprint": "Für selbstsignierte Zertifikate den SHA-256-Fingerabdruck aus einer vertrauenswürdigen Quelle eintragen. Das Zertifikat wird exakt gepinnt; leer lassen für normale CA-Prüfung.",
           "allow_insecure_http": "Für HTTP erforderlich. Zugangsdaten und Sitzung werden unverschlüsselt übertragen.",
           "scan_interval": "Standard 60s. Aktualisiert Signalmetriken, Zellendetails, Datenlimits und Client-Listen.",
           "fast_scan_interval": "Standard 5s. Aktualisiert Echtzeit-Durchsatz (Download/Upload) und CPU-/RAM-Auslastung.",
@@ -31,6 +33,8 @@
       "invalid_fast_scan_interval": "Das schnelle Abfrageintervall muss zwischen 2 und 3600 Sekunden liegen.",
       "invalid_host": "Gib einen gültigen Router-Ursprung mit http:// oder https:// ohne Zugangsdaten, Pfad, Query oder Fragment ein.",
       "insecure_http": "HTTP ist unverschlüsselt. Aktiviere die ausdrückliche HTTP-Freigabe oder verwende HTTPS.",
+      "invalid_tls_fingerprint": "Gib einen 64-stelligen SHA-256-Zertifikat-Fingerabdruck ein (Doppelpunkte sind optional).",
+      "tls_fingerprint_requires_https": "Ein TLS-Zertifikat-Fingerabdruck kann nur mit einer HTTPS-Router-URL verwendet werden.",
       "cannot_connect": "Verbindung zum ZTE-Router unter dieser URL fehlgeschlagen.",
       "invalid_auth": "Ungültiges Router-Passwort oder Authentifizierung abgewiesen.",
       "unknown": "Unerwarteter Fehler bei der Einrichtung aufgetreten."
@@ -48,6 +52,7 @@
           "host": "Router-URL / IP-Adresse",
           "password": "Neues Router-Passwort (leer lassen zum Beibehalten)",
           "verify_tls": "TLS-Zertifikat prüfen",
+          "tls_fingerprint": "TLS-Zertifikat-Fingerabdruck (SHA-256, optional)",
           "allow_insecure_http": "Unsicheres HTTP erlauben (nicht empfohlen)",
           "scan_interval": "Langsames Abfrageintervall (Sekunden)",
           "fast_scan_interval": "Schnelles Abfrageintervall (Sekunden)",
@@ -57,6 +62,7 @@
         "data_description": {
           "allow_insecure_http": "Für HTTP erforderlich. Zugangsdaten und Sitzung werden unverschlüsselt übertragen.",
           "verify_tls": "Prüft das Routerzertifikat bei HTTPS. Nur bei einem selbstsignierten, lokal vertrauten Zertifikat deaktivieren.",
+          "tls_fingerprint": "Einen außerhalb von Home Assistant verifizierten Fingerabdruck eines selbstsignierten Zertifikats pinnen. Leeren, um zur normalen CA-Prüfung zurückzukehren.",
           "track_wifi_clients": "WLAN- und LAN-Geräte beim langsamen Polling schreibgeschützt erfassen. Aktiviere gewünschte Tracker unter Einstellungen > Geräte & Dienste > Entitäten.",
           "client_consider_home": "Frist vor Meldung als abwesend (0-3600 Sekunden)."
         }

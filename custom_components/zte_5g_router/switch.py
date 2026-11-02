@@ -4,12 +4,11 @@ import logging
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 from homeassistant.util import dt as dt_util
 
 from homeassistant.components.switch import SwitchEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_registry import async_get as async_get_entity_registry
@@ -17,6 +16,8 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.event import async_call_later
 
 from .const import DOMAIN
+if TYPE_CHECKING:
+    from . import ZteNgRouterConfigEntry, ZteNgRouterRuntimeData
 from .zte_api import ZteRouterApi
 
 _LOGGER = logging.getLogger(__name__)
@@ -141,26 +142,43 @@ SWITCH_DEFS: list[ZteActionSwitchDef] = [
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: ZteNgRouterConfigEntry,
     async_add_entities,
 ) -> None:
-    data = hass.data[DOMAIN][entry.entry_id]
-    api = data["api"]
-    coordinator = data["coordinator"]
-    name = data.get("name", "ZTE Router")
+    runtime_data = entry.runtime_data
 
     entities = [
-        ZteActionSwitch(coordinator, api, entry, name, switch_def)
+        ZteActionSwitch(
+            runtime_data.coordinator,
+            runtime_data.api,
+            entry,
+            runtime_data.name,
+            switch_def,
+        )
         for switch_def in SWITCH_DEFS
     ]
 
     # Pause polling for 5 minutes
-    entities.append(ZtePausePollingSwitch(hass, entry, name))
+    entities.append(ZtePausePollingSwitch(hass, entry, runtime_data.name))
 
     # Cell lock switches (use text entities for input)
     entities += [
-        ZteCellLockSwitch(hass, coordinator, api, entry, name, kind="4g"),
-        ZteCellLockSwitch(hass, coordinator, api, entry, name, kind="5g"),
+        ZteCellLockSwitch(
+            hass,
+            runtime_data.coordinator,
+            runtime_data.api,
+            entry,
+            runtime_data.name,
+            kind="4g",
+        ),
+        ZteCellLockSwitch(
+            hass,
+            runtime_data.coordinator,
+            runtime_data.api,
+            entry,
+            runtime_data.name,
+            kind="5g",
+        ),
     ]
 
     async_add_entities(entities)
@@ -173,7 +191,7 @@ class ZteActionSwitch(CoordinatorEntity, SwitchEntity):
         self,
         coordinator,
         api,
-        entry: ConfigEntry,
+        entry: ZteNgRouterConfigEntry,
         device_name: str,
         switch_def: ZteActionSwitchDef,
     ) -> None:
@@ -345,9 +363,14 @@ class ZtePausePollingSwitch(SwitchEntity):
 
     _attr_has_entity_name = True
 
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, device_name: str) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: ZteNgRouterConfigEntry,
+        device_name: str,
+    ) -> None:
         self.hass = hass
-        self._entry_id = entry.entry_id
+        self._entry = entry
         self._unsub_auto_off = None
 
         self._attr_name = "Pause polling (5 min)"
@@ -362,37 +385,26 @@ class ZtePausePollingSwitch(SwitchEntity):
         )
 
     @property
-    def _store(self) -> dict:
-        return self.hass.data[DOMAIN][self._entry_id]
+    def _store(self) -> ZteNgRouterRuntimeData:
+        return self._entry.runtime_data
 
     @property
     def is_on(self) -> bool:
-        pause_until: datetime | None = self._store.get("pause_until")
+        pause_until = self._store.pause_until
         return pause_until is not None and dt_util.utcnow() < pause_until
 
     def _pause_polling(self) -> None:
-        cancel_polling = self._store.get("cancel_polling")
-        if callable(cancel_polling):
-            cancel_polling()
+        reset_absence = self._store.reset_client_absence
+        if callable(reset_absence):
+            reset_absence()
 
     async def _resume_polling(self) -> None:
-        api = self._store.get("api")
-
         # The router session may have been invalidated by browser activity during
         # the pause. Force a re-login before the next coordinator refresh.
-        if api is not None:
-            api.invalidate_session()
+        self._store.api.invalidate_session()
 
-        schedule_polling = self._store.get("schedule_polling")
-        if callable(schedule_polling):
-            schedule_polling()
-
-        coordinator = self._store.get("coordinator")
-        if coordinator is not None:
-            await coordinator.async_request_refresh()
-        coordinator_fast = self._store.get("coordinator_fast")
-        if coordinator_fast is not None:
-            await coordinator_fast.async_request_refresh()
+        await self._store.coordinator.async_request_refresh()
+        await self._store.coordinator_fast.async_request_refresh()
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         # Cancel any existing auto-off timer
@@ -400,12 +412,12 @@ class ZtePausePollingSwitch(SwitchEntity):
             self._unsub_auto_off()
             self._unsub_auto_off = None
 
-        self._store["pause_until"] = dt_util.utcnow() + timedelta(minutes=5)
+        self._store.pause_until = dt_util.utcnow() + timedelta(minutes=5)
         self._pause_polling()
 
         async def _auto_off(_now) -> None:
             # Auto-resume polling after 5 minutes
-            self._store["pause_until"] = None
+            self._store.pause_until = None
             self._unsub_auto_off = None
             await self._resume_polling()
             self.async_write_ha_state()
@@ -422,7 +434,7 @@ class ZtePausePollingSwitch(SwitchEntity):
             self._unsub_auto_off = None
 
         # Resume polling immediately
-        self._store["pause_until"] = None
+        self._store.pause_until = None
         await self._resume_polling()
 
         self.async_write_ha_state()
@@ -448,7 +460,7 @@ class ZteCellLockSwitch(CoordinatorEntity, SwitchEntity):
         hass: HomeAssistant,
         coordinator,
         api,
-        entry: ConfigEntry,
+        entry: ZteNgRouterConfigEntry,
         device_name: str,
         *,
         kind: str,
@@ -494,8 +506,12 @@ class ZteCellLockSwitch(CoordinatorEntity, SwitchEntity):
             ent_id = er.async_get_entity_id("text", DOMAIN, text_unique_id)
             self._text_entity_id = ent_id
             return ent_id
-        except Exception as e:
-            _LOGGER.debug("Could not resolve text entity id for %s: %s", text_unique_id, e)
+        except Exception as err:
+            _LOGGER.debug(
+                "Could not resolve text entity id for %s: error_type=%s",
+                text_unique_id,
+                type(err).__name__,
+            )
             return None
 
     @property
@@ -535,7 +551,11 @@ class ZteCellLockSwitch(CoordinatorEntity, SwitchEntity):
             else:
                 ok = await self._api.async_set_5g_cell_lock_enabled(True, value=value)
         except Exception as e:
-            _LOGGER.warning("Failed to enable cell lock %s: %s", self._kind, e)
+            _LOGGER.warning(
+                "Failed to enable cell lock %s: %s",
+                self._kind,
+                self._api.safe_error_summary(e),
+            )
             ok = False
 
         if ok:
@@ -548,7 +568,11 @@ class ZteCellLockSwitch(CoordinatorEntity, SwitchEntity):
             else:
                 ok = await self._api.async_set_5g_cell_lock_enabled(False)
         except Exception as e:
-            _LOGGER.warning("Failed to disable cell lock %s: %s", self._kind, e)
+            _LOGGER.warning(
+                "Failed to disable cell lock %s: %s",
+                self._kind,
+                self._api.safe_error_summary(e),
+            )
             ok = False
 
         if ok:

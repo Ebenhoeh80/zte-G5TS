@@ -91,11 +91,18 @@ Both intervals are user-configurable in the integration options.
 4. Search for `ZTE 5G Router` and click **Download**.
 5. Restart Home Assistant.
 
+> **Breaking change in 2.0.0:** The integration domain changed from
+> `zte_ng_router` to `zte_5g_router`. Home Assistant does not migrate the old
+> config entry automatically. Remove the old integration entry and
+> `custom_components/zte_ng_router` directory, install the new
+> `custom_components/zte_5g_router` integration, and add the router again.
+> Review entity IDs and automations after reconfiguration.
+
 ### Option 2: Manual Installation
-1. Download the latest release `zte_ng_router.zip`.
+1. Download the latest release `zte_5g_router.zip`.
 2. Extract the archive into your Home Assistant directory:
    ```
-   <config_dir>/custom_components/zte_ng_router/
+   <config_dir>/custom_components/zte_5g_router/
    ```
 3. Restart Home Assistant.
 
@@ -109,12 +116,59 @@ Both intervals are user-configurable in the integration options.
    - **Name:** Descriptive name (e.g., `ZTE 5G Router`)
    - **Router URL:** `https://192.168.0.1` (or your router's HTTPS origin)
    - **Password:** Router WebUI admin password
-   - **Verify TLS:** Enabled by default; disable only for a trusted self-signed router certificate
+   - **Verify TLS:** Enabled by default. For self-signed TLS, provide the certificate's SHA-256 fingerprint after verifying it from a trusted source; the integration pins that exact certificate.
+   - **TLS fingerprint:** Optional 64-character SHA-256 certificate fingerprint (colons are allowed). Leave blank for normal certificate authority validation. Avoid disabling verification.
    - **Allow insecure HTTP:** Enable only if the router does not support HTTPS. Credentials and session traffic will be unencrypted.
    - **Slow Polling Interval:** 60 seconds (default)
    - **Fast Polling Interval:** 5 seconds (default)
    - **Track Network Clients:** Toggle ON to discover Wi-Fi/LAN devices
    - **Client Absence Grace Period:** 180 seconds (default)
+
+### Real-router diagnostics
+
+The opt-in tools in `tools/` use the real router at `https://192.168.0.1` by
+default. Run them with Python and `aiohttp` available (for example, in the
+Home Assistant Python environment). Set `ZTEPWD` in the environment (never on
+the command line). For a self-signed certificate, set `ZTE_TLS_FINGERPRINT` to the independently
+verified SHA-256 fingerprint shown by the router certificate viewer. The
+fingerprint in a certificate is device-specific; do not copy it to a different
+router.
+
+```powershell
+$env:ZTEPWD = "<router-password>"
+$env:ZTE_TLS_FINGERPRINT = "<64-character-SHA-256-fingerprint>"
+python tools/router_probe.py
+python tools/api_discovery.py
+python tools/login_debug.py
+python tools/api_discovery.py --authenticate
+```
+
+The authenticated commands make one login and read router data; they never
+print response bodies, passwords, cookies, or tokens. The opt-in automated
+hardware tests require `RUN_REAL_ROUTER_TESTS=1`:
+
+```powershell
+$env:RUN_REAL_ROUTER_TESTS = "1"
+python -m unittest discover -s tests\integration -v
+```
+
+GoForm-specific authentication is not attempted unless
+`ZTE_TEST_GOFORM=1` is explicitly set. Router restarts are never initiated by
+these tools. Home Assistant restarts require the separate explicit opt-in below.
+
+For a live Home Assistant config-flow/entity check, use `tools/ha_e2e.py` with
+`HA_URL` and `HA_TOKEN` set in the environment. The script creates the new
+integration entry if none exists. It will only restart Home Assistant when
+both `--restart` and `HA_ALLOW_RESTART=1` are supplied:
+
+```powershell
+python tools/ha_e2e.py
+# Only during an approved maintenance window:
+$env:HA_ALLOW_RESTART = "1"
+python tools/ha_e2e.py --restart
+```
+
+Never paste `HA_TOKEN` or `ZTEPWD` into a report or chat.
 
 ---
 

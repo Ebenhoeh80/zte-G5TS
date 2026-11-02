@@ -18,7 +18,7 @@ jobs:
       - name: Build zip (root files, no folder)
         run: |
           set -euxo pipefail
-          DOMAIN="zte_ng_router"
+          DOMAIN="zte_5g_router"
           ZIP_NAME="${DOMAIN}.zip"
 
           rm -f "${ZIP_NAME}"
@@ -38,4 +38,4 @@ jobs:
       - name: Upload zip to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: zte_ng_router.zip
+          files: zte_5g_router.zip

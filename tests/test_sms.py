@@ -21,7 +21,7 @@ def load_api():
     aiohttp.CookieJar = object
     core = types.ModuleType("homeassistant.core")
     core.HomeAssistant = object
-    path = Path(__file__).resolve().parents[1] / "custom_components/zte_ng_router/zte_api.py"
+    path = Path(__file__).resolve().parents[1] / "custom_components/zte_5g_router/zte_api.py"
     spec = importlib.util.spec_from_file_location("zte_sms_test_api", path)
     module = importlib.util.module_from_spec(spec)
     with patch.dict(sys.modules, {"aiohttp": aiohttp, "homeassistant.core": core}):
@@ -277,7 +277,7 @@ class SmsSendTests(unittest.IsolatedAsyncioTestCase):
         sms_batch = router.async_call_ubus_batch.call_args_list[-1]
         self.assertEqual(len(sms_batch.args[0]), 2)
         self.assertEqual(sms_batch.kwargs["z_mode_override"], "0")
-        self.assertFalse(sms_batch.kwargs["log_raw_response"])
+        self.assertNotIn("log_raw_response", sms_batch.kwargs)
 
 
 if __name__ == "__main__":

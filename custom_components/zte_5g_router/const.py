@@ -1,7 +1,8 @@
-DOMAIN = "zte_ng_router"
+DOMAIN = "zte_5g_router"
 
 CONF_NAME = "name"
 CONF_VERIFY_TLS = "verify_tls"
+CONF_TLS_FINGERPRINT = "tls_fingerprint"
 CONF_ALLOW_INSECURE_HTTP = "allow_insecure_http"
 DEFAULT_ROUTER_URL = "https://192.168.0.1"
 DEFAULT_VERIFY_TLS = True

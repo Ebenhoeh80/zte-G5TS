@@ -13,7 +13,7 @@ from test_sms import api
 
 
 def load_buttons():
-    root = Path(__file__).resolve().parents[1] / "custom_components/zte_ng_router"
+    root = Path(__file__).resolve().parents[1] / "custom_components/zte_5g_router"
     package = types.ModuleType("zte_button_test")
     package.__path__ = [str(root)]
     modules = {"zte_button_test": package}
@@ -160,10 +160,15 @@ class PollingGroupTests(unittest.IsolatedAsyncioTestCase):
         slow = types.SimpleNamespace(data={})
         fast = types.SimpleNamespace(data={})
         for fast_coordinator in (fast, None):
-            store = {"coordinator": slow, "coordinator_fast": fast_coordinator, "name": "Router"}
-            hass = types.SimpleNamespace(data={"zte_ng_router": {"entry": store}})
+            store = types.SimpleNamespace(
+                coordinator=slow,
+                coordinator_fast=fast_coordinator,
+                name="Router",
+            )
+            hass = types.SimpleNamespace()
             entities = []
-            await sensors.async_setup_entry(hass, types.SimpleNamespace(entry_id="entry"), entities.extend)
+            entry = types.SimpleNamespace(entry_id="entry", runtime_data=store)
+            await sensors.async_setup_entry(hass, entry, entities.extend)
             self.assertEqual(len(entities), len(sensors.SENSOR_DEFS))
             for entity in entities:
                 expected = fast if fast_coordinator is not None and entity._key in fast_keys else slow
@@ -309,7 +314,7 @@ class FirmwareApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(data["gnss"]["LAT"], "12.34")
         metadata = next(c for c in router.async_call_ubus_batch.call_args_list
                         if c.kwargs.get("batch_name") == "firmware_gnss")
-        self.assertFalse(metadata.kwargs["log_raw_response"])
+        self.assertNotIn("log_raw_response", metadata.kwargs)
         self.assertFalse(metadata.kwargs["retry_on_access_denied"])
         self.assertEqual(metadata.kwargs["z_mode_override"], "0")
         self.assertEqual([c["method"] for c in metadata.args[0]], ["get_update_info", "get"])

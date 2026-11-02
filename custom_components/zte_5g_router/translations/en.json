@@ -9,6 +9,7 @@
           "host": "Router URL / IP",
           "password": "WebUI Administrator Password",
           "verify_tls": "Verify TLS certificate",
+          "tls_fingerprint": "Pinned TLS certificate SHA-256 fingerprint (optional)",
           "allow_insecure_http": "Allow insecure HTTP (not recommended)",
           "scan_interval": "Slow polling interval (seconds)",
           "fast_scan_interval": "Fast polling interval (seconds)",
@@ -18,6 +19,7 @@
         "data_description": {
           "host": "Use the router's HTTPS origin, e.g. https://192.168.0.1. HTTP requires the explicit insecure HTTP option.",
           "verify_tls": "Verify the router certificate when using HTTPS. Disable only when you trust a self-signed certificate on your local network.",
+          "tls_fingerprint": "For a self-signed certificate, enter its SHA-256 fingerprint verified from a trusted source. The exact certificate is then pinned; leave blank to use normal certificate validation.",
           "allow_insecure_http": "Required for HTTP. Router credentials and session traffic will be sent without encryption.",
           "scan_interval": "Default 60s. Refreshes signal metrics, serving cell parameters, data limits, and client lists.",
           "fast_scan_interval": "Default 5s. Refreshes real-time bandwidth throughput (download/upload) and CPU/RAM usage.",
@@ -31,6 +33,8 @@
       "invalid_fast_scan_interval": "The fast polling interval must be between 2 and 3600 seconds.",
       "invalid_host": "Enter a valid router origin using http:// or https://, without credentials, path, query, or fragment.",
       "insecure_http": "HTTP is unencrypted. Enable the explicit insecure HTTP option or use HTTPS.",
+      "invalid_tls_fingerprint": "Enter a 64-character SHA-256 certificate fingerprint (colons are optional).",
+      "tls_fingerprint_requires_https": "A TLS certificate fingerprint can only be used with an HTTPS router URL.",
       "cannot_connect": "Failed to connect to the ZTE router at this URL.",
       "invalid_auth": "Invalid router password or authentication rejected.",
       "unknown": "Unexpected error occurred during setup."
@@ -48,6 +52,7 @@
           "host": "Router URL / IP",
           "password": "New router password (leave blank to keep current)",
           "verify_tls": "Verify TLS certificate",
+          "tls_fingerprint": "Pinned TLS certificate SHA-256 fingerprint (optional)",
           "allow_insecure_http": "Allow insecure HTTP (not recommended)",
           "scan_interval": "Slow polling interval (seconds)",
           "fast_scan_interval": "Fast polling interval (seconds)",
@@ -57,6 +62,7 @@
         "data_description": {
           "allow_insecure_http": "Required for HTTP. Router credentials and session traffic will be sent without encryption.",
           "verify_tls": "Verify the router certificate when using HTTPS. Disable only when you trust a self-signed certificate on your local network.",
+          "tls_fingerprint": "Pin an out-of-band verified self-signed certificate fingerprint. Clear it to return to standard CA certificate validation.",
           "track_wifi_clients": "Read-only WLAN and LAN device discovery. Enable wanted devices under Settings > Devices & services > Entities.",
           "client_consider_home": "Grace period before marking a missing device as away (0-3600s)."
         }

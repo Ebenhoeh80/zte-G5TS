@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 import math
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.sensor import (
     SensorEntity,
@@ -22,12 +22,13 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
 )
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN, CONF_NAME
+from .const import DOMAIN
+if TYPE_CHECKING:
+    from . import ZteNgRouterConfigEntry
 
 
 # key, name, device_class, unit, state_class
@@ -921,14 +922,14 @@ def _sensor_enabled_by_default(data: dict[str, Any], key: str) -> bool:
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: ZteNgRouterConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up sensor entities from a config entry."""
-    data = hass.data[DOMAIN][entry.entry_id]
-    coordinator: DataUpdateCoordinator = data["coordinator"]
-    coordinator_fast: DataUpdateCoordinator | None = data.get("coordinator_fast")
-    router_name: str = data["name"]  # name given in config flow
+    runtime_data = entry.runtime_data
+    coordinator = runtime_data.coordinator
+    coordinator_fast = runtime_data.coordinator_fast
+    router_name = runtime_data.name
 
     entities: list[ZteNgRouterSensor] = []
     for key, name, dev_class, unit, state_class in SENSOR_DEFS:
