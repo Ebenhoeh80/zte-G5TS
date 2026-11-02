@@ -107,9 +107,10 @@ Beide Intervalle können in den Integrations-Optionen angepasst werden.
 2. Suche nach **ZTE 5G Router**.
 3. Fülle das Einrichtungsformular aus:
    - **Name:** Eindeutiger Name (z. B. `ZTE 5G Router`)
-   - **Router-URL:** `http://192.168.0.1` (oder IP-Adresse deines Routers)
+   - **Router-URL:** `https://192.168.0.1` (oder der HTTPS-Ursprung deines Routers)
    - **Passwort:** Admin-Passwort der Router-Weboberfläche
-   - **TLS prüfen:** Nur aktivieren bei HTTPS mit gültigem Zertifikat
+   - **TLS prüfen:** Standardmäßig aktiviert; nur bei einem lokal vertrauten selbstsignierten Routerzertifikat deaktivieren
+   - **Unsicheres HTTP erlauben:** Nur aktivieren, wenn der Router kein HTTPS unterstützt. Zugangsdaten und Sitzung werden unverschlüsselt übertragen.
    - **Langsames Abfrageintervall:** 60 Sekunden (Standard)
    - **Schnelles Abfrageintervall:** 5 Sekunden (Standard)
    - **Netzwerkgeräte verfolgen:** Aktivieren für WLAN-/LAN-Tracker

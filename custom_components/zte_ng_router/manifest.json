@@ -9,5 +9,5 @@
   "issue_tracker": "https://github.com/Ebenhoeh80/zte-G5TS/issues",
   "loggers": ["custom_components.zte_ng_router"],
   "requirements": [],
-  "version": "2026.11.0"
+  "version": "1.1.0"
 }

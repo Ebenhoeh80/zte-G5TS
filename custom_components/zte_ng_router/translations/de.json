@@ -9,13 +9,16 @@
           "host": "Router-URL / IP-Adresse",
           "password": "WebUI Administrator-Passwort",
           "verify_tls": "TLS-Zertifikat prüfen",
+          "allow_insecure_http": "Unsicheres HTTP erlauben (nicht empfohlen)",
           "scan_interval": "Langsames Abfrageintervall (Sekunden)",
           "fast_scan_interval": "Schnelles Abfrageintervall (Sekunden)",
           "track_wifi_clients": "Netzwerkgeräte verfolgen (WLAN & LAN)",
           "client_consider_home": "Abwesenheitsfrist für Netzwerkgeräte (Sekunden)"
         },
         "data_description": {
-          "host": "Z. B. http://192.168.0.1 oder http://192.168.254.1",
+          "host": "Verwende den HTTPS-Ursprung des Routers, z. B. https://192.168.0.1. HTTP erfordert die ausdrückliche Freigabe für unsicheres HTTP.",
+          "verify_tls": "Prüft das Routerzertifikat bei HTTPS. Nur bei einem selbstsignierten, lokal vertrauten Zertifikat deaktivieren.",
+          "allow_insecure_http": "Für HTTP erforderlich. Zugangsdaten und Sitzung werden unverschlüsselt übertragen.",
           "scan_interval": "Standard 60s. Aktualisiert Signalmetriken, Zellendetails, Datenlimits und Client-Listen.",
           "fast_scan_interval": "Standard 5s. Aktualisiert Echtzeit-Durchsatz (Download/Upload) und CPU-/RAM-Auslastung.",
           "track_wifi_clients": "WLAN- und LAN-Geräte beim langsamen Polling schreibgeschützt erfassen. Neue Tracker sind standardmäßig deaktiviert, bis sie in den Entitätseinstellungen aktiviert werden.",
@@ -26,6 +29,8 @@
     "error": {
       "invalid_scan_interval": "Das Abfrageintervall muss zwischen 5 und 3600 Sekunden liegen.",
       "invalid_fast_scan_interval": "Das schnelle Abfrageintervall muss zwischen 2 und 3600 Sekunden liegen.",
+      "invalid_host": "Gib einen gültigen Router-Ursprung mit http:// oder https:// ohne Zugangsdaten, Pfad, Query oder Fragment ein.",
+      "insecure_http": "HTTP ist unverschlüsselt. Aktiviere die ausdrückliche HTTP-Freigabe oder verwende HTTPS.",
       "cannot_connect": "Verbindung zum ZTE-Router unter dieser URL fehlgeschlagen.",
       "invalid_auth": "Ungültiges Router-Passwort oder Authentifizierung abgewiesen.",
       "unknown": "Unerwarteter Fehler bei der Einrichtung aufgetreten."
@@ -43,12 +48,15 @@
           "host": "Router-URL / IP-Adresse",
           "password": "Neues Router-Passwort (leer lassen zum Beibehalten)",
           "verify_tls": "TLS-Zertifikat prüfen",
+          "allow_insecure_http": "Unsicheres HTTP erlauben (nicht empfohlen)",
           "scan_interval": "Langsames Abfrageintervall (Sekunden)",
           "fast_scan_interval": "Schnelles Abfrageintervall (Sekunden)",
           "track_wifi_clients": "Netzwerkgeräte verfolgen (WLAN & LAN)",
           "client_consider_home": "Abwesenheitsfrist für Netzwerkgeräte (Sekunden)"
         },
         "data_description": {
+          "allow_insecure_http": "Für HTTP erforderlich. Zugangsdaten und Sitzung werden unverschlüsselt übertragen.",
+          "verify_tls": "Prüft das Routerzertifikat bei HTTPS. Nur bei einem selbstsignierten, lokal vertrauten Zertifikat deaktivieren.",
           "track_wifi_clients": "WLAN- und LAN-Geräte beim langsamen Polling schreibgeschützt erfassen. Aktiviere gewünschte Tracker unter Einstellungen > Geräte & Dienste > Entitäten.",
           "client_consider_home": "Frist vor Meldung als abwesend (0-3600 Sekunden)."
         }

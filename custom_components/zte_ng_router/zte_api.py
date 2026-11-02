@@ -55,6 +55,7 @@ class ZteRouterApi:
         base_url: str = "",
         password: str = "",
         verify_tls: bool = True,
+        allow_insecure_http: bool = False,
         session: ClientSession | None = None,
         track_clients: bool = False,
     ) -> None:
@@ -64,6 +65,21 @@ class ZteRouterApi:
         self._browser_base_url = self._strip_url_userinfo(self.base_url)
         self.password = password
         self.verify_tls = verify_tls
+        self.allow_insecure_http = allow_insecure_http
+        scheme = urlsplit(self.base_url).scheme.lower()
+        if scheme == "http" and not allow_insecure_http:
+            raise ValueError(
+                "Unencrypted HTTP is disabled; explicitly allow insecure HTTP "
+                "for this router in the integration options"
+            )
+        if scheme == "http":
+            _LOGGER.warning(
+                "Router connection uses unencrypted HTTP; credentials and session traffic are exposed"
+            )
+        elif scheme == "https" and not verify_tls:
+            _LOGGER.warning(
+                "Router TLS certificate verification is disabled; the connection is vulnerable to interception"
+            )
         self._sms_encryption: str | None = None
         self.track_clients = track_clients
         self._client_snapshot_ok: bool | None = None

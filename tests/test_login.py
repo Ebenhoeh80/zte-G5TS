@@ -38,6 +38,18 @@ def api():
 
 
 class LoginDiagnosticTests(unittest.IsolatedAsyncioTestCase):
+    async def test_http_requires_an_explicit_opt_in(self):
+        with self.assertRaisesRegex(ValueError, "Unencrypted HTTP is disabled"):
+            ZteRouterApi(base_url="http://192.0.2.1")
+
+    async def test_http_can_be_enabled_explicitly_for_legacy_routers(self):
+        router = ZteRouterApi(
+            base_url="http://192.0.2.1",
+            allow_insecure_http=True,
+            session=object(),
+        )
+        self.assertTrue(router.allow_insecure_http)
+
     async def test_ubus_rpc_error_is_not_reported_as_missing_salt(self):
         router = api()
         router.async_call_ubus = AsyncMock(

@@ -5,6 +5,9 @@ python tests/diagnose_login.py
 
 Pass --login to also make one UBUS login attempt using the ztepwd environment
 variable. This may invalidate an existing WebUI session.
+
+For legacy routers that expose only HTTP or use an untrusted HTTPS certificate,
+pass --insecure explicitly. Credentials and session traffic may then be exposed.
 """
 
 from __future__ import annotations
@@ -82,11 +85,18 @@ def _print_result(stage: str, details: dict[str, Any]) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--host", default="http://192.168.0.1", help="Router base URL")
+    parser.add_argument("--host", default="https://192.168.0.1", help="Router HTTPS origin")
     parser.add_argument(
         "--verify-tls",
         action="store_true",
-        help="Verify HTTPS certificates (default matches the integration's insecure setting)",
+        default=True,
+        help="Verify HTTPS certificates (the secure default)",
+    )
+    parser.add_argument(
+        "--insecure",
+        dest="verify_tls",
+        action="store_false",
+        help="Allow HTTP or disable HTTPS certificate verification; unsafe",
     )
     parser.add_argument(
         "--login",
@@ -95,7 +105,29 @@ def main() -> int:
     )
     args = parser.parse_args()
     base_url = args.host.rstrip("/")
-    ssl_context = ssl.create_default_context() if args.verify_tls else ssl._create_unverified_context()
+    parsed_host = urllib.parse.urlsplit(base_url)
+    if (
+        parsed_host.scheme not in {"http", "https"}
+        or not parsed_host.hostname
+        or parsed_host.username is not None
+        or parsed_host.password is not None
+        or parsed_host.path
+        or parsed_host.query
+        or parsed_host.fragment
+    ):
+        parser.error("host must be an origin-only http:// or https:// URL without credentials")
+    if parsed_host.scheme == "http" and args.verify_tls:
+        parser.error("HTTP is unencrypted; pass --insecure only if this risk is acceptable")
+    if not args.verify_tls:
+        print(
+            "WARNING: insecure transport or unverified TLS is enabled; credentials and sessions may be exposed.",
+            file=sys.stderr,
+        )
+    ssl_context = (
+        ssl.create_default_context()
+        if args.verify_tls
+        else ssl._create_unverified_context()
+    )
     cookie_jar = http.cookiejar.CookieJar()
     opener = urllib.request.build_opener(
         urllib.request.HTTPCookieProcessor(cookie_jar),

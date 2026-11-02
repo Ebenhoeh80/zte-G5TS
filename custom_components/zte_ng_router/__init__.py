@@ -19,8 +19,10 @@ from .const import (
     DOMAIN,
     CONF_NAME,
     CONF_VERIFY_TLS,
+    CONF_ALLOW_INSECURE_HTTP,
     CONF_SCAN_INTERVAL,
     CONF_FAST_SCAN_INTERVAL,
+    DEFAULT_VERIFY_TLS,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_FAST_SCAN_INTERVAL,
     CONF_TRACK_CLIENTS,
@@ -59,7 +61,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     password: str = options.get(CONF_PASSWORD, data[CONF_PASSWORD])
     verify_tls: bool = options.get(
         CONF_VERIFY_TLS,
-        data.get(CONF_VERIFY_TLS, False),
+        data.get(CONF_VERIFY_TLS, DEFAULT_VERIFY_TLS),
+    )
+    allow_insecure_http: bool = options.get(
+        CONF_ALLOW_INSECURE_HTTP,
+        data.get(
+            CONF_ALLOW_INSECURE_HTTP,
+            host.strip().lower().startswith("http://"),
+        ),
     )
     scan_interval: int = options.get(
         CONF_SCAN_INTERVAL,
@@ -73,6 +82,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     api = ZteRouterApi(
         hass=hass,
         base_url=host,
+        allow_insecure_http=allow_insecure_http,
         password=password,
         verify_tls=verify_tls,
         track_clients=options.get(CONF_TRACK_CLIENTS, data.get(CONF_TRACK_CLIENTS, False)),

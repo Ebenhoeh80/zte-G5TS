@@ -107,9 +107,10 @@ Both intervals are user-configurable in the integration options.
 2. Search for **ZTE 5G Router**.
 3. Fill in the configuration dialog:
    - **Name:** Descriptive name (e.g., `ZTE 5G Router`)
-   - **Router URL:** `http://192.168.0.1` (or your router's IP address)
+   - **Router URL:** `https://192.168.0.1` (or your router's HTTPS origin)
    - **Password:** Router WebUI admin password
-   - **Verify TLS:** Check only if using HTTPS with a trusted certificate
+   - **Verify TLS:** Enabled by default; disable only for a trusted self-signed router certificate
+   - **Allow insecure HTTP:** Enable only if the router does not support HTTPS. Credentials and session traffic will be unencrypted.
    - **Slow Polling Interval:** 60 seconds (default)
    - **Fast Polling Interval:** 5 seconds (default)
    - **Track Network Clients:** Toggle ON to discover Wi-Fi/LAN devices

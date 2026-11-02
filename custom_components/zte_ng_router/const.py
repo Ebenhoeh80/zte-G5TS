@@ -2,6 +2,9 @@ DOMAIN = "zte_ng_router"
 
 CONF_NAME = "name"
 CONF_VERIFY_TLS = "verify_tls"
+CONF_ALLOW_INSECURE_HTTP = "allow_insecure_http"
+DEFAULT_ROUTER_URL = "https://192.168.0.1"
+DEFAULT_VERIFY_TLS = True
 CONF_SCAN_INTERVAL = "scan_interval"
 CONF_FAST_SCAN_INTERVAL = "fast_scan_interval"
 # Preserve the existing option key when extending tracking to wired clients.

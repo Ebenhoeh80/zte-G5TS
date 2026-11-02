@@ -59,13 +59,50 @@ class TrackingConfigTests(unittest.IsolatedAsyncioTestCase):
     async def test_initial_schema_defaults_to_opt_out_and_persists_opt_in(self):
         config = flow.ZteNgRouterConfigFlow()
         form = await config.async_step_user()
-        values = form["data_schema"]({"name": "Router", "host": "http://192.0.2.1", "password": "test"})
+        values = form["data_schema"]({"name": "Router", "host": "https://192.0.2.1", "password": "test"})
         self.assertFalse(values["track_wifi_clients"])
+        self.assertTrue(values["verify_tls"])
+        self.assertFalse(values["allow_insecure_http"])
+        self.assertEqual(values["host"], "https://192.0.2.1")
         self.assertEqual(values["client_consider_home"], 180)
         values.update(track_wifi_clients=True, client_consider_home=120)
         result = await config.async_step_user(values)
         self.assertTrue(result["data"]["track_wifi_clients"])
+        self.assertTrue(result["data"]["verify_tls"])
         self.assertEqual(result["data"]["client_consider_home"], 120)
+
+    async def test_http_requires_explicit_opt_in(self):
+        config = flow.ZteNgRouterConfigFlow()
+        form = await config.async_step_user()
+        values = form["data_schema"]({
+            "name": "Router",
+            "host": "http://192.0.2.1",
+            "password": "test",
+        })
+
+        rejected = await config.async_step_user(values)
+        self.assertEqual(rejected["errors"]["base"], "insecure_http")
+
+        values["allow_insecure_http"] = True
+        accepted = await config.async_step_user(values)
+        self.assertEqual(accepted["data"]["host"], "http://192.0.2.1")
+        self.assertTrue(accepted["data"]["allow_insecure_http"])
+
+    async def test_router_url_rejects_non_origin_and_embedded_credentials(self):
+        for value in (
+            "192.0.2.1",
+            "ftp://192.0.2.1",
+            "https://192.0.2.1/path",
+            "https://192.0.2.1/?token=secret",
+            "https://user:password@192.0.2.1",
+        ):
+            with self.subTest(host=value):
+                normalized, error = flow._validate_router_url(
+                    value,
+                    allow_insecure_http=True,
+                )
+                self.assertIsNone(normalized)
+                self.assertEqual(error, "invalid_host")
 
     async def test_options_preserve_credentials_and_existing_choices(self):
         entry = types.SimpleNamespace(data={"host": "http://192.0.2.1", "password": "original",
@@ -75,10 +112,12 @@ class TrackingConfigTests(unittest.IsolatedAsyncioTestCase):
         form = await options.async_step_init()
         values = form["data_schema"]({})
         self.assertTrue(values["track_wifi_clients"])
+        self.assertTrue(values["allow_insecure_http"])
         self.assertEqual(values["client_consider_home"], 240)
         values["track_wifi_clients"] = False
         result = await options.async_step_init(values)
         self.assertFalse(result["data"]["track_wifi_clients"])
+        self.assertTrue(result["data"]["allow_insecure_http"])
         self.assertEqual(result["data"]["password"], "override")
         self.assertEqual(result["data"]["other_option"], "keep")
 
@@ -95,6 +134,8 @@ class TrackingConfigTests(unittest.IsolatedAsyncioTestCase):
                 labels = translations[section]["step"][step]["data"]
                 self.assertIn("track_wifi_clients", labels)
                 self.assertIn("client_consider_home", labels)
+                self.assertIn("verify_tls", labels)
+                self.assertIn("allow_insecure_http", labels)
 
 
 if __name__ == "__main__":
