@@ -1,4 +1,4 @@
-# ZTE NG Router – Home Assistant Integration
+# ZTE 5G Router – Home Assistant Integration
 
 [![HACS Default](https://img.shields.io/badge/HACS-Benutzerdefiniert-orange.svg)](https://github.com/hacs/integration)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.1%2B-blue.svg)](https://www.home-assistant.io/)
@@ -88,7 +88,7 @@ Beide Intervalle können in den Integrations-Optionen angepasst werden.
 1. Öffne in Home Assistant **HACS** > **Integrationen**.
 2. Klicke oben rechts auf das Drei-Punkte-Menü > **Benutzerdefinierte Repositories**.
 3. Füge die Repository-URL ein, wähle Kategorie **Integration** und klicke auf **Hinzufügen**.
-4. Suche nach `ZTE NG Router` und klicke auf **Herunterladen**.
+4. Suche nach `ZTE 5G Router` und klicke auf **Herunterladen**.
 5. Starte Home Assistant neu.
 
 ### Variante 2: Manuelle Installation
@@ -104,7 +104,7 @@ Beide Intervalle können in den Integrations-Optionen angepasst werden.
 ## ⚙️ Einrichtung in Home Assistant
 
 1. Gehe zu **Einstellungen** > **Geräte & Dienste** > **Integration hinzufügen**.
-2. Suche nach **ZTE NG Router**.
+2. Suche nach **ZTE 5G Router**.
 3. Fülle das Einrichtungsformular aus:
    - **Name:** Eindeutiger Name (z. B. `ZTE 5G Router`)
    - **Router-URL:** `http://192.168.0.1` (oder IP-Adresse deines Routers)

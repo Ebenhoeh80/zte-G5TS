@@ -2,12 +2,12 @@
   "config": {
     "step": {
       "user": {
-        "title": "ZTE NG Router",
-        "description": "Connect your ZTE 5G / NG router (G5TS, G5TC, G5C, G5 Max, G5 Ultra, MC801A, MC888).",
+        "title": "ZTE 5G Router",
+        "description": "Connect your ZTE 5G / 4G router (e.g. G5TS, G5TC, G5C, G5 Max, G5 Ultra, MC801A, MC888).",
         "data": {
           "name": "Integration Name",
           "host": "Router URL / IP",
-          "password": "WebUI Admin Password",
+          "password": "WebUI Administrator Password",
           "verify_tls": "Verify TLS certificate",
           "scan_interval": "Slow polling interval (seconds)",
           "fast_scan_interval": "Fast polling interval (seconds)",
@@ -16,10 +16,10 @@
         },
         "data_description": {
           "host": "E.g., http://192.168.0.1 or http://192.168.254.1",
-          "scan_interval": "Default 60s. Refreshes signal details, cell metrics, data limits, and client list.",
-          "fast_scan_interval": "Default 5s. Refreshes real-time bandwidth, throughput, and CPU/RAM usage.",
-          "track_wifi_clients": "Read-only WLAN and LAN device discovery during slow polling. Trackers are disabled by default until enabled in entity settings.",
-          "client_consider_home": "Confirmed absence duration before reporting a client away (default 180s)."
+          "scan_interval": "Default 60s. Refreshes signal metrics, serving cell parameters, data limits, and client lists.",
+          "fast_scan_interval": "Default 5s. Refreshes real-time bandwidth throughput (download/upload) and CPU/RAM usage.",
+          "track_wifi_clients": "Read-only WLAN and LAN device discovery during slow polling. New trackers are disabled by default until enabled in entity settings.",
+          "client_consider_home": "Confirmed absence duration before reporting a client away (default: 180s)."
         }
       }
     },
@@ -31,13 +31,13 @@
       "unknown": "Unexpected error occurred during setup."
     },
     "abort": {
-      "already_configured": "This ZTE router is already configured."
+      "already_configured": "This ZTE router is already configured in Home Assistant."
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "ZTE NG Router Options",
+        "title": "ZTE 5G Router Options",
         "description": "Adjust polling intervals, credentials, and client tracking parameters.",
         "data": {
           "host": "Router URL / IP",
@@ -58,18 +58,18 @@
   "entity": {
     "sensor": {
       "network_provider": { "name": "Network Provider" },
-      "connection_type": { "name": "Connection Type" },
-      "signalbar": { "name": "Signal Bars" },
-      "rmcc": { "name": "RMCC" },
-      "rmnc": { "name": "RMNC" },
-      "nr_active_band": { "name": "NR Active Band" },
+      "connection_type": { "name": "Access Technology" },
+      "signalbar": { "name": "Signal Strength" },
+      "rmcc": { "name": "Country Code (RMCC)" },
+      "rmnc": { "name": "Network Code (RMNC)" },
+      "nr_active_band": { "name": "5G Active Band" },
       "lte_primary_band": { "name": "LTE Primary Band" },
       "nr5g_cell_id": { "name": "5G Cell ID" },
       "lac_code": { "name": "LAC Code" },
       "lte_band_lock": { "name": "LTE Band Lock" },
       "gw_band_lock": { "name": "GW Band Lock" },
-      "bands_summary": { "name": "Active Bands" },
-      "total_bandwidth": { "name": "Total Bandwidth" },
+      "bands_summary": { "name": "Active Bands (CA)" },
+      "total_bandwidth": { "name": "Aggregated Bandwidth (CA)" },
       "lte_pci": { "name": "LTE PCI" },
       "lte_earfcn": { "name": "LTE EARFCN" },
       "lte_rsrp": { "name": "LTE RSRP" },
@@ -82,47 +82,47 @@
       "nr_rsrq": { "name": "5G RSRQ" },
       "nr_sinr": { "name": "5G SINR" },
       "nr_rssi": { "name": "5G RSSI" },
-      "wan_ipv4": { "name": "WAN IPv4" },
-      "wan_ipv6": { "name": "WAN IPv6" },
+      "wan_ipv4": { "name": "WAN IPv4 Address" },
+      "wan_ipv6": { "name": "WAN IPv6 Address" },
       "wan_status": { "name": "WAN Status" },
       "wan_link_state": { "name": "WAN Link State" },
       "modem_main_state": { "name": "Modem State" },
-      "radio_off": { "name": "Radio Off" },
-      "hightemp_datalimit_status": { "name": "High Temp Limit Status" },
+      "radio_off": { "name": "Radio Disabled" },
+      "hightemp_datalimit_status": { "name": "Thermal Data Throttling" },
       "5g_modem_temperature": { "name": "5G Modem Temperature" },
       "modem_temperature": { "name": "Modem Temperature" },
-      "pa_temp_level": { "name": "PA Temperature Level" },
-      "tj_temp_level": { "name": "TJ Temperature Level" },
+      "pa_temp_level": { "name": "Power Amplifier Temp Level" },
+      "tj_temp_level": { "name": "Junction Temp Level" },
       "connected_lan_devices": { "name": "Connected LAN Devices" },
       "connected_wifi_devices": { "name": "Connected Wi-Fi Devices" },
       "download_rate": { "name": "Download Rate" },
       "upload_rate": { "name": "Upload Rate" },
-      "monthly_download_mb": { "name": "Monthly Download" },
-      "monthly_upload_mb": { "name": "Monthly Upload" },
-      "daily_download": { "name": "Daily Download" },
-      "daily_upload": { "name": "Daily Upload" },
-      "data_limit_enabled": { "name": "Data Limit Enabled" },
+      "monthly_download_mb": { "name": "Monthly Download Volume" },
+      "monthly_upload_mb": { "name": "Monthly Upload Volume" },
+      "daily_download": { "name": "Today Download Volume" },
+      "daily_upload": { "name": "Today Upload Volume" },
+      "data_limit_enabled": { "name": "Data Limit Monitoring" },
       "data_limit_type": { "name": "Data Limit Type" },
       "data_limit_value": { "name": "Data Limit Value" },
       "data_limit_warning_percent": { "name": "Data Limit Warning Threshold" },
       "data_limit_exceeded": { "name": "Data Limit Exceeded" },
       "traffic_auto_reset": { "name": "Traffic Auto Reset" },
-      "traffic_reset_day": { "name": "Traffic Reset Day" },
+      "traffic_reset_day": { "name": "Billing Reset Day" },
       "rx_packet_errors": { "name": "RX Packet Errors" },
       "tx_packet_errors": { "name": "TX Packet Errors" },
       "rx_packet_drops": { "name": "RX Packet Drops" },
       "tx_packet_drops": { "name": "TX Packet Drops" },
-      "sms_count": { "name": "SMS Count" },
-      "sms_unread_total": { "name": "SMS Unread" },
+      "sms_count": { "name": "Total SMS Count" },
+      "sms_unread_total": { "name": "Unread SMS Count" },
       "sms_nv_total": { "name": "SMS NV Capacity" },
       "sms_sim_total": { "name": "SMS SIM Capacity" },
       "sms_nv_used_total": { "name": "SMS Storage Used" },
-      "sms_latest": { "name": "Latest SMS" },
-      "connected_time": { "name": "Connected Since" },
-      "hardware_version": { "name": "Hardware Version" },
+      "sms_latest": { "name": "Latest Received SMS" },
+      "connected_time": { "name": "Connection Uptime" },
+      "hardware_version": { "name": "Hardware Revision" },
       "wa_inner_version": { "name": "Firmware Version" },
-      "cpu_usage": { "name": "CPU Usage" },
-      "ram_usage": { "name": "RAM Usage" },
+      "cpu_usage": { "name": "CPU Utilization" },
+      "ram_usage": { "name": "RAM Utilization" },
       "cpu_temp": { "name": "CPU Temperature" },
       "uptime": { "name": "Router Uptime" },
       "firmware_update_status": { "name": "Firmware Update Status" },
@@ -133,24 +133,24 @@
       "gnss_fix": { "name": "GNSS Fix Status" }
     },
     "switch": {
-      "odu_led": { "name": "Router LED" },
+      "odu_led": { "name": "Status LEDs (ODU)" },
       "wifi_master": { "name": "Wi-Fi Master" },
       "wifi_main_2g": { "name": "Wi-Fi 2.4 GHz" },
       "wifi_main_5g": { "name": "Wi-Fi 5 GHz" },
-      "mobile_data": { "name": "Mobile Data" },
+      "mobile_data": { "name": "Mobile Cellular Data" },
       "pause_polling": { "name": "Pause Polling (5 min)" },
       "cell_lock_4g": { "name": "4G Cell Lock" },
       "cell_lock_5g": { "name": "5G Cell Lock" }
     },
     "button": {
-      "restart": { "name": "Restart Router" },
-      "send_sms": { "name": "Send SMS" },
-      "check_firmware_update": { "name": "Check Firmware Update" },
-      "start_firmware_update": { "name": "Start Firmware Update" }
+      "restart": { "name": "Reboot Router" },
+      "send_sms": { "name": "Send SMS Message" },
+      "check_firmware_update": { "name": "Check for Firmware Update" },
+      "start_firmware_update": { "name": "Install Firmware Update" }
     },
     "text": {
-      "cell_lock_4g_text": { "name": "4G Cell Lock Config" },
-      "cell_lock_5g_text": { "name": "5G Cell Lock Config" },
+      "cell_lock_4g_text": { "name": "4G Target Cell (PCI,EARFCN)" },
+      "cell_lock_5g_text": { "name": "5G Target Cell (PCI,ARFCN,BAND)" },
       "sms_compose_text": { "name": "SMS Compose" }
     }
   }

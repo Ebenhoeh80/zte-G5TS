@@ -99,7 +99,7 @@ class ZteRouterApi:
             "Content-Type": "application/json",
             "Accept": "application/json, text/javascript, */*; q=0.01",
             "Accept-Language": "de-DE,de;q=0.9,en;q=0.8",
-            "User-Agent": "Mozilla/5.0 (Home Assistant; ZTE NG Router)",
+            "User-Agent": "Mozilla/5.0 (Home Assistant; ZTE 5G Router)",
             "Z-Mode": "1",
             "Origin": self._browser_base_url,
             "Referer": self._browser_base_url + "/",
@@ -573,7 +573,7 @@ class ZteRouterApi:
 
         self._session_id = sid
         self._logged_in = True
-        _LOGGER.info("ZTE NG Router UBUS login successful")
+        _LOGGER.info("ZTE 5G Router UBUS login successful")
         await self._async_setup_http_encryption()
 
     async def _async_setup_http_encryption(self) -> None:

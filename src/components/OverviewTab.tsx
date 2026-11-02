@@ -52,7 +52,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ radio, wan, lang }) =>
               <Signal className="w-4 h-4 text-sky-400" />
               {t.networkStatus}
             </span>
-            <span className="px-2 py-0.5 text-xs font-bold rounded bg-sky-500/10 text-sky-400 border border-sky-500/30">
+            <span className="text-xs font-mono font-bold text-sky-400">
               {radio.networkType}
             </span>
           </div>
@@ -266,6 +266,75 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ radio, wan, lang }) =>
             <p className="font-mono text-xs text-slate-400">
               Drops: {wan.rxDrops}/{wan.txDrops}
             </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Home Assistant Live Entity Inspector */}
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div className="flex items-center gap-2">
+            <Layers className="w-4 h-4 text-sky-400" />
+            <h3 className="font-semibold text-slate-200 text-sm">
+              {lang === 'de' ? 'Home Assistant Entitäten-Vorschau (Live)' : 'Home Assistant Live Entity State Preview'}
+            </h3>
+          </div>
+          <span className="text-[11px] font-mono text-slate-400">has_entity_name: true · translation_key active</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+          <div className="bg-slate-950/70 border border-slate-800/80 rounded-lg p-3 space-y-1">
+            <span className="text-slate-400 font-mono text-[11px]">sensor.zte_g5ts_download_rate</span>
+            <div className="text-slate-200 font-semibold flex items-center justify-between">
+              <span>{lang === 'de' ? 'Download-Geschwindigkeit' : 'Download Rate'}</span>
+              <span className="font-mono text-emerald-400">{(wan.downloadSpeedBps / 1_000_000).toFixed(1)} Mbit/s</span>
+            </div>
+            <div className="text-[10px] text-slate-500 font-mono">device_class: data_rate · state_class: measurement</div>
+          </div>
+
+          <div className="bg-slate-950/70 border border-slate-800/80 rounded-lg p-3 space-y-1">
+            <span className="text-slate-400 font-mono text-[11px]">sensor.zte_g5ts_signalbar</span>
+            <div className="text-slate-200 font-semibold flex items-center justify-between">
+              <span>{lang === 'de' ? 'Signalstärke' : 'Signal Strength'}</span>
+              <span className="font-mono text-sky-400">{radio.signalBars} / 5</span>
+            </div>
+            <div className="text-[10px] text-slate-500 font-mono">icon: mdi:signal-cellular-outline</div>
+          </div>
+
+          <div className="bg-slate-950/70 border border-slate-800/80 rounded-lg p-3 space-y-1">
+            <span className="text-slate-400 font-mono text-[11px]">sensor.zte_g5ts_bands_summary</span>
+            <div className="text-slate-200 font-semibold flex items-center justify-between">
+              <span>{lang === 'de' ? 'Aktive Bänder (CA)' : 'Active Bands (CA)'}</span>
+              <span className="font-mono text-slate-200">{radio.activeBands}</span>
+            </div>
+            <div className="text-[10px] text-slate-500 font-mono">total_bandwidth: {radio.totalBandwidthMHz} MHz</div>
+          </div>
+
+          <div className="bg-slate-950/70 border border-slate-800/80 rounded-lg p-3 space-y-1">
+            <span className="text-slate-400 font-mono text-[11px]">sensor.zte_g5ts_nr_rsrp</span>
+            <div className="text-slate-200 font-semibold flex items-center justify-between">
+              <span>5G NR RSRP</span>
+              <span className="font-mono text-cyan-400">{radio.nrRsrp} dBm</span>
+            </div>
+            <div className="text-[10px] text-slate-500 font-mono">device_class: signal_strength · unit: dBm</div>
+          </div>
+
+          <div className="bg-slate-950/70 border border-slate-800/80 rounded-lg p-3 space-y-1">
+            <span className="text-slate-400 font-mono text-[11px]">switch.zte_g5ts_mobile_data</span>
+            <div className="text-slate-200 font-semibold flex items-center justify-between">
+              <span>{lang === 'de' ? 'Mobile Datenverbindung' : 'Mobile Cellular Data'}</span>
+              <span className="font-mono text-emerald-400">on</span>
+            </div>
+            <div className="text-[10px] text-slate-500 font-mono">service: zwrt_data.set_wwaniface</div>
+          </div>
+
+          <div className="bg-slate-950/70 border border-slate-800/80 rounded-lg p-3 space-y-1">
+            <span className="text-slate-400 font-mono text-[11px]">switch.zte_g5ts_pause_polling</span>
+            <div className="text-slate-200 font-semibold flex items-center justify-between">
+              <span>{lang === 'de' ? 'Abfrage pausieren (5 Min.)' : 'Pause Polling (5 min)'}</span>
+              <span className="font-mono text-slate-400">off</span>
+            </div>
+            <div className="text-[10px] text-slate-500 font-mono">protection: single_session_guard</div>
           </div>
         </div>
       </div>

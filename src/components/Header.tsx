@@ -49,18 +49,20 @@ export const Header: React.FC<HeaderProps> = ({
             ZTE
           </div>
           <div>
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+            <div className="flex items-baseline gap-2">
+              <h1 className="text-base sm:text-lg font-bold tracking-tight text-white">
                 {t.appTitle}
               </h1>
-              <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-sky-950 text-sky-400 border border-sky-800/60">
-                Home Assistant
-              </span>
+              <span className="text-xs font-medium text-sky-400">Home Assistant</span>
             </div>
-            <p className="text-xs text-slate-400 flex items-center gap-1.5">
-              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              {isRebooting ? t.rebooting : isSimulated ? t.simulatorDesc : t.liveModeDesc}
-            </p>
+            <div className="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                {isRebooting ? t.rebooting : isSimulated ? t.simulatorActive : t.liveModeActive}
+              </span>
+              <span aria-hidden="true" className="text-slate-600">·</span>
+              <span className="hidden sm:inline text-slate-400">{selectedModel}</span>
+            </div>
           </div>
         </div>
 

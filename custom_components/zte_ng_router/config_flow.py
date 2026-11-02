@@ -72,7 +72,7 @@ class ZteNgRouterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         schema = vol.Schema(
             {
-                vol.Required(CONF_NAME, default="ZTE NG Router"): str,
+                vol.Required(CONF_NAME, default="ZTE 5G Router"): str,
                 vol.Required(CONF_HOST, default="http://192.168.0.1"): str,
                 vol.Required(CONF_PASSWORD): str,
                 vol.Optional(CONF_VERIFY_TLS, default=False): bool,

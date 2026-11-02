@@ -2,7 +2,7 @@ import { Language } from '../types';
 
 export const translations = {
   de: {
-    appTitle: "ZTE NG 5G Router Manager",
+    appTitle: "ZTE 5G Router Manager",
     appSubtitle: "Home Assistant Integration & WebUI Control Center",
     simulatorActive: "Simulator aktiv",
     simulatorDesc: "Simuliert ZTE G5TS mit realistischer 5G-Telemetrie & UBUS-Antworten",
@@ -138,7 +138,7 @@ export const translations = {
     downloadZipDesc: "custom_components/zte_ng_router direkt in Home Assistant installieren",
   },
   en: {
-    appTitle: "ZTE NG 5G Router Manager",
+    appTitle: "ZTE 5G Router Manager",
     appSubtitle: "Home Assistant Integration & WebUI Control Center",
     simulatorActive: "Simulator Active",
     simulatorDesc: "Simulating ZTE G5TS with realistic 5G telemetry & UBUS responses",

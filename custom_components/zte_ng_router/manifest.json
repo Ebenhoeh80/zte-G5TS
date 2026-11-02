@@ -1,6 +1,6 @@
 {
   "domain": "zte_ng_router",
-  "name": "ZTE NG Router",
+  "name": "ZTE 5G Router",
   "codeowners": ["@rosenrot00", "@Ebenhoeh80"],
   "config_flow": true,
   "documentation": "https://github.com/Ebenhoeh80/zte-G5TS",

@@ -191,7 +191,7 @@ export function App() {
       {/* Footer */}
       <footer className="border-t border-slate-900 bg-slate-950/80 py-4 text-center text-xs text-slate-500">
         <p>
-          ZTE NG Router Home Assistant Custom Integration (G5TS / G5TC / G5C / G5 Max / G5 Ultra / MC801A / MC888) • Apache-2.0
+          ZTE 5G Router Home Assistant Custom Integration (G5TS / G5TC / G5C / G5 Max / G5 Ultra / MC801A / MC888) • Apache-2.0
         </p>
       </footer>
     </div>
