@@ -8,6 +8,6 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/Ebenhoeh80/zte-G5TS/issues",
   "loggers": ["custom_components.zte_ng_router"],
-  "requirements": ["cryptography>=41.0.0"],
+  "requirements": [],
   "version": "2026.11.0"
 }
