@@ -91,6 +91,7 @@ class ZteActionButton(CoordinatorEntity, ButtonEntity):
         self._btn_def = btn_def
 
         self._attr_name = btn_def.name
+        self._attr_translation_key = btn_def.key
         self._attr_icon = btn_def.icon
         self._attr_unique_id = f"{entry.entry_id}_{btn_def.key}"
         if btn_def.kind in {"check_firmware", "start_firmware"}:

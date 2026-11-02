@@ -182,6 +182,7 @@ class ZteActionSwitch(CoordinatorEntity, SwitchEntity):
         self._def = switch_def
 
         self._attr_name = switch_def.name
+        self._attr_translation_key = switch_def.key
         self._attr_icon = switch_def.icon
         self._attr_unique_id = f"{entry.entry_id}_{switch_def.key}"
 
@@ -350,6 +351,7 @@ class ZtePausePollingSwitch(SwitchEntity):
         self._unsub_auto_off = None
 
         self._attr_name = "Pause polling (5 min)"
+        self._attr_translation_key = "pause_polling"
         self._attr_icon = "mdi:pause-circle-outline"
         self._attr_unique_id = f"{entry.entry_id}_pause_polling"
 
@@ -461,6 +463,7 @@ class ZteCellLockSwitch(CoordinatorEntity, SwitchEntity):
             raise ValueError("kind must be '4g' or '5g'")
 
         self._attr_name = "Cell Lock 4G" if kind == "4g" else "Cell Lock 5G"
+        self._attr_translation_key = f"cell_lock_{kind}"
         self._attr_icon = "mdi:cellphone-lock"
         self._attr_unique_id = f"{entry.entry_id}_cell_lock_{kind}_enabled"
 

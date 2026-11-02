@@ -3,41 +3,155 @@
     "step": {
       "user": {
         "title": "ZTE NG Router",
+        "description": "Connect your ZTE 5G / NG router (G5TS, G5TC, G5C, G5 Max, G5 Ultra, MC801A, MC888).",
         "data": {
-          "name": "Name",
-          "host": "Router URL",
-          "password": "Router password",
+          "name": "Integration Name",
+          "host": "Router URL / IP",
+          "password": "WebUI Admin Password",
           "verify_tls": "Verify TLS certificate",
           "scan_interval": "Slow polling interval (seconds)",
+          "fast_scan_interval": "Fast polling interval (seconds)",
           "track_wifi_clients": "Track network clients (Wi-Fi and LAN)",
           "client_consider_home": "Client absence grace period (seconds)"
         },
         "data_description": {
-          "track_wifi_clients": "Read-only WLAN and LAN device discovery during slow polling. New trackers are disabled until enabled in the entity settings.",
-          "client_consider_home": "Confirmed absence before reporting a client away. Default 180 seconds; errors and polling pauses reset the grace period."
+          "host": "E.g., http://192.168.0.1 or http://192.168.254.1",
+          "scan_interval": "Default 60s. Refreshes signal details, cell metrics, data limits, and client list.",
+          "fast_scan_interval": "Default 5s. Refreshes real-time bandwidth, throughput, and CPU/RAM usage.",
+          "track_wifi_clients": "Read-only WLAN and LAN device discovery during slow polling. Trackers are disabled by default until enabled in entity settings.",
+          "client_consider_home": "Confirmed absence duration before reporting a client away (default 180s)."
         }
       }
     },
-    "error": {"invalid_scan_interval": "The polling interval must be between 5 and 3600 seconds."},
-    "abort": {"already_configured": "This router is already configured."}
+    "error": {
+      "invalid_scan_interval": "The polling interval must be between 5 and 3600 seconds.",
+      "invalid_fast_scan_interval": "The fast polling interval must be between 2 and 3600 seconds.",
+      "cannot_connect": "Failed to connect to the ZTE router at this URL.",
+      "invalid_auth": "Invalid router password or authentication rejected.",
+      "unknown": "Unexpected error occurred during setup."
+    },
+    "abort": {
+      "already_configured": "This ZTE router is already configured."
+    }
   },
   "options": {
     "step": {
       "init": {
         "title": "ZTE NG Router Options",
+        "description": "Adjust polling intervals, credentials, and client tracking parameters.",
         "data": {
-          "host": "Router URL",
-          "password": "New router password (leave empty to keep current)",
+          "host": "Router URL / IP",
+          "password": "New router password (leave blank to keep current)",
           "verify_tls": "Verify TLS certificate",
           "scan_interval": "Slow polling interval (seconds)",
+          "fast_scan_interval": "Fast polling interval (seconds)",
           "track_wifi_clients": "Track network clients (Wi-Fi and LAN)",
           "client_consider_home": "Client absence grace period (seconds)"
         },
         "data_description": {
-          "track_wifi_clients": "Read-only WLAN and LAN device discovery during slow polling. Enable wanted trackers under Settings > Devices & services > Entities, including disabled entities.",
-          "client_consider_home": "Confirmed absence before reporting a client away (0-3600 seconds). Errors and polling pauses reset the grace period."
+          "track_wifi_clients": "Read-only WLAN and LAN device discovery. Enable wanted devices under Settings > Devices & services > Entities.",
+          "client_consider_home": "Grace period before marking a missing device as away (0-3600s)."
         }
       }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "network_provider": { "name": "Network Provider" },
+      "connection_type": { "name": "Connection Type" },
+      "signalbar": { "name": "Signal Bars" },
+      "rmcc": { "name": "RMCC" },
+      "rmnc": { "name": "RMNC" },
+      "nr_active_band": { "name": "NR Active Band" },
+      "lte_primary_band": { "name": "LTE Primary Band" },
+      "nr5g_cell_id": { "name": "5G Cell ID" },
+      "lac_code": { "name": "LAC Code" },
+      "lte_band_lock": { "name": "LTE Band Lock" },
+      "gw_band_lock": { "name": "GW Band Lock" },
+      "bands_summary": { "name": "Active Bands" },
+      "total_bandwidth": { "name": "Total Bandwidth" },
+      "lte_pci": { "name": "LTE PCI" },
+      "lte_earfcn": { "name": "LTE EARFCN" },
+      "lte_rsrp": { "name": "LTE RSRP" },
+      "lte_rsrq": { "name": "LTE RSRQ" },
+      "lte_sinr": { "name": "LTE SINR" },
+      "lte_rssi": { "name": "LTE RSSI" },
+      "nr_pci": { "name": "5G PCI" },
+      "nr_arfcn": { "name": "5G ARFCN" },
+      "nr_rsrp": { "name": "5G RSRP" },
+      "nr_rsrq": { "name": "5G RSRQ" },
+      "nr_sinr": { "name": "5G SINR" },
+      "nr_rssi": { "name": "5G RSSI" },
+      "wan_ipv4": { "name": "WAN IPv4" },
+      "wan_ipv6": { "name": "WAN IPv6" },
+      "wan_status": { "name": "WAN Status" },
+      "wan_link_state": { "name": "WAN Link State" },
+      "modem_main_state": { "name": "Modem State" },
+      "radio_off": { "name": "Radio Off" },
+      "hightemp_datalimit_status": { "name": "High Temp Limit Status" },
+      "5g_modem_temperature": { "name": "5G Modem Temperature" },
+      "modem_temperature": { "name": "Modem Temperature" },
+      "pa_temp_level": { "name": "PA Temperature Level" },
+      "tj_temp_level": { "name": "TJ Temperature Level" },
+      "connected_lan_devices": { "name": "Connected LAN Devices" },
+      "connected_wifi_devices": { "name": "Connected Wi-Fi Devices" },
+      "download_rate": { "name": "Download Rate" },
+      "upload_rate": { "name": "Upload Rate" },
+      "monthly_download_mb": { "name": "Monthly Download" },
+      "monthly_upload_mb": { "name": "Monthly Upload" },
+      "daily_download": { "name": "Daily Download" },
+      "daily_upload": { "name": "Daily Upload" },
+      "data_limit_enabled": { "name": "Data Limit Enabled" },
+      "data_limit_type": { "name": "Data Limit Type" },
+      "data_limit_value": { "name": "Data Limit Value" },
+      "data_limit_warning_percent": { "name": "Data Limit Warning Threshold" },
+      "data_limit_exceeded": { "name": "Data Limit Exceeded" },
+      "traffic_auto_reset": { "name": "Traffic Auto Reset" },
+      "traffic_reset_day": { "name": "Traffic Reset Day" },
+      "rx_packet_errors": { "name": "RX Packet Errors" },
+      "tx_packet_errors": { "name": "TX Packet Errors" },
+      "rx_packet_drops": { "name": "RX Packet Drops" },
+      "tx_packet_drops": { "name": "TX Packet Drops" },
+      "sms_count": { "name": "SMS Count" },
+      "sms_unread_total": { "name": "SMS Unread" },
+      "sms_nv_total": { "name": "SMS NV Capacity" },
+      "sms_sim_total": { "name": "SMS SIM Capacity" },
+      "sms_nv_used_total": { "name": "SMS Storage Used" },
+      "sms_latest": { "name": "Latest SMS" },
+      "connected_time": { "name": "Connected Since" },
+      "hardware_version": { "name": "Hardware Version" },
+      "wa_inner_version": { "name": "Firmware Version" },
+      "cpu_usage": { "name": "CPU Usage" },
+      "ram_usage": { "name": "RAM Usage" },
+      "cpu_temp": { "name": "CPU Temperature" },
+      "uptime": { "name": "Router Uptime" },
+      "firmware_update_status": { "name": "Firmware Update Status" },
+      "firmware_latest_version": { "name": "Latest Available Firmware" },
+      "firmware_download_progress": { "name": "Firmware Download Progress" },
+      "gnss_latitude": { "name": "GNSS Latitude" },
+      "gnss_longitude": { "name": "GNSS Longitude" },
+      "gnss_fix": { "name": "GNSS Fix Status" }
+    },
+    "switch": {
+      "odu_led": { "name": "Router LED" },
+      "wifi_master": { "name": "Wi-Fi Master" },
+      "wifi_main_2g": { "name": "Wi-Fi 2.4 GHz" },
+      "wifi_main_5g": { "name": "Wi-Fi 5 GHz" },
+      "mobile_data": { "name": "Mobile Data" },
+      "pause_polling": { "name": "Pause Polling (5 min)" },
+      "cell_lock_4g": { "name": "4G Cell Lock" },
+      "cell_lock_5g": { "name": "5G Cell Lock" }
+    },
+    "button": {
+      "restart": { "name": "Restart Router" },
+      "send_sms": { "name": "Send SMS" },
+      "check_firmware_update": { "name": "Check Firmware Update" },
+      "start_firmware_update": { "name": "Start Firmware Update" }
+    },
+    "text": {
+      "cell_lock_4g_text": { "name": "4G Cell Lock Config" },
+      "cell_lock_5g_text": { "name": "5G Cell Lock Config" },
+      "sms_compose_text": { "name": "SMS Compose" }
     }
   }
 }

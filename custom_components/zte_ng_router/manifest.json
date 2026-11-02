@@ -1,12 +1,13 @@
 {
   "domain": "zte_ng_router",
   "name": "ZTE NG Router",
-  "codeowners": ["@rosenrot00"],
+  "codeowners": ["@rosenrot00", "@Ebenhoeh80"],
   "config_flow": true,
-  "documentation": "https://github.com/rosenrot00/ha-zte-ng-router",
+  "documentation": "https://github.com/Ebenhoeh80/zte-G5TS",
+  "integration_type": "hub",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/rosenrot00/ha-zte-ng-router/issues",
+  "issue_tracker": "https://github.com/Ebenhoeh80/zte-G5TS/issues",
   "loggers": ["custom_components.zte_ng_router"],
-  "requirements": [],
-  "version": "2026.10.1"
+  "requirements": ["cryptography>=41.0.0"],
+  "version": "2026.11.0"
 }

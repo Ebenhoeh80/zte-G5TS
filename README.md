@@ -1,173 +1,132 @@
-[![HACS Default](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/hacs/integration)
-![Installation Count](https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=integration%20usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.zte_ng_router.total)
+# ZTE NG Router – Home Assistant Integration
 
-# ZTE NG Router – Home Assistant Custom Integration
+[![HACS Default](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.1%2B-blue.svg)](https://www.home-assistant.io/)
+[![Language: DE/EN](https://img.shields.io/badge/Language-German%20%7C%20English-green.svg)](#)
 
-This integration targets **recent ZTE NG router platforms** with a shared firmware and API structure.
+[🇩🇪 Zur deutschen Dokumentation (README.de.md)](./README.de.md)
 
-### Supported models
-- **ZTE G5TC** – 5G FWA / Indoor CPE  
-- **ZTE G5TS** – 5G Indoor CPE (Wi-Fi 6)  
-- **ZTE G5C**  
-- **ZTE G5 Max**  
-- **ZTE G5 Ultra**
+A robust, feature-complete Home Assistant custom integration for recent **ZTE Next-Gen 5G & 4G router platforms** with shared firmware and API architecture (UBUS and GoForm).
 
-<img width="241" height="340" alt="image" src="https://github.com/user-attachments/assets/5c20d64b-420c-4eb6-9755-0bcd7ee9628e" />
-<img width="232" height="317" alt="image" src="https://github.com/user-attachments/assets/f106729c-4dea-4360-8d36-cc292df123d0" />
+---
 
-> ⚠️ Support depends on **firmware version and operator customizations**. Please keep in mind that while this integration is running, you will be logged out from the webui on every poll as only a single login is allowed on these devices.
+## 📱 Supported Router Models
 
-If you face any issue with this integration, consider contributing that information via an issue.
+- **ZTE G5TS** – 5G Indoor CPE (Wi-Fi 6)
+- **ZTE G5TC** – 5G FWA / Outdoor/Indoor CPE
+- **ZTE G5C** / **ZTE G5 Max** / **ZTE G5 Ultra**
+- **ZTE MC801A** / **MC888** / **MC889**
+- **ZTE G51F / MC7510** (with AES-GCM encrypted SMS support)
 
-## Installation
+> ⚠️ **Single Session Note:** ZTE router firmware enforces a single active login session. While this integration is actively polling, web browser sessions to the WebUI will be logged out. Use the **Pause polling (5 min)** switch before logging into the router's web interface!
 
-Just click here to open HACS directly in your Homeassistant to install this custom integration.
+---
 
-[![HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rosenrot00&repository=ha-zte-ng-router&category=integration)
+## ✨ Features & Capabilities
 
-## Features
+### 🌐 Network & 5G Signal Telemetry
+- **Connection Status & Uptime:** WAN connection state, IPv4 & IPv6 addresses, device boot time, connection duration.
+- **5G / 4G Radio Metrics:**
+  - Signal bars, RSRP (dBm), RSRQ (dB), SINR (dB), RSSI (dBm) for both 4G LTE and 5G NR.
+  - Serving cell identifiers: PCI, EARFCN / ARFCN, Cell ID, LAC code, RMCC / RMNC.
+  - Active carrier bands summary (e.g., `B3 + B20 + n78`) and aggregated total bandwidth (MHz).
 
-Feature availability depends on router model and firmware.
+### ⚡ Traffic & Bandwidth Monitoring
+- **Real-Time Throughput:** Fast-polled download and upload data rates (bit/s, Mbit/s).
+- **Daily & Monthly Traffic Counters:** Today's download/upload counters (router day boundary), lifetime packet error and packet drop counters.
+- **Data Limits & Reset Schedule:** Monthly limit settings, warning threshold percentage, exceeded status, and configured billing reset day.
 
-- Connection status and uptime  
-- Access technology (4G / 5G / NR)  
-- Radio signal metrics (RSRP, RSRQ, SINR, PCI, bands)  
-- WAN / external IP information  
-- Traffic counters and current throughput  
-- Daily download/upload and lifetime packet error/drop counters
-- Read-only monthly limit settings, warning threshold, exceeded status and traffic reset schedule
-- RAM usage matching the router WebUI percentage (available memory, rounded to whole percent)
-- Firmware update status, advertised version and download progress
-- Manual firmware check and a separate update-start button
-- GNSS latitude/longitude with fix status, source and the router's original fix time
-- Optional WLAN/LAN client trackers with MAC/IP/hostname and presence history
-- SMS inbox readout (count, unread, storage capacity + latest message preview)  
-- SMS compose + send (via Home Assistant text field and button)  
-- Device information (model, firmware, IMEI/ICCID where available)  
-- Optional controls (e.g. reboot, mobile data on/off)
+### 🎛️ Router Controls & Switches
+- **Mobile Data Switch:** Enable or disable cellular WAN connectivity.
+- **Wi-Fi Master & Band Switches:** Master Wi-Fi toggle, separate 2.4 GHz and 5 GHz radios.
+- **ODU LED Switch:** Turn router status LEDs on or off.
+- **Pause Polling (5 min):** Pauses background polling to allow WebUI access without getting logged out.
+- **Router Reboot Button:** Remotely reboot the router safely via UBUS service calls.
 
-If a feature is missing, please open an issue to report it.
+### 🔒 4G & 5G Cell Lock
+- Input target cell parameters directly or use auto-suggested serving cell values:
+  - **4G Cell Lock:** `PCI,EARFCN`
+  - **5G Cell Lock:** `PCI,ARFCN,BAND`
+- Toggle switches to apply or release cell locks.
 
-### Polling Groups
+### 👥 Network Client Tracking (Wi-Fi & LAN)
+- Read-only WLAN and wired LAN connected device scanner.
+- Deduplication by normalized MAC address; detects hostname, IPv4, IPv6, and connection interface.
+- Configurable **absence grace period** (default: 180s) to prevent false away detections during Wi-Fi power-saving sleeps.
 
-- **Fast** (default 5 seconds): download/upload rates, connected-since timestamp,
-  CPU/RAM usage, daily download/upload, packet errors and packet drops.
-- **Slow/full** (default 60 seconds): other sensors, including monthly traffic,
-  data limit settings/status, reset schedule, firmware status/progress and GNSS.
+### ✉️ SMS Center
+- Inbox readout with message count, unread count, and capacity breakdown (SIM vs NV flash).
+- Latest message preview and full content decoding (UTF-16BE / UCS-2 / GSM-7).
+- Automatic **AES-GCM encryption** detection for protected firmware (e.g., G51F / MC7510).
+- Compose & send SMS via text entity and button (`number,message`).
 
-Both intervals are configurable. Daily and packet counters are already returned
-by the fast traffic request; RAM adds `meminfo` to the existing CPU request.
-These sensors therefore do not add HTTP requests to the fast polling cycle.
-Manual firmware actions request a full refresh without moving firmware metadata
-into permanent fast polling.
+### 🛠️ Hardware & Firmware Diagnostics
+- CPU usage percentage and accurate RAM percentage (from router `meminfo`).
+- Modem temperature (°C), CPU temperature, and thermal protection levels.
+- Hardware version and inner firmware version readouts.
+- Firmware update check and start download actions.
+- GNSS fix status and coordinates (where supported by hardware).
 
-### Network Client Tracking
+---
 
-1. In the integration's **Configure** dialog, enable **Track network clients (Wi-Fi and LAN)**.
-2. After discovery, open **Settings > Devices & services > Entities**, filter by
-   this integration and include disabled entities. Enable the trackers you want.
-3. Add those `device_tracker` entities to a dashboard, an automation, or a person
-   under **Settings > People**. New trackers are disabled by default; your later
-   enable/disable choices are preserved.
+## ⏱️ Polling Architecture
 
-Tracking is off by default and adds no requests while off. When enabled, client
-lists are read during slow/full polling, not fast polling. UBUS routers exposing
-`router_wireless_access_list` and `router_lan_access_list` are supported; no GoForm
-client API is guessed. Both active WLAN and wired LAN clients are tracked, not
-offline/DHCP lease lists. Guest/mesh/switch coverage depends on what the router reports.
-The LAN call shares the client batch with WLAN pages and the final count check,
-so it does not add another HTTP request to that slow-poll cycle.
+To minimize router CPU load and prevent UI lag, polling is split into two asynchronous coordinators:
 
-Each tracker is identified by the router entry and normalized MAC, so changing
-IP addresses or hostnames do not create duplicate entities. It exposes hostname,
-IPv4, IPv6 (when supplied), raw `interface_type`, and UTC `last_seen`. No band/SSID
-mapping is invented. `connection_type` is `wifi`, `lan`, or `wifi+lan` if a MAC
-appears in both lists; `connection_types` also exposes these as a list. The same
-MAC retains one tracker when switching connection type. Separate wired/wireless
-MACs remain separate trackers, since their physical identity cannot be inferred.
-IP addresses on disconnected trackers are last-known values.
-MAC/IP/hostnames from the client list are not dumped into raw polling logs.
+| Polling Group | Default Interval | Included Metrics |
+|:---|:---:|:---|
+| **Fast Polling** | **5 seconds** | Download & upload speeds, connected-since timer, CPU & RAM usage, daily traffic, packet errors/drops |
+| **Slow Polling** | **60 seconds** | Signal metrics (RSRP, SINR, PCI, bands), WAN IP, data limits, SMS inbox, network clients, firmware status |
 
-`home` means seen on this router's WLAN or LAN, not proof that a person is physically
-home. A return is reported on the next successful poll. Absence is reported only
-after the **Client absence grace period** (default 180 seconds, configurable
-0-3600), starting with the first complete snapshot missing that client. With the
-default slow interval, departure detection therefore takes roughly 3-4 minutes.
-All pages and the final device counts must agree before absence is confirmed.
-If one client list fails, sightings from the other remain usable, but missing
-clients become unavailable instead of being reported away. Changing counts or
-failure of both lists makes all trackers unavailable; unrelated sensors remain
-usable. Polling pauses freeze the last state and reset the absence
-grace period. Restarts restore existing tracker identities and enabled trackers'
-last-seen metadata, but do not restore an assumed presence state. Offline clients
-can remain unknown until the grace period has been confirmed after restart.
+Both intervals are user-configurable in the integration options.
 
-Phones using rotating private MAC addresses can appear as new clients. This is
-read-only tracking: it never blocks, disconnects or changes any client/router.
+---
 
-### Firmware and GNSS
+## 🚀 Installation
 
-Firmware metadata and GNSS are read during normal full polling, not fast polling.
-Reading firmware status does not search for updates or start downloads. Use
-**Check Firmware Update** to ask the router to search; later polls show its result.
-**Start Firmware Update** is available only when the reported state offers an
-update or a downloaded package is ready. It rechecks that state before approving
-the download or starting installation. Depending on firmware, approving a download
-may also initiate installation and reboot the router, interrupting Internet access.
-No firmware update is started automatically by this integration. These controls
-use the UBUS methods defined by the router WebUI; unsupported APIs are not guessed.
-Installation has not been live-tested, to avoid disrupting the connection.
+### Option 1: HACS (Recommended)
+1. In Home Assistant, open **HACS** > **Integrations**.
+2. Click the three dots in the top right > **Custom repositories**.
+3. Add the repository URL, select category **Integration**, and click **Add**.
+4. Search for `ZTE NG Router` and click **Download**.
+5. Restart Home Assistant.
 
-GNSS coordinates can be a saved position rather than a current fix. Check
-**GNSS Fix** and the `fix_time` attribute before treating them as current.
-Coordinates are not included in raw polling debug logs. Daily traffic uses the
-router's day boundary, not a separately calculated Home Assistant midnight reset.
-Optional firmware/GNSS read failures do not prevent other sensors from updating.
+### Option 2: Manual Installation
+1. Download the latest release `zte_ng_router.zip`.
+2. Extract the archive into your Home Assistant directory:
+   ```
+   <config_dir>/custom_components/zte_ng_router/
+   ```
+3. Restart Home Assistant.
 
-### Data Limits
+---
 
-Normal full polling also reads `get_wwandst_monthlimit` and
-`get_wwandst_clearday` in the existing monthly batch. Sensors show whether the
-limit is enabled, its type and configured value, the warning percentage, exceeded
-status, automatic counter reset and the monthly reset day (1-31).
-Disabled limits retain their configured values. Missing/unsupported fields are
-unknown, not assumed to be zero or off. These sensors never change settings.
+## ⚙️ Configuration
 
-**Data Limit Value** preserves the router's integer value with no statistics or
-assumed byte/GB conversion. Its `value_unit` attribute is `s` for a connection-time
-limit (as defined by the WebUI service) and `router_native` for a volume limit;
-the volume unit has not been verified. The reset day is a monthly day number,
-not a timestamp.
+1. In Home Assistant, go to **Settings** > **Devices & services** > **Add integration**.
+2. Search for **ZTE NG Router**.
+3. Fill in the configuration dialog:
+   - **Name:** Descriptive name (e.g., `ZTE 5G Router`)
+   - **Router URL:** `http://192.168.0.1` (or your router's IP address)
+   - **Password:** Router WebUI admin password
+   - **Verify TLS:** Check only if using HTTPS with a trusted certificate
+   - **Slow Polling Interval:** 60 seconds (default)
+   - **Fast Polling Interval:** 5 seconds (default)
+   - **Track Network Clients:** Toggle ON to discover Wi-Fi/LAN devices
+   - **Client Absence Grace Period:** 180 seconds (default)
 
-## Requirements
+---
 
-- Local network connectivity between Home Assistant and the router IP
+## 🌍 Bilingual Support (DE / EN)
 
-## Login diagnostics
+This integration is fully bilingual:
+- German (`translations/de.json`)
+- English (`translations/en.json`)
 
-Run `python tests/diagnose_login.py --host http://192.168.0.1` from the Home
-Assistant host to check the UBUS login salt and GoForm LD challenge. The script
-reports response types and field names, but never prints the salt or session
-tokens. It uses only read requests unless `--login` is supplied.
+All entity names, option dialogs, descriptions, and error messages automatically adapt to your Home Assistant user language.
 
-To additionally attempt one UBUS login, set `ztepwd` in that process's
-environment and run `python tests/diagnose_login.py --login`. A successful login
-may invalidate an existing WebUI session. Run the offline regression tests with
-`python -m unittest discover -s tests -p test_login.py`.
+---
 
-## SMS encryption
+## 📄 License
 
-Some firmware, including the G51F / MC7510 reported in [issue #8](https://github.com/rosenrot00/ha-zte-ng-router/issues/8),
-requires AES-GCM encryption for SMS recipients and message bodies. The integration
-automatically uses firmware/model identifiers from normal polling and the SMS
-format actually returned by the router. AES-GCM fields are recognized only after
-successful authenticated decryption; existing plain-field routers such as G5TC
-retain their handling. The G51F / MC7510 model hint is based on the issue report
-and has not been tested live on a G51F.
-
-No manual router-model or encryption selection is needed. Existing installations
-keep working without reconfiguration; old stored model selections are ignored.
-If neither metadata nor inbox messages identify the SMS format (for example, an
-unknown model with an empty inbox), sending is blocked with an explanatory error
-rather than guessing or sending a test SMS. SMS reads remain batched. Failed
-sends are not retried with a different encryption mode.
+This project is licensed under the Apache License 2.0. See [LICENSE](./LICENSE) for details.

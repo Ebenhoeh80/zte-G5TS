@@ -975,8 +975,10 @@ class ZteNgRouterSensor(CoordinatorEntity, SensorEntity):
         self._stable_timestamp: datetime | None = None
         self._last_relative_seconds: float | None = None
 
-        # Entity name: "<Router name> <Sensor name>"
-        self._attr_name = f"{router_name} {name}"
+        # Support modern Home Assistant bilingual entity naming
+        self._attr_has_entity_name = True
+        self._attr_translation_key = key
+        self._attr_name = name
 
         # unique_id includes entry_id so multiple routers can coexist
         self._attr_unique_id = f"{entry_id}_{key}"

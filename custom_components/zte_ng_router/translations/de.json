@@ -3,41 +3,155 @@
     "step": {
       "user": {
         "title": "ZTE NG Router",
+        "description": "Verbinde deinen ZTE 5G / NG Router (G5TS, G5TC, G5C, G5 Max, G5 Ultra, MC801A, MC888).",
         "data": {
-          "name": "Name",
-          "host": "Router-URL",
-          "password": "Router-Passwort",
-          "verify_tls": "TLS-Zertifikat pruefen",
+          "name": "Name der Integration",
+          "host": "Router-URL / IP-Adresse",
+          "password": "WebUI Admin-Passwort",
+          "verify_tls": "TLS-Zertifikat prüfen",
           "scan_interval": "Langsames Abfrageintervall (Sekunden)",
-          "track_wifi_clients": "Netzwerkgeraete verfolgen (WLAN und LAN)",
-          "client_consider_home": "Abwesenheitsfrist fuer Netzwerkgeraete (Sekunden)"
+          "fast_scan_interval": "Schnelles Abfrageintervall (Sekunden)",
+          "track_wifi_clients": "Netzwerkgeräte verfolgen (WLAN und LAN)",
+          "client_consider_home": "Abwesenheitsfrist für Netzwerkgeräte (Sekunden)"
         },
         "data_description": {
-          "track_wifi_clients": "WLAN- und LAN-Geraete beim langsamen Polling ausschliesslich lesen. Neue Tracker sind deaktiviert, bis du sie in den Entitaetseinstellungen aktivierst.",
-          "client_consider_home": "Bestaetigte Abwesenheit bis zur Meldung als abwesend. Standard 180 Sekunden; Fehler und Polling-Pausen setzen die Frist zurueck."
+          "host": "Z. B. http://192.168.0.1 oder http://192.168.254.1",
+          "scan_interval": "Standard 60 Sek. Aktualisiert Signalmetriken, Zellendetails, Datenlimits und Client-Listen.",
+          "fast_scan_interval": "Standard 5 Sek. Aktualisiert Echtzeit-Bandbreite, Durchsatz und CPU-/RAM-Auslastung.",
+          "track_wifi_clients": "WLAN- und LAN-Geräte beim langsamen Polling schreibgeschützt erfassen. Neue Tracker sind standardmäßig deaktiviert, bis sie in den Entitätseinstellungen aktiviert werden.",
+          "client_consider_home": "Bestätigte Abwesenheitsdauer, bevor ein Gerät als abwesend gemeldet wird (Standard 180s)."
         }
       }
     },
-    "error": {"invalid_scan_interval": "Das Abfrageintervall muss zwischen 5 und 3600 Sekunden liegen."},
-    "abort": {"already_configured": "Dieser Router ist bereits eingerichtet."}
+    "error": {
+      "invalid_scan_interval": "Das Abfrageintervall muss zwischen 5 und 3600 Sekunden liegen.",
+      "invalid_fast_scan_interval": "Das schnelle Abfrageintervall muss zwischen 2 und 3600 Sekunden liegen.",
+      "cannot_connect": "Verbindung zum ZTE-Router unter dieser URL fehlgeschlagen.",
+      "invalid_auth": "Ungültiges Router-Passwort oder Anmeldung verweigert.",
+      "unknown": "Unerwarteter Fehler bei der Einrichtung aufgetreten."
+    },
+    "abort": {
+      "already_configured": "Dieser ZTE-Router ist bereits eingerichtet."
+    }
   },
   "options": {
     "step": {
       "init": {
         "title": "ZTE NG Router Optionen",
+        "description": "Passe Abfrageintervalle, Anmeldedaten und Geräteverfolgung an.",
         "data": {
-          "host": "Router-URL",
+          "host": "Router-URL / IP-Adresse",
           "password": "Neues Router-Passwort (leer lassen zum Beibehalten)",
-          "verify_tls": "TLS-Zertifikat pruefen",
+          "verify_tls": "TLS-Zertifikat prüfen",
           "scan_interval": "Langsames Abfrageintervall (Sekunden)",
-          "track_wifi_clients": "Netzwerkgeraete verfolgen (WLAN und LAN)",
-          "client_consider_home": "Abwesenheitsfrist fuer Netzwerkgeraete (Sekunden)"
+          "fast_scan_interval": "Schnelles Abfrageintervall (Sekunden)",
+          "track_wifi_clients": "Netzwerkgeräte verfolgen (WLAN und LAN)",
+          "client_consider_home": "Abwesenheitsfrist für Netzwerkgeräte (Sekunden)"
         },
         "data_description": {
-          "track_wifi_clients": "WLAN- und LAN-Geraete beim langsamen Polling ausschliesslich lesen. Gewuenschte Tracker unter Einstellungen > Geraete & Dienste > Entitaeten aktivieren; deaktivierte Entitaeten einblenden.",
-          "client_consider_home": "Bestaetigte Abwesenheit bis zur Meldung als abwesend (0-3600 Sekunden). Fehler und Polling-Pausen setzen die Frist zurueck."
+          "track_wifi_clients": "WLAN- und LAN-Geräte beim langsamen Polling schreibgeschützt erfassen. Aktiviere gewünschte Tracker unter Einstellungen > Geräte & Dienste > Entitäten.",
+          "client_consider_home": "Frist vor Meldung als abwesend (0-3600 Sekunden)."
         }
       }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "network_provider": { "name": "Netzanbieter" },
+      "connection_type": { "name": "Verbindungstyp" },
+      "signalbar": { "name": "Signalbalken" },
+      "rmcc": { "name": "RMCC" },
+      "rmnc": { "name": "RMNC" },
+      "nr_active_band": { "name": "Aktives 5G-Band" },
+      "lte_primary_band": { "name": "Primäres LTE-Band" },
+      "nr5g_cell_id": { "name": "5G Zell-ID" },
+      "lac_code": { "name": "LAC-Code" },
+      "lte_band_lock": { "name": "LTE-Band-Sperre" },
+      "gw_band_lock": { "name": "GW-Band-Sperre" },
+      "bands_summary": { "name": "Aktive Frequenzbänder" },
+      "total_bandwidth": { "name": "Gesamtbandbreite" },
+      "lte_pci": { "name": "LTE PCI" },
+      "lte_earfcn": { "name": "LTE EARFCN" },
+      "lte_rsrp": { "name": "LTE RSRP" },
+      "lte_rsrq": { "name": "LTE RSRQ" },
+      "lte_sinr": { "name": "LTE SINR" },
+      "lte_rssi": { "name": "LTE RSSI" },
+      "nr_pci": { "name": "5G PCI" },
+      "nr_arfcn": { "name": "5G ARFCN" },
+      "nr_rsrp": { "name": "5G RSRP" },
+      "nr_rsrq": { "name": "5G RSRQ" },
+      "nr_sinr": { "name": "5G SINR" },
+      "nr_rssi": { "name": "5G RSSI" },
+      "wan_ipv4": { "name": "WAN IPv4-Adresse" },
+      "wan_ipv6": { "name": "WAN IPv6-Adresse" },
+      "wan_status": { "name": "WAN-Status" },
+      "wan_link_state": { "name": "WAN Verbindungsstatus" },
+      "modem_main_state": { "name": "Modem-Status" },
+      "radio_off": { "name": "Funkmodul aus" },
+      "hightemp_datalimit_status": { "name": "Überhitzungs-Datenbegrenzung" },
+      "5g_modem_temperature": { "name": "5G Modem-Temperatur" },
+      "modem_temperature": { "name": "Modem-Temperatur" },
+      "pa_temp_level": { "name": "PA-Temperaturstufe" },
+      "tj_temp_level": { "name": "TJ-Temperaturstufe" },
+      "connected_lan_devices": { "name": "Verbundene LAN-Geräte" },
+      "connected_wifi_devices": { "name": "Verbundene WLAN-Geräte" },
+      "download_rate": { "name": "Download-Rate" },
+      "upload_rate": { "name": "Upload-Rate" },
+      "monthly_download_mb": { "name": "Monatlicher Download" },
+      "monthly_upload_mb": { "name": "Monatlicher Upload" },
+      "daily_download": { "name": "Täglicher Download" },
+      "daily_upload": { "name": "Täglicher Upload" },
+      "data_limit_enabled": { "name": "Datenlimit aktiviert" },
+      "data_limit_type": { "name": "Datenlimit-Typ" },
+      "data_limit_value": { "name": "Datenlimit-Wert" },
+      "data_limit_warning_percent": { "name": "Datenlimit-Warnschwelle" },
+      "data_limit_exceeded": { "name": "Datenlimit überschritten" },
+      "traffic_auto_reset": { "name": "Automatische Traffic-Rückstellung" },
+      "traffic_reset_day": { "name": "Traffic-Rückstellungstag" },
+      "rx_packet_errors": { "name": "Empfangene Paketfehler" },
+      "tx_packet_errors": { "name": "Gesendete Paketfehler" },
+      "rx_packet_drops": { "name": "Verworfene Pakete (RX)" },
+      "tx_packet_drops": { "name": "Verworfene Pakete (TX)" },
+      "sms_count": { "name": "SMS-Gesamtanzahl" },
+      "sms_unread_total": { "name": "Ungelesene SMS" },
+      "sms_nv_total": { "name": "SMS NV-Speicherkapazität" },
+      "sms_sim_total": { "name": "SMS SIM-Speicherkapazität" },
+      "sms_nv_used_total": { "name": "Belegter SMS-Speicher" },
+      "sms_latest": { "name": "Neueste SMS" },
+      "connected_time": { "name": "Verbunden seit" },
+      "hardware_version": { "name": "Hardware-Version" },
+      "wa_inner_version": { "name": "Firmware-Version" },
+      "cpu_usage": { "name": "CPU-Auslastung" },
+      "ram_usage": { "name": "RAM-Auslastung" },
+      "cpu_temp": { "name": "CPU-Temperatur" },
+      "uptime": { "name": "Router-Betriebszeit" },
+      "firmware_update_status": { "name": "Firmware-Update-Status" },
+      "firmware_latest_version": { "name": "Neueste Firmware-Version" },
+      "firmware_download_progress": { "name": "Firmware-Download-Fortschritt" },
+      "gnss_latitude": { "name": "GNSS Breitengrad" },
+      "gnss_longitude": { "name": "GNSS Längengrad" },
+      "gnss_fix": { "name": "GNSS Fix-Status" }
+    },
+    "switch": {
+      "odu_led": { "name": "Router-LED" },
+      "wifi_master": { "name": "WLAN Hauptschalter" },
+      "wifi_main_2g": { "name": "WLAN 2,4 GHz" },
+      "wifi_main_5g": { "name": "WLAN 5 GHz" },
+      "mobile_data": { "name": "Mobilfunkdaten" },
+      "pause_polling": { "name": "Abfrage pausieren (5 Min.)" },
+      "cell_lock_4g": { "name": "4G-Zellenfixierung" },
+      "cell_lock_5g": { "name": "5G-Zellenfixierung" }
+    },
+    "button": {
+      "restart": { "name": "Router neu starten" },
+      "send_sms": { "name": "SMS senden" },
+      "check_firmware_update": { "name": "Firmware-Update prüfen" },
+      "start_firmware_update": { "name": "Firmware-Update starten" }
+    },
+    "text": {
+      "cell_lock_4g_text": { "name": "4G-Zellenfixierung Konfiguration" },
+      "cell_lock_5g_text": { "name": "5G-Zellenfixierung Konfiguration" },
+      "sms_compose_text": { "name": "SMS verfassen" }
     }
   }
 }

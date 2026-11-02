@@ -97,6 +97,7 @@ class ZteTextEntity(CoordinatorEntity, TextEntity):
         self._user_value: str | None = None
 
         # Unique IDs must match what switch.py expects
+        self._attr_translation_key = description.key
         if self._kind == "sms":
             self._attr_unique_id = f"{entry.entry_id}_sms_compose_text"
         else:

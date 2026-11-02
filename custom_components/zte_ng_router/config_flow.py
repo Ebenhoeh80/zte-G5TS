@@ -14,9 +14,13 @@ from .const import (
     CONF_NAME,
     CONF_VERIFY_TLS,
     CONF_SCAN_INTERVAL,
+    CONF_FAST_SCAN_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_FAST_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
     MAX_SCAN_INTERVAL,
+    MIN_FAST_SCAN_INTERVAL,
+    MAX_FAST_SCAN_INTERVAL,
     CONF_TRACK_CLIENTS,
     CONF_CLIENT_CONSIDER_HOME,
     DEFAULT_CLIENT_CONSIDER_HOME,
@@ -39,6 +43,7 @@ class ZteNgRouterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             host = user_input[CONF_HOST]
             name = user_input[CONF_NAME]
             scan_interval = user_input[CONF_SCAN_INTERVAL]
+            fast_scan_interval = user_input.get(CONF_FAST_SCAN_INTERVAL, DEFAULT_FAST_SCAN_INTERVAL)
 
             # Avoid duplicate configurations for the same host
             await self.async_set_unique_id(f"zte_ng_router_{host}")
@@ -46,6 +51,8 @@ class ZteNgRouterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             if scan_interval < MIN_SCAN_INTERVAL or scan_interval > MAX_SCAN_INTERVAL:
                 errors["base"] = "invalid_scan_interval"
+            elif fast_scan_interval < MIN_FAST_SCAN_INTERVAL or fast_scan_interval > MAX_FAST_SCAN_INTERVAL:
+                errors["base"] = "invalid_fast_scan_interval"
             else:
                 return self.async_create_entry(
                     title=name,
@@ -55,6 +62,7 @@ class ZteNgRouterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_PASSWORD: user_input[CONF_PASSWORD],
                         CONF_VERIFY_TLS: user_input[CONF_VERIFY_TLS],
                         CONF_SCAN_INTERVAL: scan_interval,
+                        CONF_FAST_SCAN_INTERVAL: fast_scan_interval,
                         CONF_TRACK_CLIENTS: user_input.get(CONF_TRACK_CLIENTS, False),
                         CONF_CLIENT_CONSIDER_HOME: user_input.get(
                             CONF_CLIENT_CONSIDER_HOME, DEFAULT_CLIENT_CONSIDER_HOME
@@ -71,6 +79,10 @@ class ZteNgRouterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.All(
                     vol.Coerce(int),
                     vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
+                ),
+                vol.Required(CONF_FAST_SCAN_INTERVAL, default=DEFAULT_FAST_SCAN_INTERVAL): vol.All(
+                    vol.Coerce(int),
+                    vol.Range(min=MIN_FAST_SCAN_INTERVAL, max=MAX_FAST_SCAN_INTERVAL),
                 ),
                 vol.Optional(CONF_TRACK_CLIENTS, default=False): bool,
                 vol.Optional(CONF_CLIENT_CONSIDER_HOME, default=DEFAULT_CLIENT_CONSIDER_HOME): vol.All(
@@ -114,9 +126,12 @@ class ZteNgRouterOptionsFlow(config_entries.OptionsFlow):
                 existing[CONF_PASSWORD] = new_password
             # else: keep existing password (from options or data via fallback in __init__.py)
 
-            # TLS and scan interval always from the form
+            # TLS and scan intervals always from the form
             existing[CONF_VERIFY_TLS] = user_input[CONF_VERIFY_TLS]
             existing[CONF_SCAN_INTERVAL] = user_input[CONF_SCAN_INTERVAL]
+            existing[CONF_FAST_SCAN_INTERVAL] = user_input.get(
+                CONF_FAST_SCAN_INTERVAL, DEFAULT_FAST_SCAN_INTERVAL
+            )
             existing[CONF_TRACK_CLIENTS] = user_input.get(CONF_TRACK_CLIENTS, False)
             existing[CONF_CLIENT_CONSIDER_HOME] = user_input.get(
                 CONF_CLIENT_CONSIDER_HOME, DEFAULT_CLIENT_CONSIDER_HOME
@@ -137,6 +152,10 @@ class ZteNgRouterOptionsFlow(config_entries.OptionsFlow):
         current_scan_interval = options.get(
             CONF_SCAN_INTERVAL,
             data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+        )
+        current_fast_scan_interval = options.get(
+            CONF_FAST_SCAN_INTERVAL,
+            data.get(CONF_FAST_SCAN_INTERVAL, DEFAULT_FAST_SCAN_INTERVAL),
         )
 
         schema = vol.Schema(
@@ -159,6 +178,13 @@ class ZteNgRouterOptionsFlow(config_entries.OptionsFlow):
                 ): vol.All(
                     vol.Coerce(int),
                     vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
+                ),
+                vol.Required(
+                    CONF_FAST_SCAN_INTERVAL,
+                    default=current_fast_scan_interval,
+                ): vol.All(
+                    vol.Coerce(int),
+                    vol.Range(min=MIN_FAST_SCAN_INTERVAL, max=MAX_FAST_SCAN_INTERVAL),
                 ),
                 vol.Optional(
                     CONF_TRACK_CLIENTS,
