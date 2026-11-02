@@ -143,6 +143,18 @@ not a timestamp.
 
 - Local network connectivity between Home Assistant and the router IP
 
+## Login diagnostics
+
+Run `python tests/diagnose_login.py --host http://192.168.0.1` from the Home
+Assistant host to check the UBUS login salt and GoForm LD challenge. The script
+reports response types and field names, but never prints the salt or session
+tokens. It uses only read requests unless `--login` is supplied.
+
+To additionally attempt one UBUS login, set `ztepwd` in that process's
+environment and run `python tests/diagnose_login.py --login`. A successful login
+may invalidate an existing WebUI session. Run the offline regression tests with
+`python -m unittest discover -s tests -p test_login.py`.
+
 ## SMS encryption
 
 Some firmware, including the G51F / MC7510 reported in [issue #8](https://github.com/rosenrot00/ha-zte-ng-router/issues/8),

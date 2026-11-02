@@ -540,10 +540,16 @@ class ZteRouterApi:
             retry_on_access_denied=False,
         )
 
+        if salt_res.get("error"):
+            raise RuntimeError(
+                f"UBUS web_login_info failed: {salt_res['error']}"
+            )
         data = salt_res.get("data") or {}
         salt = data.get("zte_web_sault")
         if not salt:
-            raise RuntimeError("Could not retrieve login salt")
+            raise RuntimeError(
+                "UBUS web_login_info response did not contain zte_web_sault"
+            )
 
         # 2) final hash = SHA256(SHA256(password) + salt)
         pw_hash = self.sha256(self.password)
@@ -675,7 +681,11 @@ class ZteRouterApi:
         return self._goform_session
 
     async def _async_goform_get(
-        self, cmd: str, extra_params: dict[str, str] | None = None
+        self,
+        cmd: str,
+        extra_params: dict[str, str] | None = None,
+        *,
+        raise_errors: bool = False,
     ) -> dict[str, Any]:
         """GET /goform/goform_get_cmd_process?cmd=<cmd>&…"""
         session = await self._async_get_goform_session()
@@ -697,12 +707,21 @@ class ZteRouterApi:
                 url, params=params, headers=headers,
                 timeout=aiohttp.ClientTimeout(total=15)
             ) as resp:
-                return await resp.json(content_type=None)
+                if raise_errors:
+                    resp.raise_for_status()
+                payload = await resp.json(content_type=None)
+                if raise_errors and not isinstance(payload, dict):
+                    raise RuntimeError("response was not a JSON object")
+                return payload
         except Exception as exc:
+            if raise_errors:
+                raise RuntimeError(f"GoForm GET {cmd} failed: {exc}") from exc
             _LOGGER.warning("GoForm GET %s failed: %s", cmd, exc)
             return {}
 
-    async def _async_goform_set(self, data: dict[str, str]) -> dict[str, Any]:
+    async def _async_goform_set(
+        self, data: dict[str, str], *, raise_errors: bool = False
+    ) -> dict[str, Any]:
         """POST /goform/goform_set_cmd_process with URL-encoded form data."""
         session = await self._async_get_goform_session()
         url = f"{self.base_url}/goform/goform_set_cmd_process"
@@ -716,29 +735,40 @@ class ZteRouterApi:
                 url, data=data, headers=headers,
                 timeout=aiohttp.ClientTimeout(total=15)
             ) as resp:
-                return await resp.json(content_type=None)
+                if raise_errors:
+                    resp.raise_for_status()
+                payload = await resp.json(content_type=None)
+                if raise_errors and not isinstance(payload, dict):
+                    raise RuntimeError("response was not a JSON object")
+                return payload
         except Exception as exc:
+            if raise_errors:
+                raise RuntimeError(f"GoForm POST failed: {exc}") from exc
             _LOGGER.warning("GoForm POST failed: %s", exc)
             return {}
 
-    async def _async_goform_init_session(self) -> None:
+    async def _async_goform_init_session(self, *, raise_errors: bool = False) -> None:
         """Load router index page to establish GoForm session cookie."""
         session = await self._async_get_goform_session()
         url = f"{self.base_url}/index.html"
         try:
             async with session.get(url, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                if raise_errors:
+                    resp.raise_for_status()
                 await resp.read()
                 _LOGGER.debug("GoForm session init: status=%s", resp.status)
         except Exception as exc:
+            if raise_errors:
+                raise RuntimeError(f"GoForm session init failed: {exc}") from exc
             _LOGGER.warning("GoForm session init GET %s failed: %s", url, exc)
 
     async def _async_goform_login(self) -> None:
         """Login via GoForm API (SHA256(SHA256(password).upper() + LD))."""
         import hashlib
         # 1. Establish session cookie
-        await self._async_goform_init_session()
+        await self._async_goform_init_session(raise_errors=True)
         # 2. Get LD nonce
-        ld_resp = await self._async_goform_get("LD")
+        ld_resp = await self._async_goform_get("LD", raise_errors=True)
         ld = ld_resp.get("LD", "")
         if not ld:
             raise RuntimeError("GoForm: LD nonce is empty; cannot login")
@@ -750,7 +780,7 @@ class ZteRouterApi:
             "isTest": "false",
             "goformId": "LOGIN",
             "password": final,
-        })
+        }, raise_errors=True)
         result = login_resp.get("result", "")
         if result != "0":
             raise RuntimeError(f"GoForm login failed: result={result!r}")
