@@ -101,6 +101,13 @@ the old entry and old `custom_components/zte_ng_router` directory, install
 `custom_components/zte_5g_router`, and configure the integration again. The
 major version reflects that breaking change.
 
+Version 2.0.1 records a follow-up live UBUS login over HTTP after network
+routing to the router was restored. The login and session succeeded from the
+development PC. This does not establish reachability from the Home Assistant
+VM; HTTP also exposes credentials and session traffic and should only be used
+on a trusted network. Prefer HTTPS with the router certificate verified by
+fingerprint.
+
 ## Root-cause status for the reported login failure
 
 The reported error alone did not establish the failure stage. A live,
@@ -142,6 +149,10 @@ unauthenticated probe against the configured router established:
    traffic, SIM, and SMS reads succeeded. The failing methods are reported
    rather than treated as login failures; their support on this firmware is
    unresolved.
+10. After a network route to the router was added, a fresh UBUS login over
+    `http://192.168.0.1` from the development PC succeeded and established a
+    session. A prior test from the Proxmox host had timed out before HTTP; the
+    live HA timeout therefore still needs validation from the HA VM itself.
 
 The previous implementation swallowed the initial page-load failure and
 attempted GoForm after *any* UBUS error. That combined unrelated transport and
