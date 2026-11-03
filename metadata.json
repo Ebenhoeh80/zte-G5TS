@@ -1,6 +1,6 @@
 {
   "name": "ZTE NG 5G Router Manager",
-  "description": "Comprehensive management dashboard and control center for ZTE Next-Gen 5G CPE routers (G5TS, G5TC, G5C, G5 Max, G5 Ultra) ported from ha-zte-ng-router.",
+  "description": "Management dashboard for ZTE 5G CPE routers, based on the original ha-zte-ng-router project by rosenrot00.",
   "prompt": "Rewrite the imported ZTE NG router project as a React application preserving all core features and business logic.",
   "permissions": [],
   "capabilities": []

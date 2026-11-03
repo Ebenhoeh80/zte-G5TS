@@ -1,188 +1,203 @@
-# ZTE 5G Router – Home Assistant Integration
+# ZTE 5G Router für Home Assistant
 
-[![HACS Default](https://img.shields.io/badge/HACS-Benutzerdefiniert-orange.svg)](https://github.com/hacs/integration)
+[![HACS Custom](https://img.shields.io/badge/HACS-Benutzerdefiniert-orange.svg)](https://hacs.xyz/)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.1%2B-blue.svg)](https://www.home-assistant.io/)
-[![Sprache: DE/EN](https://img.shields.io/badge/Sprache-Deutsch%20%7C%20Englisch-green.svg)](#)
+[![Aktuelles Release](https://img.shields.io/github/v/release/Ebenhoeh80/zte-G5TS)](https://github.com/Ebenhoeh80/zte-G5TS/releases/latest)
+[![Lizenz: MIT](https://img.shields.io/badge/Lizenz-MIT-blue.svg)](./LICENSE)
 
-[🇬🇧 Switch to English Documentation (README.md)](./README.md)
+Eine Home-Assistant-Custom-Integration zur Überwachung und Steuerung
+unterstützter ZTE-4G- und 5G-Router über deren lokale Web-API.
 
-Eine robuste, vollständige Home Assistant Custom Integration für neuere **ZTE Next-Gen 5G & 4G Router-Plattformen** mit gemeinsamer Firmware- und API-Architektur (UBUS und GoForm).
+Dieses Repository basiert auf dem
+[ursprünglichen Projekt von rosenrot00](https://github.com/rosenrot00/ha-zte-ng-router).
 
----
+[English documentation](./README.md)
 
-## 📱 Unterstützte Router-Modelle
+## Inhalt
 
-- **ZTE G5TS** – 5G Indoor CPE (Wi-Fi 6)
-- **ZTE G5TC** – 5G FWA / Outdoor & Indoor CPE
-- **ZTE G5C** / **ZTE G5 Max** / **ZTE G5 Ultra**
-- **ZTE MC801A** / **MC888** / **MC889**
-- **ZTE G51F / MC7510** (mit automatischer AES-GCM-SMS-Verschlüsselung)
+- [Funktionen](#funktionen)
+- [Kompatibilität](#kompatibilität)
+- [Voraussetzungen und Netzwerkzugriff](#voraussetzungen-und-netzwerkzugriff)
+- [Installation](#installation)
+- [Einrichtung](#einrichtung)
+- [Sicherheit und Datenschutz](#sicherheit-und-datenschutz)
+- [Diagnose und Tests](#diagnose-und-tests)
+- [Fehlerbehebung](#fehlerbehebung)
+- [Support](#support)
+- [Lizenz](#lizenz)
 
-> ⚠️ **Einzelsitzungs-Hinweis:** Die ZTE-Router-Firmware erlaubt nur eine einzige aktive Anmeldesitzung gleichzeitig. Wenn die Integration im Hintergrund abfragt, wird eine geöffnete Browser-Sitzung im Router-WebUI abgemeldet. Nutze den Schalter **Abfrage pausieren (5 Min.)**, bevor du dich im Browser am Router anmeldest!
+## Funktionen
 
----
+- WAN-Status, IP-Adressen, Betriebszeit, 4G-/5G-Signalwerte, Funkzelle und
+  Bandinformationen.
+- Upload-/Download-Raten, Datenzähler, Datenlimits und Routerstatistiken.
+- Optionales Tracking verbundener WLAN- und LAN-Geräte.
+- Routersteuerung für Mobilfunkdaten, WLAN-Funkmodule, LEDs und Neustart.
+- Optionale 4G-/5G-Zellenfixierung (Cell Lock).
+- SMS-Posteingang und Versand bei unterstützter Firmware.
+- Hardware-, Temperatur-, Firmware- und GNSS-Informationen, soweit verfügbar.
+- Getrennte Koordinatoren für schnelle und langsame Abfragen. Standardmäßig
+  5 bzw. 60 Sekunden; beide Intervalle lassen sich in den Integrationsoptionen
+  anpassen.
 
-## ✨ Funktionen & Leistungsmerkmale
+Welche Daten und Steuerungen verfügbar sind, hängt von Modell und Firmware ab.
+Nicht jede Funktion ist auf jedem Gerät vorhanden.
 
-### 🌐 Netzwerk- & 5G-Signal-Telemetrie
-- **Verbindungsstatus & Betriebszeit:** WAN-Verbindungsstatus, IPv4- und IPv6-Adressen, Boot-Zeitstempel und Dauer der aktiven Sitzung.
-- **5G / 4G Funkmetriken:**
-  - Signalbalken, RSRP (dBm), RSRQ (dB), SINR (dB) und RSSI (dBm) für 4G LTE und 5G NR.
-  - Funkzellen-Identifikatoren: PCI, EARFCN / ARFCN, Zell-ID, LAC-Code, RMCC / RMNC.
-  - Zusammenfassung aktiver Bänder (z. B. `B3 + B20 + n78`) und aggregierte Gesamtbandbreite (MHz).
+## Kompatibilität
 
-### ⚡ Durchsatz- & Datenverbrauch-Überwachung
-- **Echtzeit-Durchsatz:** Schnell abgefragte Download- und Upload-Raten (Mbit/s, bit/s).
-- **Tages- & Monatszähler:** Heutiger Download/Upload (nach Router-Tagesgrenze), Paketfehler- und Paketverwerfungszähler.
-- **Datenlimits & Rückstellungsplan:** Monatliche Limit-Einstellungen, Warnschwelle in Prozent, Überschreitungsstatus und Abrechnungs-Rückstellungstag.
+Die Integration unterstützt ZTE-Routerfamilien mit kompatiblen lokalen UBUS-
+oder GoForm-Web-APIs. Als funktionierend gemeldet wurden unter anderem:
 
-### 🎛️ Schalter & Steuerungen
-- **Mobilfunkdaten-Schalter:** Mobilen Internetzugang ein- oder ausschalten.
-- **WLAN-Haupt- & Frequenzschalter:** Master-WLAN-Schalter sowie separate 2,4 GHz- und 5 GHz-Bandschalter.
-- **Router-LED-Schalter:** Status-LEDs des Routers aktivieren oder deaktivieren.
-- **Abfrage pausieren (5 Min.):** Pausiert das Hintergrundpolling für 5 Minuten für ungestörten WebUI-Zugriff.
-- **Router neu starten:** Sicheren Neustart des Routers per UBUS-Aufruf auslösen.
+- G5TS, G5TC, G5C, G5 Max und G5 Ultra
+- MC801A, MC888 und MC889
+- G51F und MC7510
 
-### 🔒 4G- & 5G-Zellenfixierung (Cell Lock)
-- Eingabe gewünschter Funkzellenparameter oder Übernahme vorgeschlagener Werte der aktuellen Zelle:
-  - **4G-Zellenfixierung:** `PCI,EARFCN`
-  - **5G-Zellenfixierung:** `PCI,ARFCN,BAND`
-- Eigene Schalter zum Aktivieren und Deaktivieren der Zellensperre.
+Die Kompatibilität kann sich je nach Hardware-Revision, Provider-Anpassungen
+und Firmware-Version unterscheiden. Die Modellliste garantiert nicht, dass
+alle Entitäten und Steuerungen verfügbar sind. Dies ist eine Community-
+Integration ohne Verbindung zu oder Empfehlung durch ZTE.
 
-### 👥 Netzwerkgeräte-Tracking (WLAN & LAN)
-- Schreibgeschützter Scanner für verbundene WLAN- und kabelgebundene LAN-Geräte.
-- Eindeutige Erkennung über normalisierte MAC-Adresse; Hostname, IPv4, IPv6 und Schnittstelle.
-- Konfigurierbare **Abwesenheitsfrist** (Standard: 180 Sekunden), um Fehlabwesenheiten im Schlafmodus mobiler Geräte zu verhindern.
+## Voraussetzungen und Netzwerkzugriff
 
-### ✉️ SMS-Zentrale
-- Posteingang mit Gesamtzahl, ungelesenen Nachrichten und Speicherkapazität (SIM vs. NV-Speicher).
-- Vorschau der neuesten Nachricht und vollständige Dekodierung (UTF-16BE / UCS-2 / GSM-7).
-- Automatische Erkennung von **AES-GCM-Verschlüsselung** bei abgesicherten Firmware-Versionen (z. B. G51F / MC7510).
-- Verfassen und Senden von SMS über Texteingabe und Button (`Rufnummer,Nachricht`).
+- Home Assistant 2024.1 oder neuer.
+- Ein ZTE-Router mit kompatibler lokaler Web-API und Administratorpasswort.
+- Netzwerkzugriff vom **Home-Assistant-Host oder der HA-VM** zum Router. Ein
+  erfolgreicher Test von einem anderen PC beweist nicht, dass Home Assistant
+  den Router ebenfalls erreicht.
 
-### 🛠️ Hardware- & Firmware-Diagnose
-- CPU-Auslastung und exakter RAM-Verbrauch (berechnet aus `meminfo` wie im WebUI).
-- Modem-Temperatur (°C), CPU-Temperatur und Temperaturwarnstufen (PA/TJ).
-- Anzeige von Hardware-Version und innerer Firmware-Version.
-- Firmware-Update-Prüfung und Start des Downloads.
-- GNSS-Positionsfix und Koordinaten (falls vom Gerät unterstützt).
+Verwende nach Möglichkeit HTTPS. Bei einem selbstsignierten Zertifikat prüfe
+den SHA-256-Fingerabdruck anhand einer vertrauenswürdigen, unabhängigen Quelle
+und trage ihn in der Integration ein. Wenn HTTPS nicht verfügbar ist, muss
+HTTP ausdrücklich freigegeben werden; Zugangsdaten und Sitzungsdaten werden
+dann unverschlüsselt übertragen.
 
----
+Manche ZTE-Firmware erlaubt nur eine aktive WebUI-Sitzung. Abfragen der
+Integration können eine Browser-Sitzung abmelden. Falls das auf deinem Router
+auftritt, aktiviere vor dem Öffnen der WebUI **Abfrage pausieren (5 Min.)**.
 
-## ⏱️ Polling-Architektur (Schnell & Langsam)
+## Installation
 
-Um den Prozessor des Routers zu schonen und Antwortverzögerungen zu vermeiden, nutzt die Integration zwei separate Koordinatoren:
+### HACS
 
-| Abfragegruppe | Standard-Intervall | Enthaltene Metriken |
-|:---|:---:|:---|
-| **Schnelles Polling** | **5 Sekunden** | Download- & Upload-Raten, Verbindungsdauer, CPU- & RAM-Auslastung, Tagesverbrauch, Paketfehler/Drops |
-| **Langsames Polling** | **60 Sekunden** | Signalmetriken (RSRP, SINR, PCI, Bänder), WAN-IP, Monatslimits, SMS-Posteingang, Gerätetracking, Firmware |
+1. Öffne in Home Assistant **HACS → Integrationen**.
+2. Öffne das Menü und wähle **Benutzerdefinierte Repositories**.
+3. Füge `https://github.com/Ebenhoeh80/zte-G5TS` mit der Kategorie
+   **Integration** hinzu.
+4. Suche nach **ZTE 5G Router**, lade die Integration herunter und starte
+   Home Assistant neu.
 
-Beide Intervalle können in den Integrations-Optionen angepasst werden.
+### Manuelle Installation
 
----
-
-## 🚀 Installation
-
-### Variante 1: Über HACS (Empfohlen)
-1. Öffne in Home Assistant **HACS** > **Integrationen**.
-2. Klicke oben rechts auf das Drei-Punkte-Menü > **Benutzerdefinierte Repositories**.
-3. Füge die Repository-URL ein, wähle Kategorie **Integration** und klicke auf **Hinzufügen**.
-4. Suche nach `ZTE 5G Router` und klicke auf **Herunterladen**.
-5. Starte Home Assistant neu.
-
-> **Breaking Change in 2.0.0:** Die Integrations-Domain wurde von
-> `zte_ng_router` in `zte_5g_router` umbenannt. Home Assistant migriert den
-> bisherigen Eintrag nicht automatisch. Entferne den alten Integrationseintrag
-> und das Verzeichnis `custom_components/zte_ng_router`, installiere die neue
-> Integration unter `custom_components/zte_5g_router` und richte den Router
-> erneut ein. Prüfe danach Entity-IDs und Automationen.
-
-### Variante 2: Manuelle Installation
-1. Lade das Release-Archiv `zte_5g_router.zip` herunter.
-2. Entpacke den Ordner in dein Home Assistant Konfigurationsverzeichnis:
-   ```
-   <config_dir>/custom_components/zte_5g_router/
-   ```
+1. Lade `zte_5g_router.zip` aus dem
+   [aktuellsten GitHub-Release](https://github.com/Ebenhoeh80/zte-G5TS/releases/latest)
+   herunter.
+2. Entpacke den Inhalt nach `<config>/custom_components/zte_5g_router/`.
+   In diesem Verzeichnis müssen `manifest.json` und die Python-Dateien der
+   Integration direkt liegen.
 3. Starte Home Assistant neu.
 
----
+### Aktualisierung von `zte_ng_router`
 
-## ⚙️ Einrichtung in Home Assistant
+Version 2.0.0 hat die Integrations-Domain in `zte_5g_router` geändert.
+Home Assistant migriert den alten Eintrag nicht automatisch. Entferne den
+alten Eintrag und das Verzeichnis `custom_components/zte_ng_router`, installiere
+die neue Integration und richte den Router erneut ein. Prüfe danach Entity-IDs
+und Automationen.
 
-1. Gehe zu **Einstellungen** > **Geräte & Dienste** > **Integration hinzufügen**.
-2. Suche nach **ZTE 5G Router**.
-3. Fülle das Einrichtungsformular aus:
-   - **Name:** Eindeutiger Name (z. B. `ZTE 5G Router`)
-   - **Router-URL:** `https://192.168.0.1` (oder der HTTPS-Ursprung deines Routers)
-   - **Passwort:** Admin-Passwort der Router-Weboberfläche
-   - **TLS prüfen:** Standardmäßig aktiviert. Bei selbstsigniertem TLS den SHA-256-Fingerabdruck des Zertifikats aus einer vertrauenswürdigen Quelle verifizieren und eintragen; exakt dieses Zertifikat wird dann gepinnt.
-   - **TLS-Fingerabdruck:** Optionaler SHA-256-Zertifikat-Fingerabdruck mit 64 Hex-Zeichen (Doppelpunkte sind erlaubt). Leer lassen für die normale Prüfung über Zertifizierungsstellen. TLS-Prüfung möglichst nicht deaktivieren.
-   - **Unsicheres HTTP erlauben:** Nur aktivieren, wenn der Router kein HTTPS unterstützt. Zugangsdaten und Sitzung werden unverschlüsselt übertragen.
-   - **Langsames Abfrageintervall:** 60 Sekunden (Standard)
-   - **Schnelles Abfrageintervall:** 5 Sekunden (Standard)
-   - **Netzwerkgeräte verfolgen:** Aktivieren für WLAN-/LAN-Tracker
-   - **Abwesenheitsfrist:** 180 Sekunden (Standard)
+## Einrichtung
 
-### Reale Router-Diagnose
+1. Öffne **Einstellungen → Geräte & Dienste → Integration hinzufügen**.
+2. Suche nach **ZTE 5G Router** und folge dem Einrichtungsdialog.
+3. Trage Router-URL, Administratorpasswort und Abfrageintervalle ein.
 
-Die optionalen Werkzeuge in `tools/` verwenden standardmäßig den echten Router
-unter `https://192.168.0.1`. Verwende Python mit installiertem `aiohttp`
-(zum Beispiel die Python-Umgebung von Home Assistant). Setze `ZTEPWD` als
-Umgebungsvariable, niemals als Kommandozeilenargument. Bei einem selbstsignierten Zertifikat setze
-`ZTE_TLS_FINGERPRINT` auf den unabhängig verifizierten SHA-256-Fingerabdruck
-aus der Zertifikatsanzeige. Der Fingerabdruck gehört nur zu diesem Router und
-darf nicht für andere Geräte übernommen werden.
+Verwende als URL den HTTPS-Ursprung des Routers, zum Beispiel
+`https://192.168.0.1`. Bei einem selbstsignierten Zertifikat kannst du dessen
+verifizierten SHA-256-Fingerabdruck eintragen (64 Hex-Zeichen; Doppelpunkte
+sind erlaubt). Ohne Fingerabdruck wird die normale Zertifizierungsstellen-
+prüfung verwendet. Deaktiviere die TLS-Prüfung nicht als Behelfslösung.
 
-```powershell
-$env:ZTEPWD = "<Router-Passwort>"
-$env:ZTE_TLS_FINGERPRINT = "<64-stelliger-SHA-256-Fingerabdruck>"
-python tools/router_probe.py
-python tools/api_discovery.py
-python tools/login_debug.py
-python tools/api_discovery.py --authenticate
-```
+**Unsicheres HTTP erlauben** darf nur aktiviert werden, wenn HTTPS nicht
+verwendet werden kann. Zugangsdaten und Sitzungsdaten sind dann für Systeme
+mit Zugriff auf das Netzwerk mitlesbar.
 
-Authentifizierte Befehle melden sich einmal an und lesen Routerdaten, geben
-aber keine Antwortinhalte, Passwörter, Cookies oder Tokens aus. Die
-automatisierten Hardwaretests sind nur mit `RUN_REAL_ROUTER_TESTS=1` aktiv:
+Die Standardintervalle sind 60 Sekunden (langsam) und 5 Sekunden (schnell).
+Das Tracking von Netzwerkgeräten ist optional und standardmäßig deaktiviert.
+
+## Sicherheit und Datenschutz
+
+- Die Integration kommuniziert lokal mit dem Router und benötigt kein
+  Cloudkonto.
+- Das Routerpasswort wird von Home Assistant im Config Entry gespeichert.
+- Bevorzuge HTTPS mit verifiziertem Zertifikat oder Fingerabdruck. HTTP und
+  deaktivierte Zertifikatsprüfung schwächen den Schutz von Zugangsdaten und
+  Sitzung.
+- Veröffentliche keine Passwörter, Zugriffstokens, Cookies, Session-IDs oder
+  unredigierte Diagnoseausgaben.
+- Firmware-Update und Router-Neustart ändern den Gerätezustand. Verwende diese
+  Funktionen nur, wenn du sie ausdrücklich auslösen möchtest.
+
+## Diagnose und Tests
+
+Das Repository enthält optionale Werkzeuge in [`tools/`](./tools/) für
+Verbindungsprüfungen, API-Erkennung und Login-Diagnose. Sie sind für
+Entwicklung und Fehlersuche gedacht und werden für den normalen Betrieb nicht
+benötigt. Verwende eine Python-Umgebung mit installiertem `aiohttp` und stelle
+`ZTEPWD` über die Prozessumgebung bereit – niemals als Kommandozeilenargument,
+im Quellcode oder in einem Bericht. Bei selbstsigniertem HTTPS darf
+`ZTE_TLS_FINGERPRINT` erst nach unabhängiger Prüfung gesetzt werden.
+
+Die Tests gegen echte Routerhardware müssen ausdrücklich aktiviert werden:
 
 ```powershell
 $env:RUN_REAL_ROUTER_TESTS = "1"
 python -m unittest discover -s tests\integration -v
 ```
 
-Ein GoForm-Login wird nur mit dem expliziten Schalter `ZTE_TEST_GOFORM=1`
-versucht. Router-Neustarts werden von diesen Werkzeugen nie ausgelöst.
-Home-Assistant-Neustarts benötigen die separate explizite Freigabe weiter unten.
+Der Home-Assistant-API-Test in `tools/ha_e2e.py` benötigt `HA_URL` und
+`HA_TOKEN`; zum Anlegen eines Eintrags wird zusätzlich `ZTEPWD` benötigt.
+Verwende für die HA-API möglichst HTTPS. Home Assistant wird nur neu gestartet,
+wenn sowohl `--restart` als auch `HA_ALLOW_RESTART=1` gesetzt sind.
 
-Für einen Live-Test des Home-Assistant-Config-Flows und der Entitäten nutze
-`tools/ha_e2e.py` mit `HA_URL` und `HA_TOKEN` als Umgebungsvariablen. Das Skript
-erstellt den neuen Integrationseintrag, falls noch keiner existiert. Home
-Assistant wird nur neu gestartet, wenn sowohl `--restart` als auch
-`HA_ALLOW_RESTART=1` gesetzt sind:
+## Fehlerbehebung
 
-```powershell
-python tools/ha_e2e.py
-# Nur während eines freigegebenen Wartungsfensters:
-$env:HA_ALLOW_RESTART = "1"
-python tools/ha_e2e.py --restart
-```
+### Timeout bei `web_login_info`
 
-`HA_TOKEN` und `ZTEPWD` niemals in Reports oder Chats einfügen.
+1. Prüfe Router-URL und Protokoll.
+2. Teste den Routerzugriff vom **Home-Assistant-Host oder der HA-VM**, nicht
+   nur von einem PC oder Hypervisor. Prüfe den passenden Port: HTTP verwendet
+   standardmäßig Port 80, HTTPS Port 443.
+3. Prüfe Routing, VLANs und Firewallregeln in beide Richtungen zwischen
+   Home Assistant und Router.
+4. Prüfe bei HTTPS die Zertifikatsvalidierung. Bei einem selbstsignierten
+   Zertifikat kann der verifizierte Fingerabdruck eingetragen werden.
+5. Ist der Endpunkt erreichbar, der Login schlägt aber weiterhin fehl, notiere
+   Fehlermeldung, Routermodell und Firmware-Version. Keine Zugangsdaten,
+   Cookies, Tokens oder Session-IDs weitergeben.
 
----
+### Home Assistant findet die Integration nicht
 
-## 🌍 Zweisprachige Unterstützung (Deutsch & Englisch)
+Prüfe, ob die Dateien unter
+`<config>/custom_components/zte_5g_router/` liegen und sich dort
+`manifest.json` befindet. Starte Home Assistant nach Installation oder Update
+neu.
 
-Die Integration ist von Grund auf zweisprachig aufgebaut:
-- **Deutsch** (`translations/de.json`)
-- **Englisch** (`translations/en.json`)
+## Support
 
-Sämtliche Entitätsnamen, Konfigurationsschritte, Beschreibungen und Fehlermeldungen erscheinen automatisch in der in Home Assistant eingestellten Benutzersprache.
+Füge beim [Erstellen eines Issues](https://github.com/Ebenhoeh80/zte-G5TS/issues)
+nach Möglichkeit folgende Angaben hinzu:
 
----
+- Routermodell und Firmware-Version.
+- Home-Assistant-Version und Installationsart.
+- Integrationsversion und betroffene Funktion.
+- Relevante, redigierte Logs und Information, ob der Router vom HA-Host aus
+  erreichbar ist.
 
-## 📄 Lizenz
+Passwörter, Tokens, Cookies, Session-IDs und unredigierte Routerantworten
+dürfen nicht angehängt werden.
 
-Dieses Projekt steht unter der Apache 2.0 Lizenz. Siehe [LICENSE](./LICENSE) für Details.
+## Dank und Lizenz
+
+Dieses Projekt steht unter der [MIT-Lizenz](./LICENSE). Der ursprüngliche
+Copyright- und Lizenzhinweis für rosenrot00 bleibt in `LICENSE` erhalten. Die
+MIT-Lizenz verlangt, diesen Copyright-Hinweis und den Lizenztext bei der
+Weitergabe von Kopien oder wesentlichen Teilen der Software beizubehalten.

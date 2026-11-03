@@ -1,187 +1,193 @@
-# ZTE 5G Router – Home Assistant Integration
+# ZTE 5G Router for Home Assistant
 
-[![HACS Default](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
+[![HACS Custom](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://hacs.xyz/)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.1%2B-blue.svg)](https://www.home-assistant.io/)
-[![Language: DE/EN](https://img.shields.io/badge/Language-German%20%7C%20English-green.svg)](#)
+[![Latest release](https://img.shields.io/github/v/release/Ebenhoeh80/zte-G5TS)](https://github.com/Ebenhoeh80/zte-G5TS/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
-[🇩🇪 Zur deutschen Dokumentation (README.de.md)](./README.de.md)
+A Home Assistant custom integration for monitoring and controlling supported ZTE
+4G and 5G routers over their local web API.
 
-A robust, feature-complete Home Assistant custom integration for recent **ZTE Next-Gen 5G & 4G router platforms** with shared firmware and API architecture (UBUS and GoForm).
+This repository is derived from the
+[original project by rosenrot00](https://github.com/rosenrot00/ha-zte-ng-router).
 
----
+[Deutsche Dokumentation](./README.de.md)
 
-## 📱 Supported Router Models
+## Contents
 
-- **ZTE G5TS** – 5G Indoor CPE (Wi-Fi 6)
-- **ZTE G5TC** – 5G FWA / Outdoor/Indoor CPE
-- **ZTE G5C** / **ZTE G5 Max** / **ZTE G5 Ultra**
-- **ZTE MC801A** / **MC888** / **MC889**
-- **ZTE G51F / MC7510** (with AES-GCM encrypted SMS support)
+- [Features](#features)
+- [Compatibility](#compatibility)
+- [Requirements and network access](#requirements-and-network-access)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Security and privacy](#security-and-privacy)
+- [Diagnostics and tests](#diagnostics-and-tests)
+- [Troubleshooting](#troubleshooting)
+- [Support](#support)
+- [License](#license)
 
-> ⚠️ **Single Session Note:** ZTE router firmware enforces a single active login session. While this integration is actively polling, web browser sessions to the WebUI will be logged out. Use the **Pause polling (5 min)** switch before logging into the router's web interface!
+## Features
 
----
+- WAN status, addresses, uptime, 4G/5G signal measurements, serving cell and
+  band information.
+- Upload/download rates, traffic counters, data limits, and router statistics.
+- Optional Wi-Fi and wired-LAN device tracking.
+- Router controls for mobile data, Wi-Fi radios, LEDs, and reboot.
+- Optional 4G/5G cell locking.
+- SMS inbox and send controls on supported firmware.
+- Hardware, temperature, firmware, and GNSS information where available.
+- Separate fast and slow polling coordinators. Defaults are 5 seconds and
+  60 seconds; both intervals can be changed in the integration options.
 
-## ✨ Features & Capabilities
+Some controls and data depend on the router model and firmware. Do not assume
+that every listed feature is available on every device.
 
-### 🌐 Network & 5G Signal Telemetry
-- **Connection Status & Uptime:** WAN connection state, IPv4 & IPv6 addresses, device boot time, connection duration.
-- **5G / 4G Radio Metrics:**
-  - Signal bars, RSRP (dBm), RSRQ (dB), SINR (dB), RSSI (dBm) for both 4G LTE and 5G NR.
-  - Serving cell identifiers: PCI, EARFCN / ARFCN, Cell ID, LAC code, RMCC / RMNC.
-  - Active carrier bands summary (e.g., `B3 + B20 + n78`) and aggregated total bandwidth (MHz).
+## Compatibility
 
-### ⚡ Traffic & Bandwidth Monitoring
-- **Real-Time Throughput:** Fast-polled download and upload data rates (bit/s, Mbit/s).
-- **Daily & Monthly Traffic Counters:** Today's download/upload counters (router day boundary), lifetime packet error and packet drop counters.
-- **Data Limits & Reset Schedule:** Monthly limit settings, warning threshold percentage, exceeded status, and configured billing reset day.
+The integration targets ZTE router families that expose compatible UBUS or
+GoForm web APIs. Models reported to work include:
 
-### 🎛️ Router Controls & Switches
-- **Mobile Data Switch:** Enable or disable cellular WAN connectivity.
-- **Wi-Fi Master & Band Switches:** Master Wi-Fi toggle, separate 2.4 GHz and 5 GHz radios.
-- **ODU LED Switch:** Turn router status LEDs on or off.
-- **Pause Polling (5 min):** Pauses background polling to allow WebUI access without getting logged out.
-- **Router Reboot Button:** Remotely reboot the router safely via UBUS service calls.
+- G5TS, G5TC, G5C, G5 Max, and G5 Ultra
+- MC801A, MC888, and MC889
+- G51F and MC7510
 
-### 🔒 4G & 5G Cell Lock
-- Input target cell parameters directly or use auto-suggested serving cell values:
-  - **4G Cell Lock:** `PCI,EARFCN`
-  - **5G Cell Lock:** `PCI,ARFCN,BAND`
-- Toggle switches to apply or release cell locks.
+Compatibility can vary by hardware revision, provider customizations, and
+firmware version. The model list is not a guarantee that every entity or
+control is supported. This is a community integration and is not affiliated
+with or endorsed by ZTE.
 
-### 👥 Network Client Tracking (Wi-Fi & LAN)
-- Read-only WLAN and wired LAN connected device scanner.
-- Deduplication by normalized MAC address; detects hostname, IPv4, IPv6, and connection interface.
-- Configurable **absence grace period** (default: 180s) to prevent false away detections during Wi-Fi power-saving sleeps.
+## Requirements and network access
 
-### ✉️ SMS Center
-- Inbox readout with message count, unread count, and capacity breakdown (SIM vs NV flash).
-- Latest message preview and full content decoding (UTF-16BE / UCS-2 / GSM-7).
-- Automatic **AES-GCM encryption** detection for protected firmware (e.g., G51F / MC7510).
-- Compose & send SMS via text entity and button (`number,message`).
+- Home Assistant 2024.1 or later.
+- A ZTE router with a compatible local web API and administrator password.
+- Network access from the **Home Assistant host or VM** to the router. Testing
+  from a separate PC does not prove that Home Assistant can reach it.
 
-### 🛠️ Hardware & Firmware Diagnostics
-- CPU usage percentage and accurate RAM percentage (from router `meminfo`).
-- Modem temperature (°C), CPU temperature, and thermal protection levels.
-- Hardware version and inner firmware version readouts.
-- Firmware update check and start download actions.
-- GNSS fix status and coordinates (where supported by hardware).
+Use HTTPS whenever possible. For a router with a self-signed certificate,
+verify its SHA-256 certificate fingerprint using a trusted, independent source
+and configure the fingerprint in the integration. If HTTPS is unavailable,
+HTTP requires an explicit opt-in and sends credentials and session traffic
+without encryption.
 
----
+Some ZTE firmware permits only one active WebUI session. Polling may log out a
+browser session; use the integration's **Pause polling (5 min)** control before
+opening the router WebUI if this occurs.
 
-## ⏱️ Polling Architecture
+## Installation
 
-To minimize router CPU load and prevent UI lag, polling is split into two asynchronous coordinators:
+### HACS
 
-| Polling Group | Default Interval | Included Metrics |
-|:---|:---:|:---|
-| **Fast Polling** | **5 seconds** | Download & upload speeds, connected-since timer, CPU & RAM usage, daily traffic, packet errors/drops |
-| **Slow Polling** | **60 seconds** | Signal metrics (RSRP, SINR, PCI, bands), WAN IP, data limits, SMS inbox, network clients, firmware status |
+1. In Home Assistant, open **HACS → Integrations**.
+2. Open the menu and choose **Custom repositories**.
+3. Add `https://github.com/Ebenhoeh80/zte-G5TS` with category **Integration**.
+4. Find **ZTE 5G Router**, download it, and restart Home Assistant.
 
-Both intervals are user-configurable in the integration options.
+### Manual installation
 
----
-
-## 🚀 Installation
-
-### Option 1: HACS (Recommended)
-1. In Home Assistant, open **HACS** > **Integrations**.
-2. Click the three dots in the top right > **Custom repositories**.
-3. Add the repository URL, select category **Integration**, and click **Add**.
-4. Search for `ZTE 5G Router` and click **Download**.
-5. Restart Home Assistant.
-
-> **Breaking change in 2.0.0:** The integration domain changed from
-> `zte_ng_router` to `zte_5g_router`. Home Assistant does not migrate the old
-> config entry automatically. Remove the old integration entry and
-> `custom_components/zte_ng_router` directory, install the new
-> `custom_components/zte_5g_router` integration, and add the router again.
-> Review entity IDs and automations after reconfiguration.
-
-### Option 2: Manual Installation
-1. Download the latest release `zte_5g_router.zip`.
-2. Extract the archive into your Home Assistant directory:
-   ```
-   <config_dir>/custom_components/zte_5g_router/
-   ```
+1. Download `zte_5g_router.zip` from the
+   [latest GitHub release](https://github.com/Ebenhoeh80/zte-G5TS/releases/latest).
+2. Extract its contents into `<config>/custom_components/zte_5g_router/`.
+   The resulting directory should contain `manifest.json` and the integration
+   Python files directly.
 3. Restart Home Assistant.
 
----
+### Upgrade from `zte_ng_router`
 
-## ⚙️ Configuration
+Version 2.0.0 changed the integration domain to `zte_5g_router`. Home Assistant
+does not automatically migrate the old config entry. Remove the old entry and
+`custom_components/zte_ng_router` directory, install the new integration, and
+add the router again. Review entity IDs and automations after reconfiguration.
 
-1. In Home Assistant, go to **Settings** > **Devices & services** > **Add integration**.
-2. Search for **ZTE 5G Router**.
-3. Fill in the configuration dialog:
-   - **Name:** Descriptive name (e.g., `ZTE 5G Router`)
-   - **Router URL:** `https://192.168.0.1` (or your router's HTTPS origin)
-   - **Password:** Router WebUI admin password
-   - **Verify TLS:** Enabled by default. For self-signed TLS, provide the certificate's SHA-256 fingerprint after verifying it from a trusted source; the integration pins that exact certificate.
-   - **TLS fingerprint:** Optional 64-character SHA-256 certificate fingerprint (colons are allowed). Leave blank for normal certificate authority validation. Avoid disabling verification.
-   - **Allow insecure HTTP:** Enable only if the router does not support HTTPS. Credentials and session traffic will be unencrypted.
-   - **Slow Polling Interval:** 60 seconds (default)
-   - **Fast Polling Interval:** 5 seconds (default)
-   - **Track Network Clients:** Toggle ON to discover Wi-Fi/LAN devices
-   - **Client Absence Grace Period:** 180 seconds (default)
+## Configuration
 
-### Real-router diagnostics
+1. Go to **Settings → Devices & services → Add integration**.
+2. Search for **ZTE 5G Router** and follow the setup form.
+3. Enter the router URL, administrator password, and polling preferences.
 
-The opt-in tools in `tools/` use the real router at `https://192.168.0.1` by
-default. Run them with Python and `aiohttp` available (for example, in the
-Home Assistant Python environment). Set `ZTEPWD` in the environment (never on
-the command line). For a self-signed certificate, set `ZTE_TLS_FINGERPRINT` to the independently
-verified SHA-256 fingerprint shown by the router certificate viewer. The
-fingerprint in a certificate is device-specific; do not copy it to a different
-router.
+Use the router's HTTPS origin, for example `https://192.168.0.1`. For a
+self-signed certificate, enter its verified SHA-256 fingerprint (64
+hexadecimal characters; colons are accepted). Leave the fingerprint blank to
+use normal certificate-authority validation. Do not disable TLS verification
+as a workaround.
 
-```powershell
-$env:ZTEPWD = "<router-password>"
-$env:ZTE_TLS_FINGERPRINT = "<64-character-SHA-256-fingerprint>"
-python tools/router_probe.py
-python tools/api_discovery.py
-python tools/login_debug.py
-python tools/api_discovery.py --authenticate
-```
+Enable **Allow insecure HTTP** only when HTTPS cannot be used. Credentials and
+session data will then be exposed to other systems able to observe the
+network.
 
-The authenticated commands make one login and read router data; they never
-print response bodies, passwords, cookies, or tokens. The opt-in automated
-hardware tests require `RUN_REAL_ROUTER_TESTS=1`:
+The default polling intervals are 60 seconds (slow) and 5 seconds (fast).
+Network-client tracking is optional and disabled by default.
+
+## Security and privacy
+
+- The integration communicates with the router locally; it does not require a
+  cloud account.
+- The router password is stored by Home Assistant in the config entry.
+- Prefer HTTPS with a verified certificate or fingerprint. HTTP and disabled
+  certificate verification weaken credential and session security.
+- Do not publish passwords, access tokens, cookies, session identifiers, or
+  unredacted diagnostic output.
+- Firmware update and router reboot controls can change device state. Use them
+  only when intended.
+
+## Diagnostics and tests
+
+The repository includes optional tools in [`tools/`](./tools/) for probing
+connectivity, inspecting API availability, and testing login. They are intended
+for development and troubleshooting, not required for normal installation.
+Use a Python environment with `aiohttp` installed and provide `ZTEPWD` through
+the process environment; never put the password in a command-line argument,
+source file, or report. For self-signed HTTPS, provide
+`ZTE_TLS_FINGERPRINT` only after independently verifying the fingerprint.
+
+The live-router test suite is opt-in:
 
 ```powershell
 $env:RUN_REAL_ROUTER_TESTS = "1"
 python -m unittest discover -s tests\integration -v
 ```
 
-GoForm-specific authentication is not attempted unless
-`ZTE_TEST_GOFORM=1` is explicitly set. Router restarts are never initiated by
-these tools. Home Assistant restarts require the separate explicit opt-in below.
+The Home Assistant API check in `tools/ha_e2e.py` requires `HA_URL` and
+`HA_TOKEN`; creating an entry also requires `ZTEPWD`. Prefer HTTPS for the HA
+API. The script does not restart Home Assistant unless both `--restart` and
+`HA_ALLOW_RESTART=1` are supplied.
 
-For a live Home Assistant config-flow/entity check, use `tools/ha_e2e.py` with
-`HA_URL` and `HA_TOKEN` set in the environment. The script creates the new
-integration entry if none exists. It will only restart Home Assistant when
-both `--restart` and `HA_ALLOW_RESTART=1` are supplied:
+## Troubleshooting
 
-```powershell
-python tools/ha_e2e.py
-# Only during an approved maintenance window:
-$env:HA_ALLOW_RESTART = "1"
-python tools/ha_e2e.py --restart
-```
+### `web_login_info` times out
 
-Never paste `HA_TOKEN` or `ZTEPWD` into a report or chat.
+1. Check that the router URL and scheme are correct.
+2. Test the router endpoint from the **Home Assistant host or VM**, not only
+   from a workstation or hypervisor. Check the relevant port: HTTP uses port
+   80 by default; HTTPS uses port 443 by default.
+3. Verify routing, VLANs, and firewall rules in both directions between
+   Home Assistant and the router.
+4. For HTTPS, check certificate validation and configure a verified
+   fingerprint if the certificate is self-signed.
+5. If the endpoint is reachable but login still fails, collect the integration
+   error and router model/firmware version. Do not include credentials,
+   cookies, tokens, or session IDs.
 
----
+### Home Assistant cannot find the integration
 
-## 🌍 Bilingual Support (DE / EN)
+Confirm that the files are under
+`<config>/custom_components/zte_5g_router/` and that the directory contains
+`manifest.json`. Restart Home Assistant after installation or an update.
 
-This integration is fully bilingual:
-- German (`translations/de.json`)
-- English (`translations/en.json`)
+## Support
 
-All entity names, option dialogs, descriptions, and error messages automatically adapt to your Home Assistant user language.
+Before [opening an issue](https://github.com/Ebenhoeh80/zte-G5TS/issues), include:
 
----
+- Router model and firmware version.
+- Home Assistant version and installation type.
+- Integration version and a description of the affected feature.
+- Relevant redacted logs and whether the router is reachable from the HA host.
 
-## 📄 License
+Never attach passwords, tokens, cookies, session IDs, or unredacted router
+responses.
 
-This project is licensed under the Apache License 2.0. See [LICENSE](./LICENSE) for details.
+## Credits and license
+
+This project is distributed under the [MIT License](./LICENSE). The original
+copyright and license notice for rosenrot00 is retained in `LICENSE`. The MIT
+license requires preserving that notice and the permission notice when
+redistributing copies or substantial portions of the software.

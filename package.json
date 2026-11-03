@@ -1,7 +1,8 @@
 {
   "name": "ha-zte-5g-router",
   "private": true,
-  "version": "2.0.1",
+  "version": "2.0.2",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
