@@ -123,6 +123,13 @@ mit Zugriff auf das Netzwerk mitlesbar.
 Die Standardintervalle sind 60 Sekunden (langsam) und 5 Sekunden (schnell).
 Das Tracking von Netzwerkgeräten ist optional und standardmäßig deaktiviert.
 
+Die Einrichtung prüft die Verbindung: Die Integration meldet sich am Router an,
+bevor der Eintrag angelegt wird – ein falsches Passwort oder ein nicht
+erreichbarer Router wird so direkt im Formular gemeldet statt erst nach der
+Einrichtung. Lehnt der Router später das gespeicherte Passwort ab, fordert Home
+Assistant zur erneuten Eingabe auf (Neuanmeldung). Geänderte Optionen wirken
+sofort, ohne manuelles Neuladen.
+
 ## Sicherheit und Datenschutz
 
 - Die Integration kommuniziert lokal mit dem Router und benötigt kein

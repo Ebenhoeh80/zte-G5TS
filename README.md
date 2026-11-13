@@ -117,6 +117,12 @@ network.
 The default polling intervals are 60 seconds (slow) and 5 seconds (fast).
 Network-client tracking is optional and disabled by default.
 
+Setup verifies the connection: the integration logs in to the router before the
+entry is created, so a wrong password or an unreachable router is reported in the
+form rather than only after setup. If the router later rejects the stored
+password, Home Assistant prompts you to re-enter it (reauthentication). Changing
+options applies immediately, without a manual reload.
+
 ## Security and privacy
 
 - The integration communicates with the router locally; it does not require a
