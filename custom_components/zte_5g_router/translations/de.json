@@ -26,6 +26,13 @@
           "track_wifi_clients": "WLAN- und LAN-Geräte beim langsamen Polling schreibgeschützt erfassen. Neue Tracker sind standardmäßig deaktiviert, bis sie in den Entitätseinstellungen aktiviert werden.",
           "client_consider_home": "Bestätigte Abwesenheitsdauer, bevor ein Gerät als abwesend gemeldet wird (Standard: 180s)."
         }
+      },
+      "reauth_confirm": {
+        "title": "ZTE-Router neu anmelden",
+        "description": "Der Router hat das gespeicherte Passwort für „{name}“ abgelehnt. Gib das aktuelle WebUI-Administrator-Passwort ein.",
+        "data": {
+          "password": "WebUI Administrator-Passwort"
+        }
       }
     },
     "error": {
@@ -40,7 +47,8 @@
       "unknown": "Unerwarteter Fehler bei der Einrichtung aufgetreten."
     },
     "abort": {
-      "already_configured": "Dieser ZTE-Router ist in Home Assistant bereits eingerichtet."
+      "already_configured": "Dieser ZTE-Router ist in Home Assistant bereits eingerichtet.",
+      "reauth_successful": "Neuanmeldung erfolgreich."
     }
   },
   "options": {

@@ -26,6 +26,13 @@
           "track_wifi_clients": "Read-only WLAN and LAN device discovery during slow polling. New trackers are disabled by default until enabled in entity settings.",
           "client_consider_home": "Confirmed absence duration before reporting a client away (default: 180s)."
         }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate ZTE router",
+        "description": "The router rejected the stored password for \"{name}\". Enter the current WebUI administrator password.",
+        "data": {
+          "password": "WebUI Administrator Password"
+        }
       }
     },
     "error": {
@@ -40,7 +47,8 @@
       "unknown": "Unexpected error occurred during setup."
     },
     "abort": {
-      "already_configured": "This ZTE router is already configured in Home Assistant."
+      "already_configured": "This ZTE router is already configured in Home Assistant.",
+      "reauth_successful": "Re-authentication was successful."
     }
   },
   "options": {

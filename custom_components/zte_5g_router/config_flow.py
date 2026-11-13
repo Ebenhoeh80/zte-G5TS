@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 from urllib.parse import urlsplit
 
+import aiohttp
 import voluptuous as vol
 
 from homeassistant import config_entries
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PASSWORD
-from homeassistant.core import callback
+from homeassistant.core import HomeAssistant, callback
 
 from .const import (
     DOMAIN,
@@ -30,6 +33,7 @@ from .const import (
     CONF_CLIENT_CONSIDER_HOME,
     DEFAULT_CLIENT_CONSIDER_HOME,
 )
+from .zte_api import ZteRouterApi
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -83,11 +87,42 @@ def _uses_http(host: str) -> bool:
         return False
 
 
+async def _async_validate_login(
+    hass: HomeAssistant,
+    *,
+    host: str,
+    password: str,
+    verify_tls: bool,
+    tls_fingerprint: str,
+    allow_insecure_http: bool,
+) -> str | None:
+    """Try to log in to the router. Return an error key, or None on success."""
+    api = ZteRouterApi(
+        hass=hass,
+        base_url=host,
+        password=password,
+        tls_fingerprint=tls_fingerprint or None,
+        allow_insecure_http=allow_insecure_http,
+        verify_tls=verify_tls,
+        track_clients=False,
+    )
+    try:
+        await api.async_login()
+        return None
+    except (aiohttp.ClientError, asyncio.TimeoutError, OSError) as exc:
+        _LOGGER.debug("ZTE config flow: cannot connect: %s", api.safe_error_summary(exc))
+        return "cannot_connect"
+    except Exception as exc:  # noqa: BLE001 - map any login rejection to invalid_auth
+        _LOGGER.debug("ZTE config flow: login rejected: %s", api.safe_error_summary(exc))
+        return "invalid_auth"
+    finally:
+        await api.async_close()
+
+
 class ZteNgRouterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Config flow for ZTE NG Router."""
 
     VERSION = 1
-    options_flow_reloads = True
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
         """Handle the initial step where the user enters basic config."""
@@ -121,23 +156,35 @@ class ZteNgRouterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 assert tls_fingerprint is not None
                 await self.async_set_unique_id(f"zte_5g_router_{host}")
                 self._abort_if_unique_id_configured()
-                return self.async_create_entry(
-                    title=name,
-                    data={
-                        CONF_NAME: name,
-                        CONF_HOST: host,
-                        CONF_PASSWORD: user_input[CONF_PASSWORD],
-                        CONF_VERIFY_TLS: user_input[CONF_VERIFY_TLS],
-                        CONF_TLS_FINGERPRINT: tls_fingerprint,
-                        CONF_ALLOW_INSECURE_HTTP: allow_insecure_http,
-                        CONF_SCAN_INTERVAL: scan_interval,
-                        CONF_FAST_SCAN_INTERVAL: fast_scan_interval,
-                        CONF_TRACK_CLIENTS: user_input.get(CONF_TRACK_CLIENTS, False),
-                        CONF_CLIENT_CONSIDER_HOME: user_input.get(
-                            CONF_CLIENT_CONSIDER_HOME, DEFAULT_CLIENT_CONSIDER_HOME
-                        ),
-                    },
+
+                login_error = await _async_validate_login(
+                    self.hass,
+                    host=host,
+                    password=user_input[CONF_PASSWORD],
+                    verify_tls=user_input[CONF_VERIFY_TLS],
+                    tls_fingerprint=tls_fingerprint,
+                    allow_insecure_http=allow_insecure_http,
                 )
+                if login_error:
+                    errors["base"] = login_error
+                else:
+                    return self.async_create_entry(
+                        title=name,
+                        data={
+                            CONF_NAME: name,
+                            CONF_HOST: host,
+                            CONF_PASSWORD: user_input[CONF_PASSWORD],
+                            CONF_VERIFY_TLS: user_input[CONF_VERIFY_TLS],
+                            CONF_TLS_FINGERPRINT: tls_fingerprint,
+                            CONF_ALLOW_INSECURE_HTTP: allow_insecure_http,
+                            CONF_SCAN_INTERVAL: scan_interval,
+                            CONF_FAST_SCAN_INTERVAL: fast_scan_interval,
+                            CONF_TRACK_CLIENTS: user_input.get(CONF_TRACK_CLIENTS, False),
+                            CONF_CLIENT_CONSIDER_HOME: user_input.get(
+                                CONF_CLIENT_CONSIDER_HOME, DEFAULT_CLIENT_CONSIDER_HOME
+                            ),
+                        },
+                    )
 
         schema = vol.Schema(
             {
@@ -168,23 +215,83 @@ class ZteNgRouterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
+    async def async_step_reauth(self, entry_data: dict[str, Any]):
+        """Start reauthentication after the stored password stopped working."""
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(self, user_input: dict[str, Any] | None = None):
+        """Ask for the router password again and verify it with a live login."""
+        entry = self.hass.config_entries.async_get_entry(self.context["entry_id"])
+        assert entry is not None
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            data = entry.data
+            options = entry.options
+            host = options.get(CONF_HOST, data[CONF_HOST])
+            verify_tls = options.get(
+                CONF_VERIFY_TLS, data.get(CONF_VERIFY_TLS, DEFAULT_VERIFY_TLS)
+            )
+            tls_fingerprint = options.get(
+                CONF_TLS_FINGERPRINT, data.get(CONF_TLS_FINGERPRINT, "")
+            )
+            allow_insecure_http = options.get(
+                CONF_ALLOW_INSECURE_HTTP,
+                data.get(CONF_ALLOW_INSECURE_HTTP, _uses_http(host)),
+            )
+            password = user_input[CONF_PASSWORD]
+
+            login_error = await _async_validate_login(
+                self.hass,
+                host=host,
+                password=password,
+                verify_tls=verify_tls,
+                tls_fingerprint=tls_fingerprint,
+                allow_insecure_http=allow_insecure_http,
+            )
+            if login_error:
+                errors["base"] = login_error
+            else:
+                # Store the new password in data and drop any stale options copy
+                new_options = {
+                    key: value
+                    for key, value in entry.options.items()
+                    if key != CONF_PASSWORD
+                }
+                return self.async_update_reload_and_abort(
+                    entry,
+                    data={**entry.data, CONF_PASSWORD: password},
+                    options=new_options,
+                )
+
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=vol.Schema({vol.Required(CONF_PASSWORD): str}),
+            errors=errors,
+            description_placeholders={"name": entry.title},
+        )
+
     @staticmethod
     @callback
     def async_get_options_flow(config_entry: config_entries.ConfigEntry):
         """Return the options flow handler."""
-        return ZteNgRouterOptionsFlow(config_entry)
+        return ZteNgRouterOptionsFlow()
 
 
 class ZteNgRouterOptionsFlow(config_entries.OptionsFlow):
-    """Options flow for adjusting settings after initial setup."""
+    """Options flow for adjusting settings after initial setup.
 
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        """Store the config entry in a private attribute."""
-        self._config_entry = config_entry
+    Uses the base-class ``self.config_entry`` property (Home Assistant 2024.11+);
+    storing the entry manually in ``__init__`` is deprecated.
+    """
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None):
         """Handle options for the config entry (host, password, verify_tls, scan_interval)."""
+        entry: ConfigEntry = self.config_entry
+        data = entry.data
+        options = entry.options
         errors: dict[str, str] = {}
+
         if user_input is not None:
             allow_insecure_http = user_input.get(CONF_ALLOW_INSECURE_HTTP, False)
             host, host_error = _validate_router_url(
@@ -201,47 +308,58 @@ class ZteNgRouterOptionsFlow(config_entries.OptionsFlow):
             else:
                 assert host is not None
                 assert tls_fingerprint is not None
-                existing = dict(self._config_entry.options)
-                existing[CONF_HOST] = host
-                existing[CONF_TLS_FINGERPRINT] = tls_fingerprint
-                existing[CONF_ALLOW_INSECURE_HTTP] = allow_insecure_http
-
-                new_password = user_input.get(CONF_PASSWORD, "")
-                if new_password.strip():
-                    existing[CONF_PASSWORD] = new_password
-
-                existing[CONF_VERIFY_TLS] = user_input[CONF_VERIFY_TLS]
-                existing[CONF_SCAN_INTERVAL] = user_input[CONF_SCAN_INTERVAL]
-                existing[CONF_FAST_SCAN_INTERVAL] = user_input.get(
-                    CONF_FAST_SCAN_INTERVAL, DEFAULT_FAST_SCAN_INTERVAL
+                new_password = user_input.get(CONF_PASSWORD, "").strip()
+                effective_password = new_password or options.get(
+                    CONF_PASSWORD, data[CONF_PASSWORD]
                 )
-                existing[CONF_TRACK_CLIENTS] = user_input.get(CONF_TRACK_CLIENTS, False)
-                existing[CONF_CLIENT_CONSIDER_HOME] = user_input.get(
-                    CONF_CLIENT_CONSIDER_HOME, DEFAULT_CLIENT_CONSIDER_HOME
-                )
-                return self.async_create_entry(title="", data=existing)
+
+                # Re-verify the login whenever the host or password changed.
+                host_changed = host != options.get(CONF_HOST, data.get(CONF_HOST))
+                login_error = None
+                if host_changed or new_password:
+                    login_error = await _async_validate_login(
+                        self.hass,
+                        host=host,
+                        password=effective_password,
+                        verify_tls=user_input[CONF_VERIFY_TLS],
+                        tls_fingerprint=tls_fingerprint,
+                        allow_insecure_http=allow_insecure_http,
+                    )
+
+                if login_error:
+                    errors["base"] = login_error
+                else:
+                    existing = dict(options)
+                    existing[CONF_HOST] = host
+                    existing[CONF_TLS_FINGERPRINT] = tls_fingerprint
+                    existing[CONF_ALLOW_INSECURE_HTTP] = allow_insecure_http
+                    if new_password:
+                        existing[CONF_PASSWORD] = new_password
+                    existing[CONF_VERIFY_TLS] = user_input[CONF_VERIFY_TLS]
+                    existing[CONF_SCAN_INTERVAL] = user_input[CONF_SCAN_INTERVAL]
+                    existing[CONF_FAST_SCAN_INTERVAL] = user_input.get(
+                        CONF_FAST_SCAN_INTERVAL, DEFAULT_FAST_SCAN_INTERVAL
+                    )
+                    existing[CONF_TRACK_CLIENTS] = user_input.get(CONF_TRACK_CLIENTS, False)
+                    existing[CONF_CLIENT_CONSIDER_HOME] = user_input.get(
+                        CONF_CLIENT_CONSIDER_HOME, DEFAULT_CLIENT_CONSIDER_HOME
+                    )
+                    return self.async_create_entry(title="", data=existing)
 
         # Current values: prefer options, fallback to data
-        data = self._config_entry.data
-        options = self._config_entry.options
-
         current_host = options.get(CONF_HOST, data.get(CONF_HOST, DEFAULT_ROUTER_URL))
         current_allow_insecure_http = options.get(
             CONF_ALLOW_INSECURE_HTTP,
             data.get(CONF_ALLOW_INSECURE_HTTP, _uses_http(current_host)),
         )
         current_tls_fingerprint = options.get(
-            CONF_TLS_FINGERPRINT,
-            data.get(CONF_TLS_FINGERPRINT, ""),
+            CONF_TLS_FINGERPRINT, data.get(CONF_TLS_FINGERPRINT, "")
         )
-        # We never show the current password in plain text; user can overwrite it if needed.
         current_verify_tls = options.get(
-            CONF_VERIFY_TLS,
-            data.get(CONF_VERIFY_TLS, DEFAULT_VERIFY_TLS),
+            CONF_VERIFY_TLS, data.get(CONF_VERIFY_TLS, DEFAULT_VERIFY_TLS)
         )
         current_scan_interval = options.get(
-            CONF_SCAN_INTERVAL,
-            data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+            CONF_SCAN_INTERVAL, data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
         )
         current_fast_scan_interval = options.get(
             CONF_FAST_SCAN_INTERVAL,
@@ -250,36 +368,19 @@ class ZteNgRouterOptionsFlow(config_entries.OptionsFlow):
 
         schema = vol.Schema(
             {
-                vol.Required(
-                    CONF_HOST,
-                    default=current_host,
-                ): str,
+                vol.Required(CONF_HOST, default=current_host): str,
+                vol.Optional(CONF_PASSWORD, default=""): str,
+                vol.Optional(CONF_TLS_FINGERPRINT, default=current_tls_fingerprint): str,
                 vol.Optional(
-                    CONF_PASSWORD,
-                    default="",
-                ): str,
-                vol.Optional(
-                    CONF_TLS_FINGERPRINT,
-                    default=current_tls_fingerprint,
-                ): str,
-                vol.Optional(
-                    CONF_ALLOW_INSECURE_HTTP,
-                    default=current_allow_insecure_http,
+                    CONF_ALLOW_INSECURE_HTTP, default=current_allow_insecure_http
                 ): bool,
-                vol.Required(
-                    CONF_VERIFY_TLS,
-                    default=current_verify_tls,
-                ): bool,
-                vol.Required(
-                    CONF_SCAN_INTERVAL,
-                    default=current_scan_interval,
-                ): vol.All(
+                vol.Required(CONF_VERIFY_TLS, default=current_verify_tls): bool,
+                vol.Required(CONF_SCAN_INTERVAL, default=current_scan_interval): vol.All(
                     vol.Coerce(int),
                     vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
                 ),
                 vol.Required(
-                    CONF_FAST_SCAN_INTERVAL,
-                    default=current_fast_scan_interval,
+                    CONF_FAST_SCAN_INTERVAL, default=current_fast_scan_interval
                 ): vol.All(
                     vol.Coerce(int),
                     vol.Range(min=MIN_FAST_SCAN_INTERVAL, max=MAX_FAST_SCAN_INTERVAL),
@@ -290,9 +391,10 @@ class ZteNgRouterOptionsFlow(config_entries.OptionsFlow):
                 ): bool,
                 vol.Optional(
                     CONF_CLIENT_CONSIDER_HOME,
-                    default=options.get(CONF_CLIENT_CONSIDER_HOME, data.get(
-                        CONF_CLIENT_CONSIDER_HOME, DEFAULT_CLIENT_CONSIDER_HOME
-                    )),
+                    default=options.get(
+                        CONF_CLIENT_CONSIDER_HOME,
+                        data.get(CONF_CLIENT_CONSIDER_HOME, DEFAULT_CLIENT_CONSIDER_HOME),
+                    ),
                 ): vol.All(vol.Coerce(int), vol.Range(min=0, max=3600)),
             }
         )

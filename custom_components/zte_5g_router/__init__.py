@@ -157,6 +157,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ZteNgRouterConfigEntry) 
         await coordinator.async_config_entry_first_refresh()
         await coordinator_fast.async_config_entry_first_refresh()
         entry.runtime_data = store
+        entry.async_on_unload(entry.add_update_listener(_async_update_listener))
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
         firmware_data = coordinator.data or {}
@@ -184,3 +185,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ZteNgRouterConfigEntry)
     if unload_ok:
         await store.api.async_close()
     return unload_ok
+
+
+async def _async_update_listener(
+    hass: HomeAssistant, entry: ZteNgRouterConfigEntry
+) -> None:
+    """Reload the entry when its options change so new settings take effect."""
+    await hass.config_entries.async_reload(entry.entry_id)

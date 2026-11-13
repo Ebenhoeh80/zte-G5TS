@@ -1,7 +1,7 @@
 # ZTE 5G Router für Home Assistant
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Benutzerdefiniert-orange.svg)](https://hacs.xyz/)
-[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.1%2B-blue.svg)](https://www.home-assistant.io/)
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.11%2B-blue.svg)](https://www.home-assistant.io/)
 [![Aktuelles Release](https://img.shields.io/github/v/release/Ebenhoeh80/zte-G5TS)](https://github.com/Ebenhoeh80/zte-G5TS/releases/latest)
 [![Lizenz: MIT](https://img.shields.io/badge/Lizenz-MIT-blue.svg)](./LICENSE)
 
@@ -59,7 +59,7 @@ Integration ohne Verbindung zu oder Empfehlung durch ZTE.
 
 ## Voraussetzungen und Netzwerkzugriff
 
-- Home Assistant 2024.1 oder neuer.
+- Home Assistant 2024.11 oder neuer.
 - Ein ZTE-Router mit kompatibler lokaler Web-API und Administratorpasswort.
 - Netzwerkzugriff vom **Home-Assistant-Host oder der HA-VM** zum Router. Ein
   erfolgreicher Test von einem anderen PC beweist nicht, dass Home Assistant

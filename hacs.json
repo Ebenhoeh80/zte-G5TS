@@ -1,5 +1,6 @@
 {
   "name": "ZTE 5G Router",
+  "homeassistant": "2024.11.0",
   "render_readme": true,
   "zip_release": true,
   "filename": "zte_5g_router.zip"
