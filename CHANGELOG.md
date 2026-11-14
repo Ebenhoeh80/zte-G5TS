@@ -5,6 +5,25 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.2] - 2026-11-14
+
+### Fixed
+- **Monthly data counters** now use `state_class = total_increasing` instead of
+  `measurement`, so Home Assistant records long-term statistics for them and
+  shows them in the Energy / consumption dashboards (consistent with the daily
+  counters).
+- **Failed switch actions are now surfaced in the UI.** Turning a switch or a
+  4G/5G cell lock on or off that the router rejects now raises
+  `HomeAssistantError` instead of only writing a log line, so the user sees why
+  the toggle snapped back.
+
+### Added
+- The detected router firmware version is stored as the device `sw_version`
+  and shown on the Home Assistant device page.
+
+### Changed
+- Made the config-flow port validation explicit (no behaviour change).
+
 ## [2.1.1] - 2026-11-14
 
 ### Added

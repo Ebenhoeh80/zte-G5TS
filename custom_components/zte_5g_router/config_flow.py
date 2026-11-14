@@ -58,7 +58,7 @@ def _validate_router_url(
     try:
         parsed = urlsplit(host)
         hostname = parsed.hostname
-        parsed.port
+        _ = parsed.port  # Accessing .port raises ValueError on an invalid port.
     except ValueError:
         return None, "invalid_host"
 

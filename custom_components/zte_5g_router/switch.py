@@ -10,6 +10,7 @@ from homeassistant.util import dt as dt_util
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_registry import async_get as async_get_entity_registry
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -246,21 +247,19 @@ class ZteActionSwitch(CoordinatorEntity, SwitchEntity):
         _LOGGER.info("Turning ON ZTE switch: %s", self._def.key)
         action = self._action_for_turn_on()
         ok = await self._api.async_execute_action_def(action)
-        if ok:
-            if not self._apply_optimistic_state(action):
-                await self.coordinator.async_request_refresh()
-        else:
-            _LOGGER.warning("Failed to turn ON ZTE switch: %s", self._def.key)
+        if not ok:
+            raise HomeAssistantError(f"Router rejected turning on '{self._def.key}'")
+        if not self._apply_optimistic_state(action):
+            await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         _LOGGER.info("Turning OFF ZTE switch: %s", self._def.key)
         action = self._action_for_turn_off()
         ok = await self._api.async_execute_action_def(action)
-        if ok:
-            if not self._apply_optimistic_state(action):
-                await self.coordinator.async_request_refresh()
-        else:
-            _LOGGER.warning("Failed to turn OFF ZTE switch: %s", self._def.key)
+        if not ok:
+            raise HomeAssistantError(f"Router rejected turning off '{self._def.key}'")
+        if not self._apply_optimistic_state(action):
+            await self.coordinator.async_request_refresh()
 
     def _apply_optimistic_state(self, action: dict[str, Any]) -> bool:
         """Update HA state from a successful write without immediately polling."""
@@ -538,8 +537,9 @@ class ZteCellLockSwitch(CoordinatorEntity, SwitchEntity):
         # Resolve associated text entity and read its current value
         text_entity_id = await self._resolve_text_entity_id()
         if not text_entity_id:
-            _LOGGER.warning("Cell lock %s: text entity not found; cannot enable", self._kind)
-            return
+            raise HomeAssistantError(
+                f"Cell lock {self._kind}: companion text entity not found"
+            )
 
         st = self.hass.states.get(text_entity_id)
         value = (st.state if st else "")
@@ -551,15 +551,13 @@ class ZteCellLockSwitch(CoordinatorEntity, SwitchEntity):
             else:
                 ok = await self._api.async_set_5g_cell_lock_enabled(True, value=value)
         except Exception as e:
-            _LOGGER.warning(
-                "Failed to enable cell lock %s: %s",
-                self._kind,
-                self._api.safe_error_summary(e),
-            )
-            ok = False
+            raise HomeAssistantError(
+                f"Failed to enable cell lock {self._kind}: {self._api.safe_error_summary(e)}"
+            ) from e
 
-        if ok:
-            await self.coordinator.async_request_refresh()
+        if not ok:
+            raise HomeAssistantError(f"Router rejected enabling cell lock {self._kind}")
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         try:
@@ -568,12 +566,10 @@ class ZteCellLockSwitch(CoordinatorEntity, SwitchEntity):
             else:
                 ok = await self._api.async_set_5g_cell_lock_enabled(False)
         except Exception as e:
-            _LOGGER.warning(
-                "Failed to disable cell lock %s: %s",
-                self._kind,
-                self._api.safe_error_summary(e),
-            )
-            ok = False
+            raise HomeAssistantError(
+                f"Failed to disable cell lock {self._kind}: {self._api.safe_error_summary(e)}"
+            ) from e
 
-        if ok:
-            await self.coordinator.async_request_refresh()
+        if not ok:
+            raise HomeAssistantError(f"Router rejected disabling cell lock {self._kind}")
+        await self.coordinator.async_request_refresh()

@@ -18,6 +18,9 @@ def load_switches():
         "homeassistant.components.switch": {"SwitchEntity": type("SwitchEntity", (), {})},
         "homeassistant.config_entries": {"ConfigEntry": object},
         "homeassistant.core": {"HomeAssistant": object},
+        "homeassistant.exceptions": {
+            "HomeAssistantError": type("HomeAssistantError", (Exception,), {})
+        },
         "homeassistant.helpers.entity": {"DeviceInfo": dict},
         "homeassistant.helpers.entity_registry": {"async_get": None},
         "homeassistant.helpers.update_coordinator": {

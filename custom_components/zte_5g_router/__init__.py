@@ -9,6 +9,7 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
@@ -172,6 +173,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ZteNgRouterConfigEntry) 
         )
         if firmware_version:
             _LOGGER.info("ZTE router firmware identified: %s", firmware_version)
+            device_registry = dr.async_get(hass)
+            device = device_registry.async_get_device(
+                identifiers={(DOMAIN, entry.entry_id)}
+            )
+            if device is not None:
+                device_registry.async_update_device(
+                    device.id, sw_version=firmware_version
+                )
         return True
     except Exception:
         await api.async_close()
