@@ -9,5 +9,5 @@
   "issue_tracker": "https://github.com/Ebenhoeh80/zte-G5TS/issues",
   "loggers": ["custom_components.zte_5g_router"],
   "requirements": [],
-  "version": "2.1.0"
+  "version": "2.1.1"
 }

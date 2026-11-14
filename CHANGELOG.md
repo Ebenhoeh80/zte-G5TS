@@ -5,6 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.1] - 2026-11-14
+
+### Added
+- Brand **icon and logo** for the integration, shown in HACS and on the Home
+  Assistant integrations page: a 5G router with antennas, signal waves and a
+  "5G" label (`custom_components/zte_5g_router/brand/`).
+
+### Fixed
+- Synced the `package.json` version (was stuck at `2.0.2`) with the integration
+  version.
+
 ## [2.1.0] - 2026-11-13
 
 ### Added
