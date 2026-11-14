@@ -248,7 +248,7 @@ def _to_bit_per_s(value: Any) -> Any:
     Router values are byte/s. Convert to bit/s for HA data_rate sensors.
     """
     v = _as_number(value)
-    if v is None:
+    if v is None or not math.isfinite(v) or v < 0:
         return None
     return int(v * 8.0)
 
