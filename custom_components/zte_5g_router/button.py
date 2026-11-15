@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
+import logging
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.button import ButtonEntity
@@ -11,6 +11,7 @@ from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, SMS_COMPOSE_DEFAULT
+
 if TYPE_CHECKING:
     from . import ZteNgRouterConfigEntry
 

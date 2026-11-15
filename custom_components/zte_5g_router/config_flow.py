@@ -1,39 +1,37 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import Any
 from urllib.parse import urlsplit
 
 import aiohttp
-import voluptuous as vol
-
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PASSWORD
 from homeassistant.core import HomeAssistant, callback
+import voluptuous as vol
 
 from .const import (
-    DOMAIN,
-    CONF_NAME,
-    CONF_VERIFY_TLS,
-    CONF_TLS_FINGERPRINT,
     CONF_ALLOW_INSECURE_HTTP,
-    DEFAULT_ROUTER_URL,
-    DEFAULT_VERIFY_TLS,
-    CONF_SCAN_INTERVAL,
+    CONF_CLIENT_CONSIDER_HOME,
     CONF_FAST_SCAN_INTERVAL,
-    DEFAULT_SCAN_INTERVAL,
+    CONF_NAME,
+    CONF_SCAN_INTERVAL,
+    CONF_TLS_FINGERPRINT,
+    CONF_TRACK_CLIENTS,
+    CONF_VERIFY_TLS,
+    DEFAULT_CLIENT_CONSIDER_HOME,
     DEFAULT_FAST_SCAN_INTERVAL,
-    MIN_SCAN_INTERVAL,
+    DEFAULT_ROUTER_URL,
+    DEFAULT_SCAN_INTERVAL,
+    DEFAULT_VERIFY_TLS,
+    DOMAIN,
+    MAX_FAST_SCAN_INTERVAL,
     MAX_SCAN_INTERVAL,
     MIN_FAST_SCAN_INTERVAL,
-    MAX_FAST_SCAN_INTERVAL,
-    CONF_TRACK_CLIENTS,
-    CONF_CLIENT_CONSIDER_HOME,
-    DEFAULT_CLIENT_CONSIDER_HOME,
+    MIN_SCAN_INTERVAL,
 )
-from .zte_api import ZteRouterApi
+from .zte_api import ZteAuthError, ZteRouterApi
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -109,12 +107,15 @@ async def _async_validate_login(
     try:
         await api.async_login()
         return None
-    except (aiohttp.ClientError, asyncio.TimeoutError, OSError) as exc:
+    except ZteAuthError as exc:
+        _LOGGER.debug("ZTE config flow: invalid auth: %s", api.safe_error_summary(exc))
+        return "invalid_auth"
+    except (TimeoutError, aiohttp.ClientError, OSError) as exc:
         _LOGGER.debug("ZTE config flow: cannot connect: %s", api.safe_error_summary(exc))
         return "cannot_connect"
-    except Exception as exc:  # noqa: BLE001 - map any login rejection to invalid_auth
-        _LOGGER.debug("ZTE config flow: login rejected: %s", api.safe_error_summary(exc))
-        return "invalid_auth"
+    except Exception as exc:  # noqa: BLE001 - unexpected failures map to "unknown"
+        _LOGGER.debug("ZTE config flow: unexpected login error: %s", api.safe_error_summary(exc))
+        return "unknown"
     finally:
         await api.async_close()
 

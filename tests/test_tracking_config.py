@@ -15,7 +15,6 @@ from unittest.mock import patch
 
 import voluptuous as vol
 
-
 ROOT = Path(__file__).resolve().parents[1] / "custom_components/zte_5g_router"
 
 
@@ -40,6 +39,10 @@ class MockRouterApi:
 
 class MockClientError(Exception):
     """Stand-in for aiohttp.ClientError (maps to cannot_connect)."""
+
+
+class MockAuthError(Exception):
+    """Stand-in for ZteAuthError (maps to invalid_auth)."""
 
 
 def load_flow():
@@ -81,6 +84,7 @@ def load_flow():
     aiohttp_mod.ClientError = MockClientError
     zte_api_mod = types.ModuleType("zte_config_test.zte_api")
     zte_api_mod.ZteRouterApi = MockRouterApi
+    zte_api_mod.ZteAuthError = MockAuthError
     package = types.ModuleType("zte_config_test")
     package.__path__ = [str(ROOT)]
     spec = importlib.util.spec_from_file_location("zte_config_test.config_flow", ROOT / "config_flow.py")
@@ -194,19 +198,27 @@ class TrackingConfigTests(unittest.IsolatedAsyncioTestCase):
                 self.assertIsNone(normalized)
                 self.assertEqual(error, "invalid_host")
 
-    async def test_login_error_is_mapped_to_cannot_connect_and_invalid_auth(self):
+    async def test_login_error_is_mapped_to_cannot_connect_invalid_auth_and_unknown(self):
         form = await flow.ZteNgRouterConfigFlow().async_step_user()
+        values = form["data_schema"]({"name": "R", "host": "https://192.0.2.1", "password": "x"})
 
+        # Connection-level failures -> cannot_connect
         MockRouterApi.login_exc = MockClientError("no route")
         cfg = flow.ZteNgRouterConfigFlow()
-        values = form["data_schema"]({"name": "R", "host": "https://192.0.2.1", "password": "x"})
         rejected = await cfg.async_step_user(values)
         self.assertEqual(rejected["errors"]["base"], "cannot_connect")
 
-        MockRouterApi.login_exc = RuntimeError("401 rejected")
+        # A rejected password (typed ZteAuthError) -> invalid_auth
+        MockRouterApi.login_exc = MockAuthError("password rejected")
         cfg = flow.ZteNgRouterConfigFlow()
         rejected = await cfg.async_step_user(values)
         self.assertEqual(rejected["errors"]["base"], "invalid_auth")
+
+        # Any other unexpected error -> unknown (no longer masquerades as invalid_auth)
+        MockRouterApi.login_exc = RuntimeError("boom")
+        cfg = flow.ZteNgRouterConfigFlow()
+        rejected = await cfg.async_step_user(values)
+        self.assertEqual(rejected["errors"]["base"], "unknown")
 
         MockRouterApi.login_exc = None
         cfg = flow.ZteNgRouterConfigFlow()
@@ -225,7 +237,7 @@ class TrackingConfigTests(unittest.IsolatedAsyncioTestCase):
             config_entries=types.SimpleNamespace(async_get_entry=lambda eid: entry)
         )
 
-        MockRouterApi.login_exc = RuntimeError("bad password")
+        MockRouterApi.login_exc = MockAuthError("bad password")
         rejected = await config.async_step_reauth_confirm({"password": "wrong"})
         self.assertEqual(rejected["errors"]["base"], "invalid_auth")
 

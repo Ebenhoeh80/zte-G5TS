@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 import time
 from typing import TYPE_CHECKING, Any
 
@@ -13,10 +13,13 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
-    DOMAIN, CONF_TRACK_CLIENTS, CONF_CLIENT_CONSIDER_HOME,
+    CONF_CLIENT_CONSIDER_HOME,
+    CONF_TRACK_CLIENTS,
     DEFAULT_CLIENT_CONSIDER_HOME,
+    DOMAIN,
 )
 from .zte_api import ZteRouterApi
+
 if TYPE_CHECKING:
     from . import ZteNgRouterConfigEntry
 
@@ -72,7 +75,7 @@ class NetworkClientTracking:
         for mac, metadata in clients.items():
             client = self.clients.setdefault(mac, NetworkClient(mac))
             client.metadata = dict(metadata)
-            client.last_seen = observed.astimezone(timezone.utc)
+            client.last_seen = observed.astimezone(UTC)
             client.connected = True
             client.missing_since = None
             client.available = True
@@ -215,4 +218,4 @@ class ZteNetworkClientTracker(CoordinatorEntity, ScannerEntity, RestoreEntity):
         except (ValueError, TypeError):
             return
         if last_seen.tzinfo is not None and last_seen.utcoffset() is not None:
-            self._client.last_seen = last_seen.astimezone(timezone.utc)
+            self._client.last_seen = last_seen.astimezone(UTC)

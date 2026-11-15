@@ -1,22 +1,23 @@
 from __future__ import annotations
 
-import logging
+from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass
-from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, Callable
-
-from homeassistant.util import dt as dt_util
+from datetime import timedelta
+import logging
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_registry import async_get as async_get_entity_registry
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.event import async_call_later
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
+
 if TYPE_CHECKING:
     from . import ZteNgRouterConfigEntry, ZteNgRouterRuntimeData
 from .zte_api import ZteRouterApi

@@ -91,13 +91,6 @@ opening the router WebUI if this occurs.
    Python files directly.
 3. Restart Home Assistant.
 
-### Upgrade from `zte_ng_router`
-
-Version 2.0.0 changed the integration domain to `zte_5g_router`. Home Assistant
-does not automatically migrate the old config entry. Remove the old entry and
-`custom_components/zte_ng_router` directory, install the new integration, and
-add the router again. Review entity IDs and automations after reconfiguration.
-
 ## Configuration
 
 1. Go to **Settings → Devices & services → Add integration**.
