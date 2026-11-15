@@ -96,14 +96,6 @@ auftritt, aktiviere vor dem Öffnen der WebUI **Abfrage pausieren (5 Min.)**.
    Integration direkt liegen.
 3. Starte Home Assistant neu.
 
-### Aktualisierung von `zte_ng_router`
-
-Version 2.0.0 hat die Integrations-Domain in `zte_5g_router` geändert.
-Home Assistant migriert den alten Eintrag nicht automatisch. Entferne den
-alten Eintrag und das Verzeichnis `custom_components/zte_ng_router`, installiere
-die neue Integration und richte den Router erneut ein. Prüfe danach Entity-IDs
-und Automationen.
-
 ## Einrichtung
 
 1. Öffne **Einstellungen → Geräte & Dienste → Integration hinzufügen**.

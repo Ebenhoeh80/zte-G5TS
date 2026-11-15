@@ -1,13 +1,13 @@
 """Offline WLAN/LAN tracker tests; no real router settings are touched."""
+from datetime import UTC, datetime, timedelta
 import importlib.util
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import sys
 import types
 import unittest
 from unittest.mock import AsyncMock, patch
 
-from test_sms import api, ZteRouterApi
+from test_sms import ZteRouterApi, api
 
 
 def load_trackers():
@@ -63,7 +63,7 @@ def load_trackers():
 
 trackers = load_trackers()
 MAC = "02:12:34:56:78:90"
-START = datetime(2026, 10, 9, 12, tzinfo=timezone.utc)
+START = datetime(2026, 10, 9, 12, tzinfo=UTC)
 
 
 def row(index=0):

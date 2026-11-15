@@ -93,13 +93,7 @@ default.
   requires `HA_ALLOW_RESTART=1`.
 - The frontend build is checked separately with TypeScript and Vite.
 
-## Domain migration and versioning
-
-Version 2.0.0 renames the integration domain to `zte_5g_router`. Home Assistant
-does not automatically migrate existing config entries, so users must remove
-the old entry and old `custom_components/zte_ng_router` directory, install
-`custom_components/zte_5g_router`, and configure the integration again. The
-major version reflects that breaking change.
+## Versioning
 
 Version 2.0.1 records a follow-up live UBUS login over HTTP after network
 routing to the router was restored. The login and session succeeded from the

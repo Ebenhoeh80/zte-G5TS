@@ -1,0 +1,10 @@
+# Test & lint toolchain for the ZTE 5G Router integration.
+#
+# The test suite stubs Home Assistant and aiohttp via sys.modules and loads the
+# integration modules with importlib, so it runs on a plain Python interpreter
+# without a running Home Assistant. `cryptography` is required because the SMS
+# encryption tests exercise the real AES-GCM/RSA code paths.
+pytest
+pytest-cov
+cryptography
+ruff>=0.17,<0.18

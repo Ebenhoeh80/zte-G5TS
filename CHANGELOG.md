@@ -5,6 +5,26 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-11-15
+
+### Fixed
+- **Authentication errors now trigger reauthentication.** A rejected router
+  password raises a typed `ZteAuthError`, which the coordinator maps to
+  `ConfigEntryAuthFailed`. Home Assistant now prompts to re-enter the password
+  instead of retrying a doomed login forever. The config flow reports
+  `invalid_auth` only for genuine password rejections and `unknown` for other
+  unexpected failures (previously every error was shown as `invalid_auth`).
+
+### Added
+- **Continuous integration.** A `CI` workflow runs Ruff and the ~96-test suite
+  (with a coverage floor) on every push and pull request, so the previously
+  dormant tests now gate changes. Adds `pyproject.toml`, `requirements_test.txt`,
+  and tests covering the typed auth error and the config-flow error mapping.
+
+### Removed
+- Dropped the obsolete "upgrade from `zte_ng_router`" migration notice from the
+  README and architecture docs (no release ever shipped under that domain).
+
 ## [2.1.4] - 2026-11-15
 
 ### Changed

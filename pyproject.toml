@@ -1,0 +1,29 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "RET", "SIM", "ASYNC", "LOG", "PIE"]
+ignore = [
+    # The transport layer carries long descriptive log/error strings; reflowing
+    # the 2500-line API module is out of scope for this change.
+    "E501",
+    # Pre-existing patterns in the monolith, tracked for the planned refactor.
+    "B023",
+    "RET504",
+    "SIM105",
+]
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+combine-as-imports = true
+known-first-party = ["custom_components"]
+
+[tool.ruff.lint.per-file-ignores]
+# The existing suite uses unittest-style asserts and long inline fixtures.
+"tests/*" = ["PT009", "PT027", "B011", "E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# tests/integration talks to a real router and must not run in CI.
+addopts = "--ignore=tests/integration"

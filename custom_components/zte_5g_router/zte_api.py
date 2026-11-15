@@ -3,15 +3,15 @@ from __future__ import annotations
 import asyncio
 import base64
 import binascii
-import logging
-import json
+from datetime import UTC, datetime
 import ipaddress
+import json
+import logging
 import os
 import re
-import time
 import string
-from datetime import datetime, timezone
-from typing import Any, Optional
+import time
+from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
 import aiohttp
@@ -27,6 +27,15 @@ class UnsupportedLoginProtocol(RuntimeError):
 
 class RouterResponseError(RuntimeError):
     """Raised when a router response does not match the requested API."""
+
+
+class ZteAuthError(RuntimeError):
+    """Raised when the router rejects the supplied password.
+
+    Distinct from connection/protocol errors so the coordinator can map it to
+    ``ConfigEntryAuthFailed`` (triggering reauth) and the config flow can report
+    ``invalid_auth`` instead of a generic failure.
+    """
 
 
 class ZteRouterApi:
@@ -109,9 +118,9 @@ class ZteRouterApi:
             jar = CookieJar(unsafe=True)
             self._session = aiohttp.ClientSession(connector=connector, cookie_jar=jar)
 
-        self._session_id: Optional[str] = None
+        self._session_id: str | None = None
         self._logged_in: bool = False
-        self._http_encryption_key: Optional[str] = None
+        self._http_encryption_key: str | None = None
 
         self._auth_lock = asyncio.Lock()
         # Serialize poll batches and writes. Some firmwares rotate request state
@@ -121,7 +130,7 @@ class ZteRouterApi:
 
         # API mode: "ubus" (default) or "goform" (auto-detected during login)
         self._api_mode: str = "ubus"
-        self._goform_session: Optional[aiohttp.ClientSession] = None
+        self._goform_session: aiohttp.ClientSession | None = None
         self._goform_field_cache: dict[str, Any] = {}
 
         # Headers similar to the JS script environment
@@ -606,6 +615,10 @@ class ZteRouterApi:
         try:
             await self._async_goform_login()
             return
+        except ZteAuthError:
+            # A rejected password must surface as an auth error, not be masked
+            # as a generic protocol failure, so reauth is triggered.
+            raise
         except Exception as goform_exc:
             raise RuntimeError(
                 f"Login failed: UBUS protocol unsupported; GoForm={goform_exc}"
@@ -672,7 +685,7 @@ class ZteRouterApi:
             retry_on_access_denied=False,
         )
         if not login_res.get("success"):
-            raise RuntimeError(
+            raise ZteAuthError(
                 "UBUS web_login failed: "
                 f"{self._describe_rpc_failure(login_res.get('error'))}"
             )
@@ -938,7 +951,7 @@ class ZteRouterApi:
         }, raise_errors=True)
         result = login_resp.get("result", "")
         if str(result) != "0":
-            raise RuntimeError("GoForm login was rejected by the router")
+            raise ZteAuthError("GoForm login was rejected by the router")
         self._logged_in = True
         self._api_mode = "goform"
         _LOGGER.info("ZTE GoForm login successful")
@@ -975,7 +988,7 @@ class ZteRouterApi:
 
     async def _async_goform_update_all(self) -> dict[str, Any]:
         """Fetch all router data via GoForm API using SINGLE-field queries.
-        
+
         IMPORTANT: GoForm API does NOT support multi-field queries (e.g., "field1,field2").
         We must query each field individually. Requests are concurrency-limited to
         avoid overwhelming the router's web server.
@@ -1274,7 +1287,7 @@ class ZteRouterApi:
     async def async_call_ubus(
         self,
         call: dict,
-        session_id: Optional[str] = None,
+        session_id: str | None = None,
         *,
         z_mode_override: str | None = None,
         retry_on_access_denied: bool = True,
@@ -1713,7 +1726,7 @@ class ZteRouterApi:
                 batch_name,
                 ", ".join(failed),
             )
-    
+
     def invalidate_session(self) -> None:
         """Mark the current session as invalid to force a re-login on the next request.
 
@@ -2107,7 +2120,7 @@ class ZteRouterApi:
                             clients[mac][key] = value
                 clients[mac]["connection_type"] = "+".join(clients[mac]["connection_types"])
         _LOGGER.debug("Read network client snapshot: count=%s complete=%s", len(clients), complete)
-        return {"clients": clients, "complete": complete, "observed_at": datetime.now(timezone.utc)}
+        return {"clients": clients, "complete": complete, "observed_at": datetime.now(UTC)}
 
     async def async_update_all(self) -> dict[str, Any]:
         """Fetch all relevant router data for Home Assistant in one go."""

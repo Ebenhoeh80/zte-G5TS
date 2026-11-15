@@ -1,19 +1,20 @@
 from __future__ import annotations
 
-import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+import logging
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import device_registry as dr
+import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
-import homeassistant.helpers.config_validation as cv
 
 from .const import (
     CONF_ALLOW_INSECURE_HTTP,
@@ -28,7 +29,7 @@ from .const import (
     DEFAULT_VERIFY_TLS,
     DOMAIN,
 )
-from .zte_api import ZteRouterApi
+from .zte_api import ZteAuthError, ZteRouterApi
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -112,6 +113,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ZteNgRouterConfigEntry) 
             return result
         except UpdateFailed:
             raise
+        except ZteAuthError as err:
+            # Wrong/stale password: trigger the reauth flow instead of retrying forever.
+            raise ConfigEntryAuthFailed(api.safe_error_summary(err)) from err
         except Exception as err:
             summary = api.safe_error_summary(err)
             _LOGGER.error("Error updating ZTE router data: %s", summary)
@@ -128,6 +132,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ZteNgRouterConfigEntry) 
             return result
         except UpdateFailed:
             raise
+        except ZteAuthError as err:
+            raise ConfigEntryAuthFailed(api.safe_error_summary(err)) from err
         except Exception as err:
             summary = api.safe_error_summary(err)
             _LOGGER.error("Error updating ZTE router fast data: %s", summary)

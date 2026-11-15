@@ -8,9 +8,9 @@ import types
 import unittest
 from unittest.mock import AsyncMock, patch
 
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 
 def load_api():

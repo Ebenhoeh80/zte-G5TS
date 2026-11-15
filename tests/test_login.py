@@ -1,7 +1,7 @@
 """Authentication failure diagnostics using mocked responses only."""
 
-import importlib.util
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
 import sys
@@ -120,6 +120,30 @@ class LoginDiagnosticTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertTrue(router.is_logged_in)
         self.assertEqual(router.login_method, "goform")
+
+    async def test_ubus_web_login_rejection_raises_typed_auth_error(self):
+        router = api()
+        router.async_call_ubus = AsyncMock(side_effect=[
+            {"success": True, "data": {"zte_web_sault": "router-salt"}},
+            {"success": False, "error": {"message": "login failed"}},
+        ])
+        router._async_setup_http_encryption = AsyncMock()
+
+        with self.assertRaises(router_module.ZteAuthError):
+            await router._async_ubus_login()
+
+    async def test_goform_login_rejection_raises_typed_auth_error(self):
+        router = api()
+        router._async_goform_init_session = AsyncMock()
+        router._async_goform_get = AsyncMock(return_value={"LD": "router-nonce"})
+        router._async_goform_set = AsyncMock(return_value={"result": 1})
+
+        with self.assertRaises(router_module.ZteAuthError):
+            await router._async_goform_login()
+
+    async def test_auth_error_is_a_runtime_error_subclass(self):
+        # Keeps backwards-compatible with callers catching RuntimeError.
+        self.assertTrue(issubclass(router_module.ZteAuthError, RuntimeError))
 
     async def test_ubus_authentication_error_does_not_trigger_goform_fallback(self):
         router = api()
