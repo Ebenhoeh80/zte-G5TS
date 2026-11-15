@@ -197,3 +197,7 @@ This project is distributed under the [MIT License](./LICENSE). The original
 copyright and license notice for rosenrot00 is retained in `LICENSE`. The MIT
 license requires preserving that notice and the permission notice when
 redistributing copies or substantial portions of the software.
+
+## Donations
+
+Voluntary donations: https://www.paypal.com/pool/9p84qTHCFr?sr=wccr

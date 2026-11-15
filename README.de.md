@@ -208,3 +208,7 @@ Dieses Projekt steht unter der [MIT-Lizenz](./LICENSE). Der ursprüngliche
 Copyright- und Lizenzhinweis für rosenrot00 bleibt in `LICENSE` erhalten. Die
 MIT-Lizenz verlangt, diesen Copyright-Hinweis und den Lizenztext bei der
 Weitergabe von Kopien oder wesentlichen Teilen der Software beizubehalten.
+
+## Spenden
+
+Freiwillige Spenden: https://www.paypal.com/pool/9p84qTHCFr?sr=wccr
