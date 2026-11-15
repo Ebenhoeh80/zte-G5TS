@@ -7,4 +7,5 @@
 pytest
 pytest-cov
 cryptography
+voluptuous
 ruff>=0.17,<0.18
