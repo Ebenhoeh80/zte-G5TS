@@ -4,6 +4,7 @@
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.11%2B-blue.svg)](https://www.home-assistant.io/)
 [![Latest release](https://img.shields.io/github/v/release/Ebenhoeh80/zte-G5TS)](https://github.com/Ebenhoeh80/zte-G5TS/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![Donate via PayPal](https://img.shields.io/badge/❤%20Donate-PayPal-00457C.svg?logo=paypal&logoColor=white)](https://www.paypal.com/pool/9p84qTHCFr?sr=wccr)
 
 A Home Assistant custom integration for monitoring and controlling supported ZTE
 4G and 5G routers over their local web API.
@@ -191,6 +192,19 @@ copyright and license notice for rosenrot00 is retained in `LICENSE`. The MIT
 license requires preserving that notice and the permission notice when
 redistributing copies or substantial portions of the software.
 
-## Donations
+---
 
-Voluntary donations: https://www.paypal.com/pool/9p84qTHCFr?sr=wccr
+## ❤️ Support this project
+
+<div align="center">
+
+**I build and maintain this integration in my free time — and cover the running costs out of my own pocket.**
+
+If it saves you time or trouble, a small voluntary tip keeps the project alive and motivates new features.
+Every contribution, however small, is hugely appreciated. Thank you! 🙏
+
+<a href="https://www.paypal.com/pool/9p84qTHCFr?sr=wccr">
+  <img src="https://img.shields.io/badge/Buy%20me%20a%20coffee-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="Donate via PayPal" height="42">
+</a>
+
+</div>

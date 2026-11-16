@@ -4,6 +4,7 @@
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.11%2B-blue.svg)](https://www.home-assistant.io/)
 [![Aktuelles Release](https://img.shields.io/github/v/release/Ebenhoeh80/zte-G5TS)](https://github.com/Ebenhoeh80/zte-G5TS/releases/latest)
 [![Lizenz: MIT](https://img.shields.io/badge/Lizenz-MIT-blue.svg)](./LICENSE)
+[![Spenden via PayPal](https://img.shields.io/badge/❤%20Spenden-PayPal-00457C.svg?logo=paypal&logoColor=white)](https://www.paypal.com/pool/9p84qTHCFr?sr=wccr)
 
 Eine Home-Assistant-Custom-Integration zur Überwachung und Steuerung
 unterstützter ZTE-4G- und 5G-Router über deren lokale Web-API.
@@ -201,6 +202,19 @@ Copyright- und Lizenzhinweis für rosenrot00 bleibt in `LICENSE` erhalten. Die
 MIT-Lizenz verlangt, diesen Copyright-Hinweis und den Lizenztext bei der
 Weitergabe von Kopien oder wesentlichen Teilen der Software beizubehalten.
 
-## Spenden
+---
 
-Freiwillige Spenden: https://www.paypal.com/pool/9p84qTHCFr?sr=wccr
+## ❤️ Projekt unterstützen
+
+<div align="center">
+
+**Ich entwickle und pflege diese Integration in meiner Freizeit – und trage die laufenden Kosten aus eigener Tasche.**
+
+Wenn sie dir Zeit oder Ärger erspart, hält eine kleine freiwillige Spende das Projekt am Leben und motiviert zu neuen Funktionen.
+Jeder Beitrag, egal wie klein, freut mich riesig. Vielen Dank! 🙏
+
+<a href="https://www.paypal.com/pool/9p84qTHCFr?sr=wccr">
+  <img src="https://img.shields.io/badge/Spendier%20mir%20einen%20Kaffee-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="Spenden via PayPal" height="42">
+</a>
+
+</div>
