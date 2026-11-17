@@ -1,5 +1,5 @@
 {
-  "name": "ZTE 5G Router",
+  "name": "ZTE 5G Router (G5TS fork)",
   "homeassistant": "2024.11.0",
   "render_readme": true,
   "zip_release": true,

@@ -5,7 +5,7 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.3.0] - 2026-11-17
 
 ### Security
 - **SMS sender numbers and message texts are no longer stored in entity state or
@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Reported by the HACS reviewer.
 
 ### Changed
+- The integration is now listed as **ZTE 5G Router (G5TS fork)** (manifest and
+  HACS name) so it can be told apart from the upstream **ZTE NG Router** when both
+  are installed. The domain (`zte_5g_router`) and existing entries are unchanged.
 - **Breaking:** the sensor state is now only the newest message's timestamp, and the
   attributes `latest_number`, `latest_text` and `recent_messages` are removed.
   Automations that read them must switch to the new event.
@@ -23,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `zte_5g_router_sms_received` event for every newly received SMS (`entry_id`,
   `name`, `id`, `number`, `date`, `text`). The inbox present at startup is only
   recorded, so a restart does not replay old messages.
+- README section (en/de) on running this integration side by side with
+  [rosenrot00/ha-zte-ng-router](https://github.com/rosenrot00/ha-zte-ng-router)
+  and switching between them.
 
 ## [2.2.0] - 2026-11-15
 
