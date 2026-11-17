@@ -29,6 +29,7 @@ from .const import (
     DEFAULT_VERIFY_TLS,
     DOMAIN,
 )
+from .sms_events import EVENT_SMS_RECEIVED, collect_new_incoming_sms
 from .zte_api import ZteAuthError, ZteRouterApi
 
 _LOGGER = logging.getLogger(__name__)
@@ -48,6 +49,7 @@ class ZteNgRouterRuntimeData:
     pause_until: datetime | None = None
     reset_client_absence: Callable[[], None] | None = None
     sms_compose: str = ""
+    sms_seen: set[str] | None = None
 
 
 ZteNgRouterConfigEntry = ConfigEntry[ZteNgRouterRuntimeData]
@@ -56,6 +58,29 @@ ZteNgRouterConfigEntry = ConfigEntry[ZteNgRouterRuntimeData]
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up integration from YAML (not used, config flow only)."""
     return True
+
+
+def _fire_sms_events(
+    hass: HomeAssistant,
+    entry: ZteNgRouterConfigEntry,
+    store: ZteNgRouterRuntimeData,
+    data: dict[str, Any],
+) -> None:
+    """Fire one event per newly received SMS (never exposed via entity state)."""
+    messages = (data.get("sms") or {}).get("messages")
+    new_messages, store.sms_seen = collect_new_incoming_sms(messages, store.sms_seen)
+    for message in new_messages:
+        hass.bus.async_fire(
+            EVENT_SMS_RECEIVED,
+            {
+                "entry_id": entry.entry_id,
+                "name": store.name,
+                "id": message.get("id"),
+                "number": message.get("number"),
+                "date": message.get("date"),
+                "text": message.get("content_decoded"),
+            },
+        )
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ZteNgRouterConfigEntry) -> bool:
@@ -110,6 +135,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ZteNgRouterConfigEntry) 
             result = await api.async_update_all()
             if result is None:
                 raise UpdateFailed("No data returned from router")
+            _fire_sms_events(hass, entry, store, result)
             return result
         except UpdateFailed:
             raise
