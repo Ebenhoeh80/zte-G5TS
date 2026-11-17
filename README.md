@@ -35,7 +35,8 @@ This repository is derived from the
 - Optional Wi-Fi and wired-LAN device tracking.
 - Router controls for mobile data, Wi-Fi radios, LEDs, and reboot.
 - Optional 4G/5G cell locking.
-- SMS inbox and send controls on supported firmware.
+- SMS inbox and send controls on supported firmware, plus a
+  `zte_5g_router_sms_received` event for every newly received message.
 - Hardware, temperature, firmware, and GNSS information where available.
 - Separate fast and slow polling coordinators. Defaults are 5 seconds and
   60 seconds; both intervals can be changed in the integration options.
@@ -124,6 +125,12 @@ options applies immediately, without a manual reload.
 - The router password is stored by Home Assistant in the config entry.
 - Prefer HTTPS with a verified certificate or fingerprint. HTTP and disabled
   certificate verification weaken credential and session security.
+- Sender numbers and message texts are intentionally **not** part of any entity
+  state or attribute (the recorder stores them and every user can read them).
+  The `Latest Received SMS` sensor only shows the newest message's timestamp.
+  Use the `zte_5g_router_sms_received` event (data: `entry_id`, `name`, `id`,
+  `number`, `date`, `text`) as an automation trigger instead; messages already in
+  the inbox at startup are not replayed.
 - Do not publish passwords, access tokens, cookies, session identifiers, or
   unredacted diagnostic output.
 - Firmware update and router reboot controls can change device state. Use them

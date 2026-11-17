@@ -35,7 +35,8 @@ Dieses Repository basiert auf dem
 - Optionales Tracking verbundener WLAN- und LAN-Geräte.
 - Routersteuerung für Mobilfunkdaten, WLAN-Funkmodule, LEDs und Neustart.
 - Optionale 4G-/5G-Zellenfixierung (Cell Lock).
-- SMS-Posteingang und Versand bei unterstützter Firmware.
+- SMS-Posteingang und Versand bei unterstützter Firmware, dazu ein Event
+  `zte_5g_router_sms_received` für jede neu empfangene Nachricht.
 - Hardware-, Temperatur-, Firmware- und GNSS-Informationen, soweit verfügbar.
 - Getrennte Koordinatoren für schnelle und langsame Abfragen. Standardmäßig
   5 bzw. 60 Sekunden; beide Intervalle lassen sich in den Integrationsoptionen
@@ -131,6 +132,12 @@ sofort, ohne manuelles Neuladen.
 - Bevorzuge HTTPS mit verifiziertem Zertifikat oder Fingerabdruck. HTTP und
   deaktivierte Zertifikatsprüfung schwächen den Schutz von Zugangsdaten und
   Sitzung.
+- Absendernummern und Nachrichtentexte sind bewusst **nicht** Teil von Zustand oder
+  Attributen einer Entität (der Recorder speichert sie, und jeder Benutzer kann sie
+  lesen). Der Sensor „Neueste empfangene SMS“ zeigt nur den Zeitstempel der neuesten
+  Nachricht. Nutze stattdessen das Event `zte_5g_router_sms_received` (Daten:
+  `entry_id`, `name`, `id`, `number`, `date`, `text`) als Automations-Trigger;
+  Nachrichten, die beim Start bereits im Posteingang liegen, werden nicht erneut gemeldet.
 - Veröffentliche keine Passwörter, Zugriffstokens, Cookies, Session-IDs oder
   unredigierte Diagnoseausgaben.
 - Firmware-Update und Router-Neustart ändern den Gerätezustand. Verwende diese
