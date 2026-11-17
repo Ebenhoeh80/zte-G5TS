@@ -82,7 +82,27 @@ opening the router WebUI if this occurs.
 1. In Home Assistant, open **HACS → Integrations**.
 2. Open the menu and choose **Custom repositories**.
 3. Add `https://github.com/Ebenhoeh80/zte-G5TS` with category **Integration**.
-4. Find **ZTE 5G Router**, download it, and restart Home Assistant.
+4. Find **ZTE 5G Router (G5TS fork)**, download it, and restart Home Assistant.
+
+### Running alongside the upstream integration
+
+This project shares its router protocol code with
+[rosenrot00/ha-zte-ng-router](https://github.com/rosenrot00/ha-zte-ng-router)
+(domain `zte_ng_router`, listed as **ZTE NG Router** in the HACS default store).
+Both can be installed side by side, for example to compare them or to switch
+between them:
+
+- They use different domains (`zte_5g_router` and `zte_ng_router`), so files,
+  config entries, devices, entities, events and diagnostics are separate.
+  Nothing is shared or overwritten.
+- Entities are not migrated between the two. Each integration creates its own;
+  after switching, point automations and dashboards to the other entities (or
+  rename the entity IDs under **Settings → Devices & services → Entities**).
+- **Use one at a time.** Both talk to the same router, and the router may only
+  allow a limited number of concurrent web sessions, so running both enabled can
+  make them log each other out (not verified). To switch, open
+  **Settings → Devices & services**, choose the ZTE entry, use the three-dot menu
+  and **Disable** one entry, then **Enable** the other.
 
 ### Manual installation
 
