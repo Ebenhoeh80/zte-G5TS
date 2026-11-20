@@ -226,7 +226,8 @@ dürfen nicht angehängt werden.
 ## Dank und Lizenz
 
 Dieses Projekt steht unter der [MIT-Lizenz](./LICENSE). Der ursprüngliche
-Copyright- und Lizenzhinweis für rosenrot00 bleibt in `LICENSE` erhalten. Die
+Copyright- und Lizenzhinweis für rosenrot00 bleibt in `LICENSE` erhalten, ergänzt um
+das Copyright für die Änderungen (© 2026 Daniel Ebenhöh). Die
 MIT-Lizenz verlangt, diesen Copyright-Hinweis und den Lizenztext bei der
 Weitergabe von Kopien oder wesentlichen Teilen der Software beizubehalten.
 

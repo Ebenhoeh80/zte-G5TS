@@ -215,7 +215,8 @@ responses.
 ## Credits and license
 
 This project is distributed under the [MIT License](./LICENSE). The original
-copyright and license notice for rosenrot00 is retained in `LICENSE`. The MIT
+copyright and license notice for rosenrot00 is retained in `LICENSE`, together with
+the copyright for the modifications (© 2026 Daniel Ebenhöh). The MIT
 license requires preserving that notice and the permission notice when
 redistributing copies or substantial portions of the software.
 
