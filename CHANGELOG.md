@@ -5,6 +5,22 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2026-11-23
+
+### Fixed
+- **Reduced ubus core-batch warning noise on firmwares that omit optional
+  endpoints.** Soft nonzero responses for known optional core calls
+  (`uci.get zwrt_common_info/common_config`, `zwrt_led.get_ODU_switch_state`,
+  `uci.get wireless/main_2g`, `uci.get wireless/main_5g`) are now logged at
+  DEBUG as optional unsupported calls instead of emitting repeated coordinator
+  WARNINGs during normal polling. Transport failures and explicit RPC/HTTP
+  errors for these calls remain WARNINGs.
+
+### Added
+- Regression tests for ubus batch failure classification, covering optional
+  soft failures, genuine core failures, transport/RPC errors, and non-core
+  batches.
+
 ## [2.3.0] - 2026-11-17
 
 ### Security

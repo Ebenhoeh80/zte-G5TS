@@ -1694,14 +1694,56 @@ class ZteRouterApi:
 
         return out
 
-    @staticmethod
+    # Core-batch calls that are absent or unsupported on some firmwares.
+    # A nonzero router response for these is expected; log at DEBUG to avoid
+    # poll-time warning spam while still surfacing transport/RPC/HTTP failures.
+    _OPTIONAL_CORE_BATCH_FAILURES: frozenset[tuple[str, str, tuple[tuple[str, Any], ...]]] = frozenset(
+        {
+            ("zwrt_led", "get_ODU_switch_state", ()),
+            (
+                "uci",
+                "get",
+                (("config", "zwrt_common_info"), ("section", "common_config")),
+            ),
+            ("uci", "get", (("config", "wireless"), ("section", "main_2g"))),
+            ("uci", "get", (("config", "wireless"), ("section", "main_5g"))),
+        }
+    )
+
+    @classmethod
+    def _batch_failure_key(cls, call: dict[str, Any]) -> tuple[str, str, tuple[tuple[str, Any], ...]]:
+        params = call.get("params")
+        if isinstance(params, dict):
+            param_key = tuple(sorted((str(k), v) for k, v in params.items()))
+        else:
+            param_key = ()
+        return (str(call.get("service")), str(call.get("method")), param_key)
+
+    @classmethod
+    def _is_optional_batch_failure(cls, batch_name: str, call: dict[str, Any], error: Any) -> bool:
+        if batch_name != "core":
+            return False
+        if not isinstance(error, dict):
+            return False
+        # Real transport/connectivity failures and explicit RPC/HTTP errors should
+        # remain visible; only soft router-side "unsupported/no payload" failures
+        # are downgraded for known optional core calls.
+        if error.get("kind") == "transport":
+            return False
+        if isinstance(error.get("status"), int) or isinstance(error.get("code"), int):
+            return False
+        return cls._batch_failure_key(call) in cls._OPTIONAL_CORE_BATCH_FAILURES
+
+    @classmethod
     def _log_batch_failures(
+        cls,
         batch_name: str,
         calls: list[dict[str, Any]],
         results: list[dict[str, Any]],
     ) -> None:
         """Log failed calls in a named batch without aborting the whole update."""
         failed: list[str] = []
+        optional_failed: list[str] = []
         for call, result in zip(calls, results, strict=False):
             if result.get("success"):
                 continue
@@ -1716,15 +1758,23 @@ class ZteRouterApi:
                     failure = "transport error"
                 elif "message" in error:
                     failure = "router error without code"
-            failed.append(
-                f"{call.get('service')}.{call.get('method')} ({failure})"
-            )
+            label = f"{call.get('service')}.{call.get('method')} ({failure})"
+            if cls._is_optional_batch_failure(batch_name, call, error):
+                optional_failed.append(label)
+            else:
+                failed.append(label)
 
         if failed:
             _LOGGER.warning(
                 "ubus batch '%s' had failed calls: %s",
                 batch_name,
                 ", ".join(failed),
+            )
+        if optional_failed:
+            _LOGGER.debug(
+                "ubus batch '%s' had optional unsupported calls: %s",
+                batch_name,
+                ", ".join(optional_failed),
             )
 
     def invalidate_session(self) -> None:
