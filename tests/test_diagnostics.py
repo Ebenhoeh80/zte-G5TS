@@ -80,8 +80,17 @@ class DiagnosticsTests(unittest.IsolatedAsyncioTestCase):
             is_logged_in = True
 
         entry = types.SimpleNamespace(
-            data={"host": "https://192.0.2.1", "password": "do-not-export"},
-            options={"token": "do-not-export"},
+            data={
+                "host": "https://192.0.2.1",
+                "password": "do-not-export",
+                "wlan_mac_address": "aa:bb:cc:dd:ee:ff",
+                "imei": "123456789012345",
+            },
+            options={
+                "token": "do-not-export",
+                "unique_id": "zte_5g_router_aa:bb:cc:dd:ee:ff",
+                "iccid": "8949000000000000000",
+            },
             runtime_data=types.SimpleNamespace(
                 coordinator=Coordinator(),
                 coordinator_fast=Coordinator(),
@@ -93,6 +102,10 @@ class DiagnosticsTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result["config"]["data"]["password"], "**REDACTED**")
         self.assertEqual(result["config"]["options"]["token"], "**REDACTED**")
+        self.assertEqual(result["config"]["data"]["wlan_mac_address"], "**REDACTED**")
+        self.assertEqual(result["config"]["data"]["imei"], "**REDACTED**")
+        self.assertEqual(result["config"]["options"]["unique_id"], "**REDACTED**")
+        self.assertEqual(result["config"]["options"]["iccid"], "**REDACTED**")
         self.assertEqual(result["connection"]["login_method"], "ubus")
         self.assertEqual(result["connection"]["firmware"]["model"], "G5TS")
         self.assertNotIn("sms", result)

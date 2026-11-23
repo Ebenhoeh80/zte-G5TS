@@ -5,6 +5,33 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-11-23
+
+### Added
+- **Stable device identity.** The config entry is now identified by the router's
+  own WLAN MAC (`wlan_mac_address` from `get_sim_info`, already polled - no extra
+  request) instead of its URL. Moving the router to a new IP no longer creates a
+  duplicate entry. Legacy URL-based entries are migrated in place on the next
+  setup; entity IDs, areas and long-term statistics are preserved. Firmwares
+  without a device MAC keep the URL-based ID.
+- **Reconfigure flow** (Settings → Devices & services → Reconfigure) changes the
+  router address, password and TLS settings without removing the entry. An
+  endpoint reporting a different device MAC is rejected with `wrong_device`.
+- `quality_scale.yaml`: audited all 54 Home Assistant integration quality scale
+  rules with an honest `done` / `todo` / `exempt` status and comments.
+
+### Security
+- Diagnostics redaction now also covers device-owned identifiers: MAC addresses,
+  IMEI, serial numbers, ICCID and the entry `unique_id` (which now contains the
+  router MAC). Previously only credentials, tokens and session data were masked.
+
+### Tests
+- New identity tests (MAC normalization, identifier priority, migration and
+  cross-router guard) and config-flow tests (MAC-based unique ID, URL fallback,
+  reconfigure success and `wrong_device` rejection).
+- Extended diagnostics tests for identifier redaction. 123 tests plus 63
+  subtests pass.
+
 ## [2.3.1] - 2026-11-23
 
 ### Fixed

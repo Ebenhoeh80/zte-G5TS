@@ -31,6 +31,11 @@ from .const import (
     MIN_FAST_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
 )
+from .identity import (
+    device_identifier_from_payload,
+    entry_unique_id,
+    is_other_router,
+)
 from .zte_api import ZteAuthError, ZteRouterApi
 
 _LOGGER = logging.getLogger(__name__)
@@ -93,8 +98,14 @@ async def _async_validate_login(
     verify_tls: bool,
     tls_fingerprint: str,
     allow_insecure_http: bool,
-) -> str | None:
-    """Try to log in to the router. Return an error key, or None on success."""
+    probe_identifier: bool = False,
+) -> tuple[str | None, str | None]:
+    """Try to log in; return ``(error key or None, device identifier or None)``.
+
+    The identifier probe is best-effort: a firmware that omits the field still
+    gets a working (URL-based) entry. The error value is intentionally a tuple
+    so setup and reconfigure can use the same login check.
+    """
     api = ZteRouterApi(
         hass=hass,
         base_url=host,
@@ -104,18 +115,28 @@ async def _async_validate_login(
         verify_tls=verify_tls,
         track_clients=False,
     )
+    identifier: str | None = None
     try:
         await api.async_login()
-        return None
+        if probe_identifier:
+            try:
+                reply = await api.async_call_ubus(
+                    {"service": "zwrt_zte_mdm.api", "method": "get_sim_info"}
+                )
+                if reply.get("success"):
+                    identifier = device_identifier_from_payload(reply.get("data"))
+            except Exception:  # noqa: BLE001 - identifier is optional
+                _LOGGER.debug("ZTE config flow: device identifier probe unavailable")
+        return None, identifier
     except ZteAuthError as exc:
         _LOGGER.debug("ZTE config flow: invalid auth: %s", api.safe_error_summary(exc))
-        return "invalid_auth"
+        return "invalid_auth", None
     except (TimeoutError, aiohttp.ClientError, OSError) as exc:
         _LOGGER.debug("ZTE config flow: cannot connect: %s", api.safe_error_summary(exc))
-        return "cannot_connect"
+        return "cannot_connect", None
     except Exception as exc:  # noqa: BLE001 - unexpected failures map to "unknown"
         _LOGGER.debug("ZTE config flow: unexpected login error: %s", api.safe_error_summary(exc))
-        return "unknown"
+        return "unknown", None
     finally:
         await api.async_close()
 
@@ -155,20 +176,26 @@ class ZteNgRouterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             else:
                 assert host is not None
                 assert tls_fingerprint is not None
-                await self.async_set_unique_id(f"zte_5g_router_{host}")
-                self._abort_if_unique_id_configured()
 
-                login_error = await _async_validate_login(
+                login_error, identifier = await _async_validate_login(
                     self.hass,
                     host=host,
                     password=user_input[CONF_PASSWORD],
                     verify_tls=user_input[CONF_VERIFY_TLS],
                     tls_fingerprint=tls_fingerprint,
                     allow_insecure_http=allow_insecure_http,
+                    probe_identifier=True,
                 )
                 if login_error:
                     errors["base"] = login_error
                 else:
+                    # Prefer the device-owned MAC. Firmwares without a MAC keep
+                    # the historic URL-based ID.
+                    unique_id = (
+                        entry_unique_id(identifier) if identifier else f"zte_5g_router_{host}"
+                    )
+                    await self.async_set_unique_id(unique_id)
+                    self._abort_if_unique_id_configured()
                     return self.async_create_entry(
                         title=name,
                         data={
@@ -242,7 +269,7 @@ class ZteNgRouterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
             password = user_input[CONF_PASSWORD]
 
-            login_error = await _async_validate_login(
+            login_error, _ = await _async_validate_login(
                 self.hass,
                 host=host,
                 password=password,
@@ -268,6 +295,110 @@ class ZteNgRouterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="reauth_confirm",
             data_schema=vol.Schema({vol.Required(CONF_PASSWORD): str}),
+            errors=errors,
+            description_placeholders={"name": entry.title},
+        )
+
+    async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None):
+        """Change the router address or credentials without losing entity history.
+
+        The new endpoint must report the same device identifier, otherwise the
+        flow refuses to reconfigure this entry (a different router belongs in a
+        new entry).
+        """
+        entry = self._get_reconfigure_entry()
+        data = entry.data
+        options = entry.options
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            allow_insecure_http = user_input.get(CONF_ALLOW_INSECURE_HTTP, False)
+            host, host_error = _validate_router_url(
+                user_input[CONF_HOST], allow_insecure_http=allow_insecure_http
+            )
+            fingerprint, fingerprint_error = _validate_tls_fingerprint(
+                user_input.get(CONF_TLS_FINGERPRINT, "")
+            )
+            if host_error:
+                errors["base"] = host_error
+            elif fingerprint_error:
+                errors["base"] = fingerprint_error
+            elif fingerprint and urlsplit(host or "").scheme != "https":
+                errors["base"] = "tls_fingerprint_requires_https"
+            else:
+                assert host is not None
+                assert fingerprint is not None
+                new_password = user_input.get(CONF_PASSWORD, "").strip()
+                password = new_password or options.get(CONF_PASSWORD, data[CONF_PASSWORD])
+                login_error, identifier = await _async_validate_login(
+                    self.hass,
+                    host=host,
+                    password=password,
+                    verify_tls=user_input[CONF_VERIFY_TLS],
+                    tls_fingerprint=fingerprint,
+                    allow_insecure_http=allow_insecure_http,
+                    probe_identifier=True,
+                )
+                if login_error:
+                    errors["base"] = login_error
+                elif identifier and is_other_router(entry.unique_id, identifier):
+                    errors["base"] = "wrong_device"
+                else:
+                    new_options = {
+                        key: value
+                        for key, value in options.items()
+                        if key != CONF_PASSWORD
+                    }
+                    new_options.update({
+                        CONF_HOST: host,
+                        CONF_VERIFY_TLS: user_input[CONF_VERIFY_TLS],
+                        CONF_TLS_FINGERPRINT: fingerprint,
+                        CONF_ALLOW_INSECURE_HTTP: allow_insecure_http,
+                    })
+                    if new_password:
+                        new_options[CONF_PASSWORD] = new_password
+                    return self.async_update_reload_and_abort(
+                        entry,
+                        data={**data, CONF_PASSWORD: password},
+                        options=new_options,
+                    )
+
+        current_host = options.get(CONF_HOST, data.get(CONF_HOST, DEFAULT_ROUTER_URL))
+        schema = vol.Schema({
+            vol.Required(
+                CONF_HOST, default=(user_input or {}).get(CONF_HOST, current_host)
+            ): str,
+            vol.Optional(CONF_PASSWORD, default=""): str,
+            vol.Required(
+                CONF_VERIFY_TLS,
+                default=(user_input or {}).get(
+                    CONF_VERIFY_TLS,
+                    options.get(
+                        CONF_VERIFY_TLS, data.get(CONF_VERIFY_TLS, DEFAULT_VERIFY_TLS)
+                    ),
+                ),
+            ): bool,
+            vol.Optional(
+                CONF_TLS_FINGERPRINT,
+                default=(user_input or {}).get(
+                    CONF_TLS_FINGERPRINT,
+                    options.get(CONF_TLS_FINGERPRINT, data.get(CONF_TLS_FINGERPRINT, "")),
+                ),
+            ): str,
+            vol.Optional(
+                CONF_ALLOW_INSECURE_HTTP,
+                default=(user_input or {}).get(
+                    CONF_ALLOW_INSECURE_HTTP,
+                    options.get(
+                        CONF_ALLOW_INSECURE_HTTP,
+                        data.get(CONF_ALLOW_INSECURE_HTTP, _uses_http(current_host)),
+                    ),
+                ),
+            ): bool,
+        })
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=schema,
             errors=errors,
             description_placeholders={"name": entry.title},
         )
@@ -318,7 +449,7 @@ class ZteNgRouterOptionsFlow(config_entries.OptionsFlow):
                 host_changed = host != options.get(CONF_HOST, data.get(CONF_HOST))
                 login_error = None
                 if host_changed or new_password:
-                    login_error = await _async_validate_login(
+                    login_error, _ = await _async_validate_login(
                         self.hass,
                         host=host,
                         password=effective_password,

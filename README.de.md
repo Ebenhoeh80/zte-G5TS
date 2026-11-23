@@ -145,6 +145,14 @@ Einrichtung. Lehnt der Router später das gespeicherte Passwort ab, fordert Home
 Assistant zur erneuten Eingabe auf (Neuanmeldung). Geänderte Optionen wirken
 sofort, ohne manuelles Neuladen.
 
+Der Eintrag wird über die eigene WLAN-MAC des Routers identifiziert, nicht über
+seine Adresse. Hat der Router eine neue IP erhalten, aktualisiere Adresse oder
+Passwort über **Neu konfigurieren** am Integrationseintrag – Entity-IDs, Bereiche
+und langfristige Statistiken bleiben erhalten. „Neu konfigurieren" lehnt eine
+Adresse ab, die zu einem anderen Router gehört; füge in diesem Fall einen neuen
+Integrationseintrag hinzu. Bestehende Einträge mit URL-basierter Kennung werden
+beim nächsten Start automatisch migriert.
+
 ## Sicherheit und Datenschutz
 
 - Die Integration kommuniziert lokal mit dem Router und benötigt kein

@@ -1,0 +1,190 @@
+# Integration quality scale audit (54 rules: Bronze 20, Silver 10, Gold 21, Platinum 3).
+# Status follows https://developers.home-assistant.io/docs/core/integration-quality-scale/rules/
+# "todo" = not implemented or not verified yet; "exempt" = not applicable to this integration.
+# Updated with v2.4.0 alongside the stable device identity work.
+
+rules:
+  # ------------------------------- Bronze ----------------------------------
+  action-setup:
+    status: exempt
+    comment: The integration provides no actions or services.
+  appropriate-polling:
+    status: done
+    comment: >-
+      Two bounded, user-configurable intervals: slow polling (60s default,
+      5-3600s) for status/signal/clients and fast polling (5s default, 2-3600s)
+      for throughput and CPU/RAM.
+  brands:
+    status: done
+    comment: custom_components/zte_5g_router/brand contains logo and icon assets.
+  common-modules:
+    status: todo
+    comment: >-
+      No coordinator.py/entity.py split yet; the API client is a single
+      ~2500-line zte_api.py module. Tracked for a later refactor.
+  config-flow:
+    status: done
+    comment: UI setup with data_description, ConfigEntry.data/options separation.
+  config-flow-test-coverage:
+    status: done
+    comment: >-
+      tests/test_tracking_config.py, test_login.py and test_identity_flow.py
+      cover validation, login failures, unique IDs and reconfigure.
+  dependency-transparency:
+    status: exempt
+    comment: No external runtime dependencies; manifest requirements is empty.
+  docs-actions:
+    status: exempt
+    comment: No actions or services are provided.
+  docs-conditions:
+    status: exempt
+    comment: No conditions are provided.
+  docs-high-level-description:
+    status: done
+    comment: README (en/de) describes the supported ZTE 5G/4G routers.
+  docs-installation-instructions:
+    status: done
+    comment: README has step-by-step HACS and manual installation sections.
+  docs-removal-instructions:
+    status: todo
+    comment: README covers installation but has no explicit removal section.
+  docs-triggers:
+    status: exempt
+    comment: No triggers are provided.
+  entity-event-setup:
+    status: exempt
+    comment: Entities are coordinator-driven; no direct event subscriptions.
+  entity-unique-id:
+    status: done
+    comment: Every platform derives a stable unique ID from the config entry ID.
+  has-entity-name:
+    status: done
+    comment: Entity platforms set _attr_has_entity_name = True.
+  runtime-data:
+    status: done
+    comment: API and coordinators live in ZteNgRouterConfigEntry.runtime_data.
+  test-before-configure:
+    status: done
+    comment: The config flow performs a real login before creating the entry.
+  test-before-setup:
+    status: done
+    comment: Setup raises ConfigEntryAuthFailed / UpdateFailed on login or poll failure.
+  unique-config-entry:
+    status: done
+    comment: >-
+      Since v2.4.0 the entry unique_id uses the router's WLAN MAC; legacy
+      URL-based entries migrate in place without changing entity IDs.
+
+  # ------------------------------- Silver ----------------------------------
+  action-exceptions:
+    status: exempt
+    comment: No actions or services are provided.
+  config-entry-unloading:
+    status: done
+    comment: async_unload_entry closes the API and supports reload on option changes.
+  docs-configuration-parameters:
+    status: done
+    comment: README's Configuration section documents setup and options fields.
+  docs-installation-parameters:
+    status: done
+    comment: README documents URL, password, TLS and polling parameters.
+  entity-unavailable:
+    status: todo
+    comment: Coordinator-driven availability is inherited; per-entity checks not verified.
+  integration-owner:
+    status: done
+    comment: manifest codeowners lists @rosenrot00 and @Ebenhoeh80.
+  log-when-unavailable:
+    status: todo
+    comment: Coordinator logs failures; no explicit once-on-loss/once-on-restore logging.
+  parallel-updates:
+    status: todo
+    comment: PARALLEL_UPDATES is not declared on entity platforms.
+  reauthentication-flow:
+    status: done
+    comment: async_step_reauth / reauth_confirm with a live login check.
+  test-coverage:
+    status: todo
+    comment: 123 tests + 63 subtests pass, but per-module 95% coverage is not measured.
+
+  # -------------------------------- Gold ----------------------------------
+  devices:
+    status: done
+    comment: Entities are grouped in one DeviceInfo per config entry.
+  diagnostics:
+    status: done
+    comment: >-
+      diagnostics.py exports redacted config plus connection state; v2.4.0
+      extends redaction to MAC, IMEI, serial, ICCID and unique_id.
+  discovery:
+    status: todo
+    comment: Manual setup only; no zeroconf/dhcp discovery yet.
+  discovery-update-info:
+    status: todo
+    comment: >-
+      The new reconfigure flow updates the address manually; automatic
+      discovery-based address updates are not implemented.
+  docs-data-update:
+    status: done
+    comment: README documents slow and fast polling intervals and their contents.
+  docs-examples:
+    status: todo
+    comment: No automation examples or blueprints in the README yet.
+  docs-known-limitations:
+    status: done
+    comment: README documents side-by-side operation and firmware limitations.
+  docs-supported-devices:
+    status: done
+    comment: README lists supported models (G5TS, G5TC, G5C, G5 Max, G5 Ultra, MC801A, MC888).
+  docs-supported-functions:
+    status: done
+    comment: README's Features section describes the provided entities and actions.
+  docs-troubleshooting:
+    status: done
+    comment: README has a Troubleshooting section.
+  docs-use-cases:
+    status: done
+    comment: README describes monitoring of signal, traffic, SMS and network clients.
+  dynamic-devices:
+    status: done
+    comment: Network client trackers are added during slow polling without a reload.
+  entity-category:
+    status: done
+    comment: CONFIG for control/config entities, DIAGNOSTIC for diagnostic sensors.
+  entity-device-class:
+    status: done
+    comment: Device classes are used where applicable (e.g. timestamp, signal strength).
+  entity-disabled-by-default:
+    status: done
+    comment: Newly discovered client trackers are disabled until enabled by the user.
+  entity-translations:
+    status: done
+    comment: Entity names come from strings.json with en/de translations.
+  exception-translations:
+    status: done
+    comment: Config flow errors and aborts are defined in strings.json.
+  icon-translations:
+    status: todo
+    comment: No icons.json yet; icons are set in code.
+  reconfiguration-flow:
+    status: done
+    comment: >-
+      async_step_reconfigure in v2.4.0 changes address/credentials/TLS in place
+      and refuses an endpoint reporting a different device MAC.
+  repair-issues:
+    status: todo
+    comment: No repairs are raised yet (e.g. TLS fingerprint mismatch, auth failure).
+  stale-devices:
+    status: todo
+    comment: Gone client trackers are marked away but not removed from the device registry.
+
+  # ------------------------------ Platinum ---------------------------------
+  async-dependency:
+    status: exempt
+    comment: The integration ships its own asyncio-based API client.
+  inject-websession:
+    status: todo
+    comment: ZteRouterApi accepts a session in tests; config flow creation needs verification.
+  strict-typing:
+    status: todo
+    comment: Type hints exist but strict mypy is not configured or enforced.

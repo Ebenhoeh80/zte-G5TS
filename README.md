@@ -138,6 +138,13 @@ form rather than only after setup. If the router later rejects the stored
 password, Home Assistant prompts you to re-enter it (reauthentication). Changing
 options applies immediately, without a manual reload.
 
+The entry is identified by the router's own WLAN MAC, not by its address. If the
+router gets a new IP, use **Reconfigure** on the integration entry to update the
+address or password without losing entity IDs, areas or long-term statistics.
+Reconfigure refuses an address that belongs to a different router; add a new
+integration entry in that case. Existing URL-based entries are migrated
+automatically on the next setup.
+
 ## Security and privacy
 
 - The integration communicates with the router locally; it does not require a

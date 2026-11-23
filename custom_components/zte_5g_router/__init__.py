@@ -29,6 +29,11 @@ from .const import (
     DEFAULT_VERIFY_TLS,
     DOMAIN,
 )
+from .identity import (
+    device_identifier_from_data,
+    entry_unique_id,
+    should_migrate_unique_id,
+)
 from .sms_events import EVENT_SMS_RECEIVED, collect_new_incoming_sms
 from .zte_api import ZteAuthError, ZteRouterApi
 
@@ -189,6 +194,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ZteNgRouterConfigEntry) 
     try:
         await coordinator.async_config_entry_first_refresh()
         await coordinator_fast.async_config_entry_first_refresh()
+        # Migrate before registering the listener: changing unique_id would
+        # otherwise trigger an unnecessary reload right after setup.
+        _async_migrate_entry_identity(hass, entry, coordinator.data)
         entry.runtime_data = store
         entry.async_on_unload(entry.add_update_listener(_async_update_listener))
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -217,6 +225,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ZteNgRouterConfigEntry) 
     except Exception:
         await api.async_close()
         raise
+
+
+def _async_migrate_entry_identity(
+    hass: HomeAssistant,
+    entry: ZteNgRouterConfigEntry,
+    poll_data: dict[str, Any],
+) -> None:
+    """Replace a legacy URL-based unique ID with the router's own MAC.
+
+    Entity unique IDs and the device identifier are based on the entry ID, so
+    this changes only duplicate detection - entity IDs, areas and statistics
+    are preserved. Entries on firmware without a MAC keep their old ID.
+    """
+    identifier = device_identifier_from_data(poll_data)
+    if identifier is None or not should_migrate_unique_id(entry.unique_id, identifier):
+        return
+    hass.config_entries.async_update_entry(entry, unique_id=entry_unique_id(identifier))
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ZteNgRouterConfigEntry) -> bool:

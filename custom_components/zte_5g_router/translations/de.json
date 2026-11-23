@@ -33,6 +33,22 @@
         "data": {
           "password": "WebUI Administrator-Passwort"
         }
+      },
+      "reconfigure": {
+        "title": "{name} neu konfigurieren",
+        "description": "Adresse oder Passwort des Routers ändern. Die neue Adresse muss zum selben Router gehören.",
+        "data": {
+          "host": "Router-URL / IP",
+          "password": "Neues Router-Passwort (leer lassen, um das aktuelle zu behalten)",
+          "verify_tls": "TLS-Zertifikat prüfen",
+          "tls_fingerprint": "Fingerabdruck des TLS-Zertifikats (SHA-256, optional)",
+          "allow_insecure_http": "Unsicheres HTTP erlauben (nicht empfohlen)"
+        },
+        "data_description": {
+          "host": "HTTPS-Ursprung des Routers verwenden, z. B. https://192.168.0.1. HTTP erfordert die explizite Option für unsicheres HTTP.",
+          "tls_fingerprint": "Für ein selbstsigniertes Zertifikat den aus vertrauenswürdiger Quelle geprüften SHA-256-Fingerabdruck eingeben. Leer lassen für die normale Zertifikatsprüfung.",
+          "allow_insecure_http": "Für HTTP erforderlich. Router-Zugangsdaten und Sitzungsverkehr werden unverschlüsselt übertragen."
+        }
       }
     },
     "error": {
@@ -48,7 +64,9 @@
     },
     "abort": {
       "already_configured": "Dieser ZTE-Router ist in Home Assistant bereits eingerichtet.",
-      "reauth_successful": "Neuanmeldung erfolgreich."
+      "reauth_successful": "Neuanmeldung erfolgreich.",
+      "reconfigure_successful": "Die Router-Einstellungen wurden aktualisiert.",
+      "wrong_device": "Diese Adresse gehört zu einem anderen Router. Füge stattdessen einen neuen Integrationseintrag hinzu."
     }
   },
   "options": {

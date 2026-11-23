@@ -28,6 +28,20 @@ TO_REDACT = {
     "longitude",
     "phone_number",
     "number",
+    # Device-owned identifiers are personal data. Since v2.4.0 the entry
+    # unique_id contains the router's WLAN MAC, so guard it as well.
+    "unique_id",
+    "wlan_mac_address",
+    "lan_mac_address",
+    "mac_address",
+    "device_mac",
+    "mac",
+    "imei",
+    "serial_number",
+    "serial_no",
+    "sn",
+    "iccid",
+    "sim_iccid",
 }
 
 
