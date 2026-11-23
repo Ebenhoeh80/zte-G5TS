@@ -106,6 +106,7 @@ class ZteRouterApi:
         self._sms_encryption: str | None = None
         self.track_clients = track_clients
         self._client_snapshot_ok: bool | None = None
+        self._seen_optional_core_failures: set[tuple[str, str, tuple[tuple[str, Any], ...]]] = set()
 
         self._owns_session = session is None
         if session is not None:
@@ -280,6 +281,9 @@ class ZteRouterApi:
         self._session_id = None
         self._http_encryption_key = None
         self._goform_field_cache.clear()
+        seen_optional = getattr(self, "_seen_optional_core_failures", None)
+        if isinstance(seen_optional, set):
+            seen_optional.clear()
 
     async def async_close(self) -> None:
         """Close router-owned HTTP sessions."""
@@ -1690,13 +1694,17 @@ class ZteRouterApi:
                 data = result[1] if len(result) > 1 else None
                 out[idx] = {"success": True, "data": data, "error": None}
             else:
-                out[idx] = {"success": False, "data": None, "error": {"message": "nonzero_result"}}
+                error: dict[str, Any] = {"message": "nonzero_result"}
+                if isinstance(result, list) and result and isinstance(result[0], int):
+                    error["ubus_status"] = result[0]
+                out[idx] = {"success": False, "data": None, "error": error}
 
         return out
 
     # Core-batch calls that are absent or unsupported on some firmwares.
-    # A nonzero router response for these is expected; log at DEBUG to avoid
-    # poll-time warning spam while still surfacing transport/RPC/HTTP failures.
+    # A nonzero router response for these is expected; log them once as INFO to
+    # keep a visible trace while avoiding poll-time warning spam. Real
+    # transport/RPC/HTTP failures remain warnings.
     _OPTIONAL_CORE_BATCH_FAILURES: frozenset[tuple[str, str, tuple[tuple[str, Any], ...]]] = frozenset(
         {
             ("zwrt_led", "get_ODU_switch_state", ()),
@@ -1709,21 +1717,30 @@ class ZteRouterApi:
             ("uci", "get", (("config", "wireless"), ("section", "main_5g"))),
         }
     )
+    _OPTIONAL_CORE_NONZERO_UBUS_STATUS = {1, 2, 3, 4, 5, 8}
 
     @classmethod
-    def _batch_failure_key(cls, call: dict[str, Any]) -> tuple[str, str, tuple[tuple[str, Any], ...]]:
+    def _batch_failure_key(cls, call: dict[str, Any]) -> tuple[str, str, tuple[tuple[str, Any], ...]] | None:
         params = call.get("params")
-        if isinstance(params, dict):
-            param_key = tuple(sorted((str(k), v) for k, v in params.items()))
+        if params is None:
+            param_key: tuple[tuple[str, Any], ...] = ()
+        elif isinstance(params, dict):
+            try:
+                param_key = tuple(sorted((str(k), v) for k, v in params.items()))
+                hash(param_key)
+            except TypeError:
+                param_key = tuple(sorted((str(k), repr(v)) for k, v in params.items()))
         else:
-            param_key = ()
+            try:
+                hash(params)
+                param_key = (("__params__", params),)
+            except TypeError:
+                param_key = (("__params__", repr(params)),)
         return (str(call.get("service")), str(call.get("method")), param_key)
 
     @classmethod
     def _is_optional_batch_failure(cls, batch_name: str, call: dict[str, Any], error: Any) -> bool:
-        if batch_name != "core":
-            return False
-        if not isinstance(error, dict):
+        if batch_name != "core" or not isinstance(error, dict):
             return False
         # Real transport/connectivity failures and explicit RPC/HTTP errors should
         # remain visible; only soft router-side "unsupported/no payload" failures
@@ -1732,11 +1749,14 @@ class ZteRouterApi:
             return False
         if isinstance(error.get("status"), int) or isinstance(error.get("code"), int):
             return False
-        return cls._batch_failure_key(call) in cls._OPTIONAL_CORE_BATCH_FAILURES
+        ubus_status = error.get("ubus_status")
+        if isinstance(ubus_status, int) and ubus_status not in cls._OPTIONAL_CORE_NONZERO_UBUS_STATUS:
+            return False
+        key = cls._batch_failure_key(call)
+        return key in cls._OPTIONAL_CORE_BATCH_FAILURES if key is not None else False
 
-    @classmethod
     def _log_batch_failures(
-        cls,
+        self,
         batch_name: str,
         calls: list[dict[str, Any]],
         results: list[dict[str, Any]],
@@ -1744,6 +1764,10 @@ class ZteRouterApi:
         """Log failed calls in a named batch without aborting the whole update."""
         failed: list[str] = []
         optional_failed: list[str] = []
+        seen_optional = getattr(self, "_seen_optional_core_failures", None)
+        if not isinstance(seen_optional, set):
+            seen_optional = set()
+            self._seen_optional_core_failures = seen_optional
         for call, result in zip(calls, results, strict=False):
             if result.get("success"):
                 continue
@@ -1756,11 +1780,17 @@ class ZteRouterApi:
                     failure = f"RPC {error['code']}"
                 elif error.get("kind") == "transport":
                     failure = "transport error"
+                elif isinstance(error.get("ubus_status"), int):
+                    failure = f"ubus {error['ubus_status']}"
                 elif "message" in error:
                     failure = "router error without code"
             label = f"{call.get('service')}.{call.get('method')} ({failure})"
-            if cls._is_optional_batch_failure(batch_name, call, error):
-                optional_failed.append(label)
+            if self._is_optional_batch_failure(batch_name, call, error):
+                key = self._batch_failure_key(call)
+                if key is None or key not in seen_optional:
+                    if key is not None:
+                        seen_optional.add(key)
+                    optional_failed.append(label)
             else:
                 failed.append(label)
 
@@ -1771,8 +1801,9 @@ class ZteRouterApi:
                 ", ".join(failed),
             )
         if optional_failed:
-            _LOGGER.debug(
-                "ubus batch '%s' had optional unsupported calls: %s",
+            _LOGGER.info(
+                "ubus batch '%s' had optional unsupported or unavailable calls: %s. "
+                "Related entities may be unavailable or show defaults on this firmware.",
                 batch_name,
                 ", ".join(optional_failed),
             )
