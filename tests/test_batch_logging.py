@@ -123,6 +123,29 @@ def test_optional_classification_not_applied_outside_core(caplog):
     assert "ubus batch 'sms' had failed calls" in warnings[0].getMessage()
 
 
+def test_optional_core_failures_match_core_batch_calls():
+    api_instance = api()
+    core_batch_calls = [
+        {"service": "zte_nwinfo_api", "method": "nwinfo_get_netinfo"},
+        {"service": "zwrt_wlan", "method": "report"},
+        {"service": "uci", "method": "get", "params": {"config": "wireless", "section": "zte_mbb"}},
+        {"service": "zwrt_bsp.thermal", "method": "get_cpu_temp"},
+        {"service": "zwrt_mc.device.manager", "method": "get_device_info"},
+        {"service": "zwrt_zte_mdm.api", "method": "get_sim_info"},
+        {"service": "zwrt_router.api", "method": "router_get_status"},
+        {"service": "zwrt_router.api", "method": "router_get_user_list_num"},
+        {"service": "uci", "method": "get", "params": {"config": "zwrt_common_info", "section": "common_config"}},
+        {"service": "zwrt_led", "method": "get_ODU_switch_state", "params": {}},
+        {"service": "uci", "method": "get", "params": {"config": "wireless", "section": "main_2g"}},
+        {"service": "uci", "method": "get", "params": {"config": "wireless", "section": "main_5g"}},
+        {"service": "zwrt_data", "method": "get_wwandst", "params": {"source_module": "web", "cid": 1, "type": 4}},
+        {"service": "zwrt_data", "method": "get_wwaniface", "params": {"source_module": "web", "cid": 1}},
+    ]
+    core_keys = {api_instance._batch_failure_key(call) for call in core_batch_calls}
+    missing = ZteRouterApi._OPTIONAL_CORE_BATCH_FAILURES - core_keys
+    assert not missing
+
+
 def test_optional_core_failure_with_unhashable_params_does_not_raise(caplog):
     calls = [_call("uci", "get", {"config": "wireless", "section": "main_2g", "extra": [1, 2]})]
     results = [{"success": False, "data": None, "error": {"message": "nonzero_result"}}]
