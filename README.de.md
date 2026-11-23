@@ -119,6 +119,17 @@ Umschalten:
    Integration direkt liegen.
 3. Starte Home Assistant neu.
 
+### Integration entfernen
+
+1. Öffne **Einstellungen → Geräte & Dienste** und den Eintrag „ZTE 5G Router“.
+2. Wähle **Löschen** und bestätige. Damit werden Eintrag, Entitäten und Gerät aus
+   Home Assistant entfernt; an den Router werden keine Daten gesendet.
+3. Lösche `<config>/custom_components/zte_5g_router/` und starte Home Assistant
+   neu. Das Verzeichnis wird nicht automatisch entfernt.
+4. Deaktivierte oder umbenannte Entitäten behalten ihre Anpassungen in der
+   Entitätsregistrierung. Entferne sie dort ebenfalls, wenn du die Integration
+   nicht erneut installieren möchtest.
+
 ## Einrichtung
 
 1. Öffne **Einstellungen → Geräte & Dienste → Integration hinzufügen**.
@@ -193,6 +204,31 @@ Der Home-Assistant-API-Test in `tools/ha_e2e.py` benötigt `HA_URL` und
 `HA_TOKEN`; zum Anlegen eines Eintrags wird zusätzlich `ZTEPWD` benötigt.
 Verwende für die HA-API möglichst HTTPS. Home Assistant wird nur neu gestartet,
 wenn sowohl `--restart` als auch `HA_ALLOW_RESTART=1` gesetzt sind.
+
+## Automationsbeispiele
+
+Neue SMS eingegangen – Benachrichtigung ohne den Nachrichtentext in den Recorder
+oder eine Notification zu kopieren (das Event selbst enthält `entry_id`, `name`,
+`id`, `number`, `date` und `text`):
+
+```yaml
+alias: ZTE-Router - neue SMS
+triggers:
+  - trigger: event
+    event_type: zte_5g_router_sms_received
+actions:
+  - action: persistent_notification.create
+    data:
+      title: Neue SMS am ZTE-Router
+      message: Sieh im Router-WebUI nach der Nachricht.
+mode: single
+```
+
+Für Automatisierungen mit Sensoren sieh die Entity-ID unter **Einstellungen →
+Geräte & Dienste → Entitäten** nach; die Sensor-IDs enthalten den bei der
+Einrichtung gewählten Namen und unterscheiden sich daher zwischen Installationen.
+Verwende Messwerte der schnellen Abfrage (Durchsatz, CPU/RAM) nicht für
+langfristige Statistiken – sie sind für die Echtzeitanzeige gedacht.
 
 ## Fehlerbehebung
 

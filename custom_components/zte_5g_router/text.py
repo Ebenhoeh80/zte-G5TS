@@ -14,6 +14,9 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN, SMS_COMPOSE_DEFAULT
 from .zte_api import ZteRouterApi
 
+# All router I/O goes through the shared coordinator; serialize entity updates.
+PARALLEL_UPDATES = 1
+
 if TYPE_CHECKING:
     from . import ZteNgRouterConfigEntry
 

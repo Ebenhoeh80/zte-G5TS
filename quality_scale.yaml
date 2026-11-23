@@ -46,8 +46,8 @@ rules:
     status: done
     comment: README has step-by-step HACS and manual installation sections.
   docs-removal-instructions:
-    status: todo
-    comment: README covers installation but has no explicit removal section.
+    status: done
+    comment: README (en/de) has an explicit "Removing the integration" section.
   docs-triggers:
     status: exempt
     comment: No triggers are provided.
@@ -89,8 +89,10 @@ rules:
     status: done
     comment: README documents URL, password, TLS and polling parameters.
   entity-unavailable:
-    status: todo
-    comment: Coordinator-driven availability is inherited; per-entity checks not verified.
+    status: done
+    comment: >-
+      CoordinatorEntity marks entities unavailable on failed polls; button and
+      device tracker add explicit availability checks for missing data/clients.
   integration-owner:
     status: done
     comment: manifest codeowners lists @rosenrot00 and @Ebenhoeh80.
@@ -98,8 +100,8 @@ rules:
     status: todo
     comment: Coordinator logs failures; no explicit once-on-loss/once-on-restore logging.
   parallel-updates:
-    status: todo
-    comment: PARALLEL_UPDATES is not declared on entity platforms.
+    status: done
+    comment: All five entity platforms declare PARALLEL_UPDATES = 1.
   reauthentication-flow:
     status: done
     comment: async_step_reauth / reauth_confirm with a live login check.
@@ -128,8 +130,8 @@ rules:
     status: done
     comment: README documents slow and fast polling intervals and their contents.
   docs-examples:
-    status: todo
-    comment: No automation examples or blueprints in the README yet.
+    status: done
+    comment: README (en/de) has a privacy-friendly SMS event automation example.
   docs-known-limitations:
     status: done
     comment: README documents side-by-side operation and firmware limitations.

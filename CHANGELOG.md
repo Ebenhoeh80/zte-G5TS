@@ -5,6 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.1] - 2026-11-23
+
+### Added
+- README (en/de): section on removing the integration and a privacy-friendly
+  automation example for the `zte_5g_router_sms_received` event.
+
+### Changed
+- All five entity platforms now declare `PARALLEL_UPDATES = 1`, so entity
+  updates are serialized through the shared coordinator.
+- Quality scale audit updated: `parallel-updates`, `entity-unavailable`,
+  `docs-removal-instructions` and `docs-examples` are now marked `done`.
+
 ## [2.4.0] - 2026-11-23
 
 ### Added
