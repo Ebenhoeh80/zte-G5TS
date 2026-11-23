@@ -9,17 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Reduced ubus core-batch warning noise on firmwares that omit optional
-  endpoints.** Soft nonzero responses for known optional core calls
+  endpoints.** Soft nonzero router responses for known optional core calls
   (`uci.get zwrt_common_info/common_config`, `zwrt_led.get_ODU_switch_state`,
-  `uci.get wireless/main_2g`, `uci.get wireless/main_5g`) are now logged at
-  DEBUG as optional unsupported calls instead of emitting repeated coordinator
-  WARNINGs during normal polling. Transport failures and explicit RPC/HTTP
-  errors for these calls remain WARNINGs.
+  `uci.get wireless/main_2g`, `uci.get wireless/main_5g`) are logged once per
+  session at INFO as optional unsupported/unavailable calls, with a note that
+  related entities may be unavailable or show defaults on that firmware. This
+  avoids repeated coordinator WARNINGs during normal polling; at Home
+  Assistant's default WARNING log level the one-time INFO trace is not shown.
+  Downgrade applies only to soft responses without transport/RPC/HTTP errors
+  and without unexpected ubus status codes (expected: `1,2,3,4,5,8`).
+  Transport failures, explicit RPC/HTTP errors, unexpected ubus statuses, and
+  `error=None` responses remain WARNINGs.
 
 ### Added
-- Regression tests for ubus batch failure classification, covering optional
-  soft failures, genuine core failures, transport/RPC errors, and non-core
-  batches.
+- Regression tests for ubus batch failure classification, covering once-per-
+  session optional INFO logging, genuine core failures, transport/RPC errors,
+  non-core batches, unhashable params, mixed failures, `error=None`, and a
+  drift guard for optional core call definitions.
 
 ## [2.3.0] - 2026-11-17
 
