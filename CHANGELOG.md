@@ -5,6 +5,48 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2026-11-24
+
+First stable release of the 2.5.0 line. All six beta releases were verified and
+their remaining findings fixed; no known open points remain.
+
+### Added
+- Shared `coordinator.py` and `entity.py` for polling, availability logging,
+  device info and unique IDs across all five platforms.
+- Repair/reauth flow when the stored router password is rejected at the
+  first refresh.
+- Stale client trackers are removed from the entity registry after seven days
+  of absence and recreated when the client returns.
+- `wrong_device` config-flow error translation and the three missing Wi-Fi
+  sensor names (`wifi_onoff`, `main2g_ssid`, `main5g_ssid`) in `strings.json`,
+  `en.json` and `de.json`. New tests guard all flow error keys, all
+  `SENSOR_DEFS` names and the supported model lists.
+
+### Changed
+- All entity icons now come from `icons.json`; `manifest.json` declares the
+  HACS category `computers_network.routers_network`.
+- All 15 source files pass Full-Strict-mypy; the quality scale audit is at
+  43 `done`, 11 `exempt`, 0 `todo`.
+- CI uses Actions v7, enforces a 95% total and per-module coverage floor and
+  checks `ruff check .` plus `ruff format --check .` repo-wide (59 files).
+- `.gitignore` ignores the CI-generated `coverage.json`.
+- The config-flow description, README model lists and quality-scale audit now
+  name the same ten supported models, including MC889, G51F and MC7510.
+- `package.json` and `metadata.json` no longer carry upstream/old version
+  strings; both identify the G5TS fork.
+- The release-zip workflow now aborts when the pushed tag does not match the
+  manifest version.
+
+### Tests
+- 676 tests plus 619 subtests; total coverage 99.86% with 14 of 15 modules at
+  100% (`zte_api.py` 99% with four unreachable defensive lines).
+- Independent sign-off by Claude Sonnet 5.5 on beta.6: FREIGABE, no open points.
+- Live installation checked on HA 2026.11.2: entry `loaded`, session
+  `authenticated`, both pollers successful, 92 entities (91 available), no
+  diagnostics issues and no ZTE errors in the logbook. Relative to beta.6 only
+  translations, docs/metadata and the release workflow guard changed; polling
+  and entity behaviour are unchanged.
+
 ## [2.5.0-beta.6] - 2026-11-24
 
 Cosmetic corrections from the final independent sign-off. Not recommended for

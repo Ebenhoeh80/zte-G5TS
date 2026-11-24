@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "ZTE 5G Router",
-        "description": "Verbinde deinen ZTE 5G / 4G Router (z. B. G5TS, G5TC, G5C, G5 Max, G5 Ultra, MC801A, MC888).",
+        "description": "Verbinde deinen ZTE 5G / 4G Router (z. B. G5TS, G5TC, G5C, G5 Max, G5 Ultra, MC801A, MC888, MC889, G51F, MC7510).",
         "data": {
           "name": "Name des Routers",
           "host": "Router-URL / IP-Adresse",
@@ -60,6 +60,7 @@
       "tls_fingerprint_requires_https": "Ein TLS-Zertifikat-Fingerabdruck kann nur mit einer HTTPS-Router-URL verwendet werden.",
       "cannot_connect": "Verbindung zum ZTE-Router unter dieser URL fehlgeschlagen.",
       "invalid_auth": "Ungültiges Router-Passwort oder Authentifizierung abgewiesen.",
+      "wrong_device": "Diese Adresse gehört zu einem anderen Router. Füge stattdessen einen neuen Integrationseintrag hinzu.",
       "unknown": "Unerwarteter Fehler bei der Einrichtung aufgetreten."
     },
     "abort": {
@@ -99,6 +100,9 @@
     "sensor": {
       "network_provider": { "name": "Mobilfunkanbieter" },
       "connection_type": { "name": "Mobilfunk-Verbindungsart" },
+      "wifi_onoff": { "name": "WLAN aktiviert" },
+      "main2g_ssid": { "name": "WLAN-SSID (2,4 GHz)" },
+      "main5g_ssid": { "name": "WLAN-SSID (5 GHz)" },
       "signalbar": { "name": "Signalstärke" },
       "rmcc": { "name": "Ländercode (RMCC)" },
       "rmnc": { "name": "Netzcode (RMNC)" },

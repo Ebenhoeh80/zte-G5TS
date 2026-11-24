@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "ZTE 5G Router",
-        "description": "Connect your ZTE 5G / 4G router (e.g. G5TS, G5TC, G5C, G5 Max, G5 Ultra, MC801A, MC888).",
+        "description": "Connect your ZTE 5G / 4G router (e.g. G5TS, G5TC, G5C, G5 Max, G5 Ultra, MC801A, MC888, MC889, G51F, MC7510).",
         "data": {
           "name": "Integration Name",
           "host": "Router URL / IP",
@@ -60,6 +60,7 @@
       "tls_fingerprint_requires_https": "A TLS certificate fingerprint can only be used with an HTTPS router URL.",
       "cannot_connect": "Failed to connect to the ZTE router at this URL.",
       "invalid_auth": "Invalid router password or authentication rejected.",
+      "wrong_device": "This address belongs to a different router. Add a new integration entry instead of reconfiguring this one.",
       "unknown": "Unexpected error occurred during setup."
     },
     "abort": {
@@ -99,6 +100,9 @@
     "sensor": {
       "network_provider": { "name": "Network Provider" },
       "connection_type": { "name": "Access Technology" },
+      "wifi_onoff": { "name": "WiFi Enabled" },
+      "main2g_ssid": { "name": "WiFi 2.4 GHz SSID" },
+      "main5g_ssid": { "name": "WiFi 5 GHz SSID" },
       "signalbar": { "name": "Signal Strength" },
       "rmcc": { "name": "Country Code (RMCC)" },
       "rmnc": { "name": "Network Code (RMNC)" },
