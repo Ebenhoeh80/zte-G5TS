@@ -5,6 +5,24 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0-beta.2] - 2026-11-24
+
+Follow-up quick wins for the beta. Not recommended for production use yet.
+
+### Added
+- `categories: ["computers_network.routers_network"]` in `manifest.json`, which
+  removes the hassfest "no categories" annotation.
+- Offline tests for `__init__.py` and `text.py` (setup, auth repair, SMS events,
+  pause behaviour, unload, text entity state and input validation).
+
+### Fixed
+- Removed the last three hardcoded `icon=` values from `text.py`'s entity
+  descriptions; `icons.json` is now authoritative for every entity icon.
+
+### Tests
+- 151 tests plus 97 subtests pass; coverage rose from ~56% to ~64%.
+  `__init__.py`, `text.py` and `repairs.py` now have 100% coverage.
+
 ## [2.5.0-beta.1] - 2026-11-24
 
 Test/pre-release for the remaining quality-scale work. Not recommended for

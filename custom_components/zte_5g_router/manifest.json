@@ -1,6 +1,7 @@
 {
   "domain": "zte_5g_router",
   "name": "ZTE 5G Router (G5TS fork)",
+  "categories": ["computers_network.routers_network"],
   "codeowners": ["@rosenrot00", "@Ebenhoeh80"],
   "config_flow": true,
   "documentation": "https://github.com/Ebenhoeh80/zte-G5TS",
@@ -9,5 +10,5 @@
   "issue_tracker": "https://github.com/Ebenhoeh80/zte-G5TS/issues",
   "loggers": ["custom_components.zte_5g_router"],
   "requirements": [],
-  "version": "2.5.0-beta.1"
+  "version": "2.5.0-beta.2"
 }

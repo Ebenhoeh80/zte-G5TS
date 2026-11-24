@@ -139,6 +139,8 @@ class IconTranslationTests(unittest.TestCase):
             with self.subTest(source=name):
                 source = (ROOT / name).read_text(encoding="utf-8")
                 self.assertNotIn("_attr_icon", source)
+                # Entity descriptions must not override icons.json either.
+                self.assertNotIn("icon=", source)
 
 
 if __name__ == "__main__":
