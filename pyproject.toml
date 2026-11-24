@@ -27,3 +27,22 @@ known-first-party = ["custom_components"]
 testpaths = ["tests"]
 # tests/integration talks to a real router and must not run in CI.
 addopts = "--ignore=tests/integration"
+
+[tool.mypy]
+# Full strict run: mypy --config-file pyproject.toml custom_components/zte_5g_router
+# Strict island that currently passes (legacy modules still need typed payloads):
+# mypy --config-file pyproject.toml --follow-imports=silent \
+#   custom_components/zte_5g_router/{const,identity,sms_events,entity,diagnostics,coordinator}.py
+python_version = "3.13"
+files = ["custom_components/zte_5g_router"]
+strict = true
+show_error_codes = true
+show_column_numbers = true
+warn_unreachable = true
+warn_unused_configs = true
+
+# Bootstrap for a custom component: Home Assistant and aiohttp are only
+# available at runtime. This is removed in a core PR with real HA stubs.
+[[tool.mypy.overrides]]
+module = ["homeassistant.*", "aiohttp.*", "voluptuous.*"]
+ignore_missing_imports = true

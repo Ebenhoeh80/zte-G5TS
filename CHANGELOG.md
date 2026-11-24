@@ -5,6 +5,38 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0-beta.1] - 2026-11-24
+
+Test/pre-release for the remaining quality-scale work. Not recommended for
+production use yet.
+
+### Added
+- `coordinator.py`: shared `ZteDataUpdateCoordinator` with one-time connection
+  loss and recovery logging (`log-when-unavailable`).
+- `entity.py`: shared device info and unique-ID helpers for all platforms
+  (`common-modules`).
+- `icons.json`: all button, switch and text icons come from translation keys;
+  no hardcoded `_attr_icon` assignments remain.
+- `repairs.py`: a config-entry-scoped repair with a reauth fix flow when the
+  stored router password is rejected at first refresh.
+- Stale client trackers are removed from the entity registry after seven days
+  of continuous absence and are recreated if the client returns.
+- `[tool.mypy]` strict configuration; the new/shared modules pass a strict run.
+
+### Changed
+- All five platforms now use the shared entity helpers; entity IDs and device
+  identifiers are unchanged.
+- Quality scale audit updated: `common-modules`, `log-when-unavailable`,
+  `icon-translations`, `repair-issues` and `stale-devices` are `done`.
+  `discovery` / `discovery-update-info` and `inject-websession` are documented
+  `exempt` with the reasons from the audit.
+- `test-coverage` and `strict-typing` stay `todo` with concrete measured gaps.
+
+### Tests
+- New tests for shared coordinator/entity/icon helpers, repairs and stale
+  client removal. 132 tests plus 95 subtests pass; CI coverage is ~56% with a
+  50% floor.
+
 ## [2.4.1] - 2026-11-23
 
 ### Added

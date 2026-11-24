@@ -7,10 +7,11 @@ from typing import TYPE_CHECKING, Any
 from homeassistant.components.button import ButtonEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers.entity import DeviceInfo, EntityCategory
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, SMS_COMPOSE_DEFAULT
+from .const import SMS_COMPOSE_DEFAULT
+from .entity import device_info, entity_unique_id
 
 # All router I/O goes through the shared coordinator; serialize entity updates.
 PARALLEL_UPDATES = 1
@@ -25,7 +26,6 @@ _LOGGER = logging.getLogger(__name__)
 class ZteActionButtonDef:
     key: str
     name: str
-    icon: str
     action: dict[str, Any]
     kind: str = "action"
 
@@ -34,7 +34,6 @@ BUTTON_DEFS: list[ZteActionButtonDef] = [
     ZteActionButtonDef(
         key="restart",
         name="Restart",
-        icon="mdi:restart",
         kind="action",
         action={
             "service": "zwrt_mc.device.manager",
@@ -45,16 +44,15 @@ BUTTON_DEFS: list[ZteActionButtonDef] = [
     ZteActionButtonDef(
         key="send_sms",
         name="Send SMS",
-        icon="mdi:send",
         kind="send_sms",
         action={},
     ),
     ZteActionButtonDef(
-        key="check_firmware_update", name="Check Firmware Update", icon="mdi:update",
+        key="check_firmware_update", name="Check Firmware Update",
         kind="check_firmware", action={},
     ),
     ZteActionButtonDef(
-        key="start_firmware_update", name="Start Firmware Update", icon="mdi:cloud-download",
+        key="start_firmware_update", name="Start Firmware Update",
         kind="start_firmware", action={},
     ),
 ]
@@ -101,16 +99,11 @@ class ZteActionButton(CoordinatorEntity, ButtonEntity):
 
         self._attr_name = btn_def.name
         self._attr_translation_key = btn_def.key
-        self._attr_icon = btn_def.icon
-        self._attr_unique_id = f"{entry.entry_id}_{btn_def.key}"
+        self._attr_unique_id = entity_unique_id(entry.entry_id, btn_def.key)
         if btn_def.kind in {"check_firmware", "start_firmware"}:
             self._attr_entity_category = EntityCategory.CONFIG
 
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            name=device_name,
-            manufacturer="ZTE",
-        )
+        self._attr_device_info = device_info(entry.entry_id, device_name)
 
     @property
     def available(self) -> bool:

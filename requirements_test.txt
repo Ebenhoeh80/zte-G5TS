@@ -9,3 +9,4 @@ pytest-cov
 cryptography
 voluptuous
 ruff>=0.17,<0.18
+mypy>=1.14,<3

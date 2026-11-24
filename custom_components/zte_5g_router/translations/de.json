@@ -193,5 +193,21 @@
       "cell_lock_5g_text": { "name": "5G-Zielzelle (PCI,ARFCN,BAND)" },
       "sms_compose_text": { "name": "SMS-Empfänger & Nachricht" }
     }
+  },
+  "issues": {
+    "auth_failed": {
+      "title": "ZTE-Router-Passwort abgelehnt",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "{name} neu anmelden",
+            "description": "Home Assistant konnte sich mit dem gespeicherten Passwort nicht an {name} anmelden. Bestätige, um das aktuelle WebUI-Administratorpasswort einzugeben."
+          }
+        },
+        "abort": {
+          "reauth_started": "Neuanmeldung gestartet."
+        }
+      }
+    }
   }
 }

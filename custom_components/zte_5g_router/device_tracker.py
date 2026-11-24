@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+import logging
 import time
 from typing import TYPE_CHECKING, Any
 
@@ -18,10 +19,17 @@ from .const import (
     DEFAULT_CLIENT_CONSIDER_HOME,
     DOMAIN,
 )
+from .entity import entity_unique_id
 from .zte_api import ZteRouterApi
 
 # All router I/O goes through the shared coordinator; serialize entity updates.
 PARALLEL_UPDATES = 1
+
+# Clients that have been absent for a week are removed from the entity registry.
+# Their tracker is recreated automatically if the client reappears.
+STALE_CLIENT_REMOVAL_DAYS = 7
+
+_LOGGER = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from . import ZteNgRouterConfigEntry
@@ -37,6 +45,7 @@ class NetworkClient:
     connected: bool | None = None
     missing_since: float | None = None
     available: bool = False
+    stale: bool = False
 
 
 class NetworkClientTracking:
@@ -82,6 +91,7 @@ class NetworkClientTracking:
             client.connected = True
             client.missing_since = None
             client.available = True
+            client.stale = False
         for mac, client in self.clients.items():
             if mac in clients:
                 continue
@@ -94,6 +104,12 @@ class NetworkClientTracking:
                 client.missing_since = now
             if now - client.missing_since >= self.consider_home:
                 client.connected = False
+            if (
+                client.missing_since is not None
+                and now - client.missing_since
+                >= STALE_CLIENT_REMOVAL_DAYS * 86400
+            ):
+                client.stale = True
 
 
 async def async_setup_entry(
@@ -137,6 +153,19 @@ async def async_setup_entry(
                 )
                 for mac in sorted(new)
             ])
+        stale = {
+            mac: client
+            for mac, client in tracking.clients.items()
+            if client.stale and mac in added
+        }
+        for mac in sorted(stale):
+            unique_id = entity_unique_id(entry.entry_id, f"wifi_{mac.replace(':', '')}")
+            entity_id = registry.async_get_entity_id("device_tracker", DOMAIN, unique_id)
+            if entity_id is not None:
+                _LOGGER.info("Removing stale ZTE client tracker %s", entity_id)
+                registry.async_remove(entity_id)
+            added.discard(mac)
+            tracking.clients.pop(mac, None)
 
     runtime_data.reset_client_absence = tracking.reset_absence
     entry.async_on_unload(lambda: setattr(runtime_data, "reset_client_absence", None))
@@ -155,7 +184,7 @@ class ZteNetworkClientTracker(CoordinatorEntity, ScannerEntity, RestoreEntity):
         super().__init__(coordinator)
         self._tracking = tracking
         self._mac = mac
-        self._unique_id = f"{entry_id}_wifi_{mac.replace(':', '')}"
+        self._unique_id = entity_unique_id(entry_id, f"wifi_{mac.replace(':', '')}")
         self._router_name = router_name
 
     @property
