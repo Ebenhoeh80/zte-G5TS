@@ -1,8 +1,8 @@
 {
   "domain": "zte_5g_router",
   "name": "ZTE 5G Router (G5TS fork)",
-  "codeowners": ["@rosenrot00", "@Ebenhoeh80"],
   "categories": ["computers_network.routers_network"],
+  "codeowners": ["@rosenrot00", "@Ebenhoeh80"],
   "config_flow": true,
   "documentation": "https://github.com/Ebenhoeh80/zte-G5TS",
   "integration_type": "hub",
