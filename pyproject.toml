@@ -29,10 +29,8 @@ testpaths = ["tests"]
 addopts = "--ignore=tests/integration"
 
 [tool.mypy]
-# Full strict run: mypy --config-file pyproject.toml custom_components/zte_5g_router
-# Strict island that currently passes (legacy modules still need typed payloads):
-# mypy --config-file pyproject.toml --follow-imports=silent \
-#   custom_components/zte_5g_router/{const,identity,sms_events,entity,diagnostics,coordinator}.py
+# Full strict run (all 15 source files must pass):
+#   mypy --config-file pyproject.toml custom_components/zte_5g_router
 python_version = "3.13"
 files = ["custom_components/zte_5g_router"]
 strict = true

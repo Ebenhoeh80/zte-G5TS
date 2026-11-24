@@ -41,7 +41,7 @@ def async_delete_auth_issue(hass: HomeAssistant, entry_id: str) -> None:
     ir.async_delete_issue(hass, DOMAIN, auth_issue_id(entry_id))
 
 
-class ZteAuthRepairFlow(RepairsFlow):
+class ZteAuthRepairFlow(RepairsFlow):  # type: ignore[misc]  # HA base is Any without stubs
     """Offer to start the regular reauthentication flow."""
 
     async def async_step_init(

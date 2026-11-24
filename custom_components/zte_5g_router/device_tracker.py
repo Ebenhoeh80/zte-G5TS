@@ -32,6 +32,10 @@ STALE_CLIENT_REMOVAL_DAYS = 7
 _LOGGER = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
+    from homeassistant.helpers.entity_platform import AddEntitiesCallback
+    from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+
     from . import ZteNgRouterConfigEntry
 
 
@@ -113,9 +117,9 @@ class NetworkClientTracking:
 
 
 async def async_setup_entry(
-    hass,
+    hass: HomeAssistant,
     entry: ZteNgRouterConfigEntry,
-    async_add_entities,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Discover WLAN/LAN clients only when the user opts in."""
     if not entry.options.get(CONF_TRACK_CLIENTS, entry.data.get(CONF_TRACK_CLIENTS, False)):
@@ -137,7 +141,7 @@ async def async_setup_entry(
             tracking.clients.setdefault(mac, NetworkClient(mac))
     added: set[str] = set()
 
-    @callback
+    @callback  # type: ignore[untyped-decorator]  # HA decorator is Any here
     def update_clients() -> None:
         tracking.update((coordinator.data or {}).get("network_clients") if coordinator.last_update_success else None)
         new = tracking.clients.keys() - added
@@ -173,13 +177,13 @@ async def async_setup_entry(
     update_clients()
 
 
-class ZteNetworkClientTracker(CoordinatorEntity, ScannerEntity, RestoreEntity):
+class ZteNetworkClientTracker(CoordinatorEntity, ScannerEntity, RestoreEntity):  # type: ignore[misc]  # HA bases are Any here
     """HA-native tracker, identified by router config entry and normalized MAC."""
 
     _attr_source_type = SourceType.ROUTER
     _attr_entity_category = None
 
-    def __init__(self, coordinator, tracking: NetworkClientTracking, mac: str,
+    def __init__(self, coordinator: DataUpdateCoordinator[dict[str, Any]], tracking: NetworkClientTracking, mac: str,
                  entry_id: str, router_name: str) -> None:
         super().__init__(coordinator)
         self._tracking = tracking

@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -19,6 +19,9 @@ from .const import DOMAIN
 from .entity import device_info, entity_unique_id
 
 if TYPE_CHECKING:
+    from homeassistant.helpers.entity_platform import AddEntitiesCallback
+    from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+
     from . import ZteNgRouterConfigEntry, ZteNgRouterRuntimeData
 from .zte_api import ZteRouterApi
 
@@ -35,7 +38,7 @@ class ZteActionSwitchDef:
     state_key: str
     on_value: str
     off_value: str
-    get_path: Callable[[dict[str, Any]], dict[str, Any]]
+    get_path: Callable[[dict[str, Any]], Any]
     turn_on: dict[str, Any]
     turn_off: dict[str, Any]
 
@@ -142,7 +145,7 @@ SWITCH_DEFS: list[ZteActionSwitchDef] = [
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ZteNgRouterConfigEntry,
-    async_add_entities,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     runtime_data = entry.runtime_data
 
@@ -183,13 +186,13 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class ZteActionSwitch(CoordinatorEntity, SwitchEntity):
+class ZteActionSwitch(CoordinatorEntity, SwitchEntity):  # type: ignore[misc]  # HA bases are Any here
     _attr_has_entity_name = True
 
     def __init__(
         self,
-        coordinator,
-        api,
+        coordinator: DataUpdateCoordinator[dict[str, Any]],
+        api: ZteRouterApi,
         entry: ZteNgRouterConfigEntry,
         device_name: str,
         switch_def: ZteActionSwitchDef,
@@ -232,7 +235,8 @@ class ZteActionSwitch(CoordinatorEntity, SwitchEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
         data = self.coordinator.data or {}
-        return self._def.get_path(data)
+        attributes: dict[str, Any] | None = self._def.get_path(data)
+        return attributes
 
 
     async def async_turn_on(self, **kwargs: Any) -> None:
@@ -346,7 +350,7 @@ class ZteActionSwitch(CoordinatorEntity, SwitchEntity):
         return action
 
 
-class ZtePausePollingSwitch(SwitchEntity):
+class ZtePausePollingSwitch(SwitchEntity):  # type: ignore[misc]  # HA base is Any here
     """Switch to pause router polling for 5 minutes.
 
     While paused, coordinators return last known data and do not call the router API.
@@ -362,7 +366,7 @@ class ZtePausePollingSwitch(SwitchEntity):
     ) -> None:
         self.hass = hass
         self._entry = entry
-        self._unsub_auto_off = None
+        self._unsub_auto_off: Callable[[], Any] | None = None
 
         self._attr_name = "Pause polling (5 min)"
         self._attr_translation_key = "pause_polling"
@@ -371,7 +375,8 @@ class ZtePausePollingSwitch(SwitchEntity):
 
     @property
     def _store(self) -> ZteNgRouterRuntimeData:
-        return self._entry.runtime_data
+        store: ZteNgRouterRuntimeData = self._entry.runtime_data
+        return store
 
     @property
     def is_on(self) -> bool:
@@ -400,7 +405,7 @@ class ZtePausePollingSwitch(SwitchEntity):
         self._store.pause_until = dt_util.utcnow() + timedelta(minutes=5)
         self._pause_polling()
 
-        async def _auto_off(_now) -> None:
+        async def _auto_off(_now: datetime) -> None:
             # Auto-resume polling after 5 minutes
             self._store.pause_until = None
             self._unsub_auto_off = None
@@ -431,7 +436,7 @@ class ZtePausePollingSwitch(SwitchEntity):
 
 # ----------------- Cell Lock Switches -----------------
 
-class ZteCellLockSwitch(CoordinatorEntity, SwitchEntity):
+class ZteCellLockSwitch(CoordinatorEntity, SwitchEntity):  # type: ignore[misc]  # HA bases are Any here
     """Switch to enable/disable 4G/5G cell lock.
 
     - ON: applies the value from the corresponding text entity
@@ -443,8 +448,8 @@ class ZteCellLockSwitch(CoordinatorEntity, SwitchEntity):
     def __init__(
         self,
         hass: HomeAssistant,
-        coordinator,
-        api,
+        coordinator: DataUpdateCoordinator[dict[str, Any]],
+        api: ZteRouterApi,
         entry: ZteNgRouterConfigEntry,
         device_name: str,
         *,
@@ -484,7 +489,7 @@ class ZteCellLockSwitch(CoordinatorEntity, SwitchEntity):
 
         try:
             er = async_get_entity_registry(self.hass)
-            ent_id = er.async_get_entity_id("text", DOMAIN, text_unique_id)
+            ent_id: str | None = er.async_get_entity_id("text", DOMAIN, text_unique_id)
             self._text_entity_id = ent_id
             return ent_id
         except Exception as err:

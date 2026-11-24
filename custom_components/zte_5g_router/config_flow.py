@@ -141,12 +141,15 @@ async def _async_validate_login(
         await api.async_close()
 
 
-class ZteNgRouterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+# HA flow classes are Any in this environment; the keyword argument belongs to
+# the untyped HA base class.
+class ZteNgRouterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg, misc]
     """Config flow for ZTE NG Router."""
 
     VERSION = 1
 
-    async def async_step_user(self, user_input: dict[str, Any] | None = None):
+    # Flow results are HA-controlled (untyped here), so they stay Any.
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> Any:
         """Handle the initial step where the user enters basic config."""
         errors: dict[str, str] = {}
 
@@ -243,11 +246,11 @@ class ZteNgRouterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_reauth(self, entry_data: dict[str, Any]):
+    async def async_step_reauth(self, entry_data: dict[str, Any]) -> Any:
         """Start reauthentication after the stored password stopped working."""
         return await self.async_step_reauth_confirm()
 
-    async def async_step_reauth_confirm(self, user_input: dict[str, Any] | None = None):
+    async def async_step_reauth_confirm(self, user_input: dict[str, Any] | None = None) -> Any:
         """Ask for the router password again and verify it with a live login."""
         entry = self.hass.config_entries.async_get_entry(self.context["entry_id"])
         assert entry is not None
@@ -299,7 +302,7 @@ class ZteNgRouterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             description_placeholders={"name": entry.title},
         )
 
-    async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None):
+    async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None) -> Any:
         """Change the router address or credentials without losing entity history.
 
         The new endpoint must report the same device identifier, otherwise the
@@ -404,20 +407,20 @@ class ZteNgRouterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
     @staticmethod
-    @callback
-    def async_get_options_flow(config_entry: config_entries.ConfigEntry):
+    @callback  # type: ignore[untyped-decorator]  # HA decorator is Any here
+    def async_get_options_flow(config_entry: config_entries.ConfigEntry) -> ZteNgRouterOptionsFlow:
         """Return the options flow handler."""
         return ZteNgRouterOptionsFlow()
 
 
-class ZteNgRouterOptionsFlow(config_entries.OptionsFlow):
+class ZteNgRouterOptionsFlow(config_entries.OptionsFlow):  # type: ignore[misc]  # HA base is Any here
     """Options flow for adjusting settings after initial setup.
 
     Uses the base-class ``self.config_entry`` property (Home Assistant 2024.11+);
     storing the entry manually in ``__init__`` is deprecated.
     """
 
-    async def async_step_init(self, user_input: dict[str, Any] | None = None):
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> Any:
         """Handle options for the config entry (host, password, verify_tls, scan_interval)."""
         entry: ConfigEntry = self.config_entry
         data = entry.data
@@ -434,7 +437,7 @@ class ZteNgRouterOptionsFlow(config_entries.OptionsFlow):
                 user_input.get(CONF_TLS_FINGERPRINT, "")
             )
             if host_error or fingerprint_error:
-                errors["base"] = host_error or fingerprint_error
+                errors["base"] = host_error or fingerprint_error or ""
             elif tls_fingerprint and urlsplit(host or "").scheme != "https":
                 errors["base"] = "tls_fingerprint_requires_https"
             else:
