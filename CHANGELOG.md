@@ -5,6 +5,27 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0-beta.4] - 2026-11-24
+
+Small follow-up quick wins after beta.3. Not recommended for production use yet.
+
+### Added
+- `tests/test_device_tracker_coverage.py`: registry cleanup for foreign
+  entities, MAC name fallback, restore skips and invalid `last_seen` values.
+  `device_tracker.py` now has 100% coverage; 14 of 15 modules are at 100%.
+
+### Changed
+- GitHub Actions `checkout` v4 -> v7 and `setup-python` v5 -> v7 across all
+  workflows; this removes the Node.js 20 deprecation warnings in CI.
+- `quality_scale.yaml`: header and strict-typing note updated to the current
+  release, including that core `.strict-typing` registration is N/A for custom
+  components with no manifest requirements.
+- `.gitignore` now ignores the CI-generated `coverage.json`.
+
+### Tests
+- 672 tests plus 296 subtests; total coverage 99.86% (`zte_api.py` 99% with
+  four unreachable defensive lines). Ruff, Full-Strict-mypy and CI stay green.
+
 ## [2.5.0-beta.3] - 2026-11-24
 
 Final quality-scale test release: no `todo` rules remain. Not recommended for

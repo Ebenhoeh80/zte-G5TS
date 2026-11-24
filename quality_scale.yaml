@@ -1,7 +1,7 @@
 # Integration quality scale audit (54 rules: Bronze 20, Silver 10, Gold 21, Platinum 3).
 # Status follows https://developers.home-assistant.io/docs/core/integration-quality-scale/rules/
 # "todo" = not implemented or not verified yet; "exempt" = not applicable to this integration.
-# Updated with v2.4.0 alongside the stable device identity work.
+# Last reviewed with v2.5.0-beta.4; the last two todo rules closed in beta.3.
 
 rules:
   # ------------------------------- Bronze ----------------------------------
@@ -111,11 +111,10 @@ rules:
   test-coverage:
     status: done
     comment: >-
-      668 tests plus 289 subtests; total coverage 99.7% with 95% total and
-      per-module CI floors. Every module is above 95% (13 at 100%; zte_api.py
-      99%, device_tracker.py 97%). The four open lines in zte_api.py are
-      unreachable defensive fallbacks (pre-validated hex, latin-1 decode, base64
-      length guard); device_tracker.py has five defensive registry branches.
+      672 tests plus 296 subtests; total coverage 99.86% with 95% total and
+      per-module CI floors. 14 of 15 modules are at 100%; the four open lines in
+      zte_api.py are unreachable defensive fallbacks (pre-validated hex,
+      latin-1 decode, base64 length guard).
 
   # -------------------------------- Gold ----------------------------------
   devices:
@@ -221,4 +220,6 @@ rules:
       is clean and enforced in CI. API payloads are narrowed with casts and
       typed locals; 16 type-ignore comments remain (15 new, one pre-existing in
       coordinator.py), all for untyped HA bases/decorators or aiohttp's numeric
-      timeout argument.
+      timeout argument. The core .strict-typing registration and py.typed rule
+      are N/A for a custom component with no manifest requirements; every entry
+      point and platform uses the typed ZteNgRouterConfigEntry.
