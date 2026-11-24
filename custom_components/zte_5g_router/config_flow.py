@@ -53,9 +53,7 @@ def _validate_tls_fingerprint(value: str) -> tuple[str | None, str | None]:
     return fingerprint, None
 
 
-def _validate_router_url(
-    value: str, *, allow_insecure_http: bool
-) -> tuple[str | None, str | None]:
+def _validate_router_url(value: str, *, allow_insecure_http: bool) -> tuple[str | None, str | None]:
     """Validate an origin-only router URL and require explicit HTTP opt-in."""
     host = value.strip()
     try:
@@ -174,7 +172,10 @@ class ZteNgRouterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: 
                 errors["base"] = "tls_fingerprint_requires_https"
             elif scan_interval < MIN_SCAN_INTERVAL or scan_interval > MAX_SCAN_INTERVAL:
                 errors["base"] = "invalid_scan_interval"
-            elif fast_scan_interval < MIN_FAST_SCAN_INTERVAL or fast_scan_interval > MAX_FAST_SCAN_INTERVAL:
+            elif (
+                fast_scan_interval < MIN_FAST_SCAN_INTERVAL
+                or fast_scan_interval > MAX_FAST_SCAN_INTERVAL
+            ):
                 errors["base"] = "invalid_fast_scan_interval"
             else:
                 assert host is not None
@@ -234,8 +235,11 @@ class ZteNgRouterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: 
                     vol.Range(min=MIN_FAST_SCAN_INTERVAL, max=MAX_FAST_SCAN_INTERVAL),
                 ),
                 vol.Optional(CONF_TRACK_CLIENTS, default=False): bool,
-                vol.Optional(CONF_CLIENT_CONSIDER_HOME, default=DEFAULT_CLIENT_CONSIDER_HOME): vol.All(
-                    vol.Coerce(int), vol.Range(min=0, max=3600),
+                vol.Optional(
+                    CONF_CLIENT_CONSIDER_HOME, default=DEFAULT_CLIENT_CONSIDER_HOME
+                ): vol.All(
+                    vol.Coerce(int),
+                    vol.Range(min=0, max=3600),
                 ),
             }
         )
@@ -260,12 +264,8 @@ class ZteNgRouterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: 
             data = entry.data
             options = entry.options
             host = options.get(CONF_HOST, data[CONF_HOST])
-            verify_tls = options.get(
-                CONF_VERIFY_TLS, data.get(CONF_VERIFY_TLS, DEFAULT_VERIFY_TLS)
-            )
-            tls_fingerprint = options.get(
-                CONF_TLS_FINGERPRINT, data.get(CONF_TLS_FINGERPRINT, "")
-            )
+            verify_tls = options.get(CONF_VERIFY_TLS, data.get(CONF_VERIFY_TLS, DEFAULT_VERIFY_TLS))
+            tls_fingerprint = options.get(CONF_TLS_FINGERPRINT, data.get(CONF_TLS_FINGERPRINT, ""))
             allow_insecure_http = options.get(
                 CONF_ALLOW_INSECURE_HTTP,
                 data.get(CONF_ALLOW_INSECURE_HTTP, _uses_http(host)),
@@ -285,9 +285,7 @@ class ZteNgRouterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: 
             else:
                 # Store the new password in data and drop any stale options copy
                 new_options = {
-                    key: value
-                    for key, value in entry.options.items()
-                    if key != CONF_PASSWORD
+                    key: value for key, value in entry.options.items() if key != CONF_PASSWORD
                 }
                 return self.async_update_reload_and_abort(
                     entry,
@@ -348,16 +346,16 @@ class ZteNgRouterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: 
                     errors["base"] = "wrong_device"
                 else:
                     new_options = {
-                        key: value
-                        for key, value in options.items()
-                        if key != CONF_PASSWORD
+                        key: value for key, value in options.items() if key != CONF_PASSWORD
                     }
-                    new_options.update({
-                        CONF_HOST: host,
-                        CONF_VERIFY_TLS: user_input[CONF_VERIFY_TLS],
-                        CONF_TLS_FINGERPRINT: fingerprint,
-                        CONF_ALLOW_INSECURE_HTTP: allow_insecure_http,
-                    })
+                    new_options.update(
+                        {
+                            CONF_HOST: host,
+                            CONF_VERIFY_TLS: user_input[CONF_VERIFY_TLS],
+                            CONF_TLS_FINGERPRINT: fingerprint,
+                            CONF_ALLOW_INSECURE_HTTP: allow_insecure_http,
+                        }
+                    )
                     if new_password:
                         new_options[CONF_PASSWORD] = new_password
                     return self.async_update_reload_and_abort(
@@ -367,38 +365,38 @@ class ZteNgRouterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: 
                     )
 
         current_host = options.get(CONF_HOST, data.get(CONF_HOST, DEFAULT_ROUTER_URL))
-        schema = vol.Schema({
-            vol.Required(
-                CONF_HOST, default=(user_input or {}).get(CONF_HOST, current_host)
-            ): str,
-            vol.Optional(CONF_PASSWORD, default=""): str,
-            vol.Required(
-                CONF_VERIFY_TLS,
-                default=(user_input or {}).get(
+        schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_HOST, default=(user_input or {}).get(CONF_HOST, current_host)
+                ): str,
+                vol.Optional(CONF_PASSWORD, default=""): str,
+                vol.Required(
                     CONF_VERIFY_TLS,
-                    options.get(
-                        CONF_VERIFY_TLS, data.get(CONF_VERIFY_TLS, DEFAULT_VERIFY_TLS)
+                    default=(user_input or {}).get(
+                        CONF_VERIFY_TLS,
+                        options.get(CONF_VERIFY_TLS, data.get(CONF_VERIFY_TLS, DEFAULT_VERIFY_TLS)),
                     ),
-                ),
-            ): bool,
-            vol.Optional(
-                CONF_TLS_FINGERPRINT,
-                default=(user_input or {}).get(
+                ): bool,
+                vol.Optional(
                     CONF_TLS_FINGERPRINT,
-                    options.get(CONF_TLS_FINGERPRINT, data.get(CONF_TLS_FINGERPRINT, "")),
-                ),
-            ): str,
-            vol.Optional(
-                CONF_ALLOW_INSECURE_HTTP,
-                default=(user_input or {}).get(
-                    CONF_ALLOW_INSECURE_HTTP,
-                    options.get(
-                        CONF_ALLOW_INSECURE_HTTP,
-                        data.get(CONF_ALLOW_INSECURE_HTTP, _uses_http(current_host)),
+                    default=(user_input or {}).get(
+                        CONF_TLS_FINGERPRINT,
+                        options.get(CONF_TLS_FINGERPRINT, data.get(CONF_TLS_FINGERPRINT, "")),
                     ),
-                ),
-            ): bool,
-        })
+                ): str,
+                vol.Optional(
+                    CONF_ALLOW_INSECURE_HTTP,
+                    default=(user_input or {}).get(
+                        CONF_ALLOW_INSECURE_HTTP,
+                        options.get(
+                            CONF_ALLOW_INSECURE_HTTP,
+                            data.get(CONF_ALLOW_INSECURE_HTTP, _uses_http(current_host)),
+                        ),
+                    ),
+                ): bool,
+            }
+        )
         return self.async_show_form(
             step_id="reconfigure",
             data_schema=schema,
@@ -444,9 +442,7 @@ class ZteNgRouterOptionsFlow(config_entries.OptionsFlow):  # type: ignore[misc] 
                 assert host is not None
                 assert tls_fingerprint is not None
                 new_password = user_input.get(CONF_PASSWORD, "").strip()
-                effective_password = new_password or options.get(
-                    CONF_PASSWORD, data[CONF_PASSWORD]
-                )
+                effective_password = new_password or options.get(CONF_PASSWORD, data[CONF_PASSWORD])
 
                 # Re-verify the login whenever the host or password changed.
                 host_changed = host != options.get(CONF_HOST, data.get(CONF_HOST))
@@ -506,17 +502,13 @@ class ZteNgRouterOptionsFlow(config_entries.OptionsFlow):  # type: ignore[misc] 
                 vol.Required(CONF_HOST, default=current_host): str,
                 vol.Optional(CONF_PASSWORD, default=""): str,
                 vol.Optional(CONF_TLS_FINGERPRINT, default=current_tls_fingerprint): str,
-                vol.Optional(
-                    CONF_ALLOW_INSECURE_HTTP, default=current_allow_insecure_http
-                ): bool,
+                vol.Optional(CONF_ALLOW_INSECURE_HTTP, default=current_allow_insecure_http): bool,
                 vol.Required(CONF_VERIFY_TLS, default=current_verify_tls): bool,
                 vol.Required(CONF_SCAN_INTERVAL, default=current_scan_interval): vol.All(
                     vol.Coerce(int),
                     vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
                 ),
-                vol.Required(
-                    CONF_FAST_SCAN_INTERVAL, default=current_fast_scan_interval
-                ): vol.All(
+                vol.Required(CONF_FAST_SCAN_INTERVAL, default=current_fast_scan_interval): vol.All(
                     vol.Coerce(int),
                     vol.Range(min=MIN_FAST_SCAN_INTERVAL, max=MAX_FAST_SCAN_INTERVAL),
                 ),

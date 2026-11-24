@@ -36,9 +36,7 @@ class DeviceIdentifierTests(unittest.TestCase):
             },
             "device": {"mac_address": "00:11:22:33:44:55"},
         }
-        self.assertEqual(
-            identity.device_identifier_from_data(data), "a0:b1:c2:d3:e4:f5"
-        )
+        self.assertEqual(identity.device_identifier_from_data(data), "a0:b1:c2:d3:e4:f5")
 
     def test_fallback_to_serial_on_firmwares_without_mac(self):
         self.assertEqual(
@@ -58,22 +56,18 @@ class DeviceIdentifierTests(unittest.TestCase):
 
     def test_only_legacy_url_ids_are_migrated(self):
         mac = "aa:bb:cc:dd:ee:ff"
-        self.assertTrue(
-            identity.should_migrate_unique_id("zte_5g_router_https://192.0.2.1", mac)
-        )
+        self.assertTrue(identity.should_migrate_unique_id("zte_5g_router_https://192.0.2.1", mac))
+        self.assertFalse(identity.should_migrate_unique_id(identity.entry_unique_id(mac), mac))
         self.assertFalse(
-            identity.should_migrate_unique_id(identity.entry_unique_id(mac), mac)
-        )
-        self.assertFalse(
-            identity.should_migrate_unique_id(
-                identity.entry_unique_id("11:22:33:44:55:66"), mac
-            )
+            identity.should_migrate_unique_id(identity.entry_unique_id("11:22:33:44:55:66"), mac)
         )
         self.assertFalse(identity.should_migrate_unique_id(None, mac))
 
     def test_other_router_guard_only_applies_to_mac_based_ids(self):
         mac = "aa:bb:cc:dd:ee:ff"
-        self.assertTrue(identity.is_other_router(identity.entry_unique_id(mac), "11:22:33:44:55:66"))
+        self.assertTrue(
+            identity.is_other_router(identity.entry_unique_id(mac), "11:22:33:44:55:66")
+        )
         self.assertFalse(identity.is_other_router(identity.entry_unique_id(mac), mac))
         self.assertFalse(identity.is_other_router("zte_5g_router_https://192.0.2.1", mac))
 

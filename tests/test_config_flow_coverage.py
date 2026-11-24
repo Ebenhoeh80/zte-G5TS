@@ -156,9 +156,7 @@ class ConfigFlowCoverageTests(unittest.IsolatedAsyncioTestCase):
         for changes, expected in cases:
             with self.subTest(expected=expected):
                 handler = self._reconfigure_flow(self._entry())
-                result = await handler.async_step_reconfigure(
-                    dict(RECONFIGURE_INPUT, **changes)
-                )
+                result = await handler.async_step_reconfigure(dict(RECONFIGURE_INPUT, **changes))
                 self.assertEqual(result["errors"], {"base": expected})
 
         FakeApi.login_exc = flow.ZteAuthError("bad password")

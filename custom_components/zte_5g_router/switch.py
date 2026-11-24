@@ -238,7 +238,6 @@ class ZteActionSwitch(CoordinatorEntity, SwitchEntity):  # type: ignore[misc]  #
         attributes: dict[str, Any] | None = self._def.get_path(data)
         return attributes
 
-
     async def async_turn_on(self, **kwargs: Any) -> None:
         _LOGGER.info("Turning ON ZTE switch: %s", self._def.key)
         action = self._action_for_turn_on()
@@ -307,8 +306,20 @@ class ZteActionSwitch(CoordinatorEntity, SwitchEntity):  # type: ignore[misc]  #
 
         # WebUI sends lbd/mlo with wifi_onoff=1. Preserve current values when
         # reported, otherwise use the same defaults observed from the browser.
-        lbd = wifi_module.get("lbd") or wlan.get("lbd_enable") or wlan.get("lbd") or zte_mbb.get("lbd") or "1"
-        mlo = wifi_module.get("mlo") or wlan.get("mlo_enable") or wlan.get("mlo") or zte_mbb.get("mlo") or "0"
+        lbd = (
+            wifi_module.get("lbd")
+            or wlan.get("lbd_enable")
+            or wlan.get("lbd")
+            or zte_mbb.get("lbd")
+            or "1"
+        )
+        mlo = (
+            wifi_module.get("mlo")
+            or wlan.get("mlo_enable")
+            or wlan.get("mlo")
+            or zte_mbb.get("mlo")
+            or "0"
+        )
 
         zte_mbb["lbd"] = str(lbd) if str(lbd) in {"0", "1"} else "1"
         zte_mbb["mlo"] = str(mlo) if str(mlo) in {"0", "1"} else "0"
@@ -434,7 +445,9 @@ class ZtePausePollingSwitch(SwitchEntity):  # type: ignore[misc]  # HA base is A
             self._unsub_auto_off()
             self._unsub_auto_off = None
 
+
 # ----------------- Cell Lock Switches -----------------
+
 
 class ZteCellLockSwitch(CoordinatorEntity, SwitchEntity):  # type: ignore[misc]  # HA bases are Any here
     """Switch to enable/disable 4G/5G cell lock.
@@ -466,9 +479,7 @@ class ZteCellLockSwitch(CoordinatorEntity, SwitchEntity):  # type: ignore[misc] 
 
         self._attr_name = "Cell Lock 4G" if kind == "4g" else "Cell Lock 5G"
         self._attr_translation_key = f"cell_lock_{kind}"
-        self._attr_unique_id = entity_unique_id(
-            entry.entry_id, f"cell_lock_{kind}_enabled"
-        )
+        self._attr_unique_id = entity_unique_id(entry.entry_id, f"cell_lock_{kind}_enabled")
         self._attr_device_info = device_info(entry.entry_id, device_name)
 
         # Will be resolved lazily via entity registry
@@ -524,12 +535,10 @@ class ZteCellLockSwitch(CoordinatorEntity, SwitchEntity):  # type: ignore[misc] 
         # Resolve associated text entity and read its current value
         text_entity_id = await self._resolve_text_entity_id()
         if not text_entity_id:
-            raise HomeAssistantError(
-                f"Cell lock {self._kind}: companion text entity not found"
-            )
+            raise HomeAssistantError(f"Cell lock {self._kind}: companion text entity not found")
 
         st = self.hass.states.get(text_entity_id)
-        value = (st.state if st else "")
+        value = st.state if st else ""
         value = (value or "").strip()
 
         try:

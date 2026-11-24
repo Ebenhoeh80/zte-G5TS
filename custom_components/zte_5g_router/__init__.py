@@ -131,9 +131,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ZteNgRouterConfigEntry) 
         tls_fingerprint=tls_fingerprint or None,
         allow_insecure_http=allow_insecure_http,
         verify_tls=verify_tls,
-        track_clients=options.get(
-            CONF_TRACK_CLIENTS, data.get(CONF_TRACK_CLIENTS, False)
-        ),
+        track_clients=options.get(CONF_TRACK_CLIENTS, data.get(CONF_TRACK_CLIENTS, False)),
     )
 
     async def _async_update_data() -> dict[str, Any]:
@@ -223,13 +221,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ZteNgRouterConfigEntry) 
         if firmware_version:
             _LOGGER.info("ZTE router firmware identified: %s", firmware_version)
             device_registry = dr.async_get(hass)
-            device = device_registry.async_get_device(
-                identifiers={(DOMAIN, entry.entry_id)}
-            )
+            device = device_registry.async_get_device(identifiers={(DOMAIN, entry.entry_id)})
             if device is not None:
-                device_registry.async_update_device(
-                    device.id, sw_version=firmware_version
-                )
+                device_registry.async_update_device(device.id, sw_version=firmware_version)
         return True
     except Exception:
         await api.async_close()
@@ -262,8 +256,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ZteNgRouterConfigEntry)
     return unload_ok
 
 
-async def _async_update_listener(
-    hass: HomeAssistant, entry: ZteNgRouterConfigEntry
-) -> None:
+async def _async_update_listener(hass: HomeAssistant, entry: ZteNgRouterConfigEntry) -> None:
     """Reload the entry when its options change so new settings take effect."""
     await hass.config_entries.async_reload(entry.entry_id)

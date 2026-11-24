@@ -1,4 +1,5 @@
 """Optional, read-only WLAN and LAN tracking from slow-poll snapshots."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -74,11 +75,17 @@ class NetworkClientTracking:
         observed = snapshot.get("observed_at")
         clients = snapshot.get("clients")
         complete = snapshot.get("complete", True)
-        if (not isinstance(observed, datetime) or observed.tzinfo is None
-                or observed.utcoffset() is None or not isinstance(clients, dict)
-                or not isinstance(complete, bool)
-                or any(ZteRouterApi.normalize_client_mac(mac) != mac or not isinstance(metadata, dict)
-                       for mac, metadata in clients.items())):
+        if (
+            not isinstance(observed, datetime)
+            or observed.tzinfo is None
+            or observed.utcoffset() is None
+            or not isinstance(clients, dict)
+            or not isinstance(complete, bool)
+            or any(
+                ZteRouterApi.normalize_client_mac(mac) != mac or not isinstance(metadata, dict)
+                for mac, metadata in clients.items()
+            )
+        ):
             self.available = False
             self.reset_absence()
             return
@@ -110,8 +117,7 @@ class NetworkClientTracking:
                 client.connected = False
             if (
                 client.missing_since is not None
-                and now - client.missing_since
-                >= STALE_CLIENT_REMOVAL_DAYS * 86400
+                and now - client.missing_since >= STALE_CLIENT_REMOVAL_DAYS * 86400
             ):
                 client.stale = True
 
@@ -126,41 +132,52 @@ async def async_setup_entry(
         return
     runtime_data = entry.runtime_data
     coordinator = runtime_data.coordinator
-    tracking = NetworkClientTracking(entry.options.get(
-        CONF_CLIENT_CONSIDER_HOME, entry.data.get(CONF_CLIENT_CONSIDER_HOME, DEFAULT_CLIENT_CONSIDER_HOME)
-    ))
+    tracking = NetworkClientTracking(
+        entry.options.get(
+            CONF_CLIENT_CONSIDER_HOME,
+            entry.data.get(CONF_CLIENT_CONSIDER_HOME, DEFAULT_CLIENT_CONSIDER_HOME),
+        )
+    )
     # Retain the original ID prefix so existing WLAN trackers survive upgrades.
     prefix = f"{entry.entry_id}_wifi_"
     # Recreate existing trackers even when their clients are offline after a restart.
     registry = er.async_get(hass)
     for entity in er.async_entries_for_config_entry(registry, entry.entry_id):
-        if entity.domain != "device_tracker" or entity.platform != DOMAIN or not entity.unique_id.startswith(prefix):
+        if (
+            entity.domain != "device_tracker"
+            or entity.platform != DOMAIN
+            or not entity.unique_id.startswith(prefix)
+        ):
             continue
-        mac = ZteRouterApi.normalize_client_mac(entity.unique_id[len(prefix):])
+        mac = ZteRouterApi.normalize_client_mac(entity.unique_id[len(prefix) :])
         if mac is not None:
             tracking.clients.setdefault(mac, NetworkClient(mac))
     added: set[str] = set()
 
     @callback  # type: ignore[untyped-decorator]  # HA decorator is Any here
     def update_clients() -> None:
-        tracking.update((coordinator.data or {}).get("network_clients") if coordinator.last_update_success else None)
+        tracking.update(
+            (coordinator.data or {}).get("network_clients")
+            if coordinator.last_update_success
+            else None
+        )
         new = tracking.clients.keys() - added
         if new:
             added.update(new)
-            async_add_entities([
-                ZteNetworkClientTracker(
-                    coordinator,
-                    tracking,
-                    mac,
-                    entry.entry_id,
-                    runtime_data.name,
-                )
-                for mac in sorted(new)
-            ])
+            async_add_entities(
+                [
+                    ZteNetworkClientTracker(
+                        coordinator,
+                        tracking,
+                        mac,
+                        entry.entry_id,
+                        runtime_data.name,
+                    )
+                    for mac in sorted(new)
+                ]
+            )
         stale = {
-            mac: client
-            for mac, client in tracking.clients.items()
-            if client.stale and mac in added
+            mac: client for mac, client in tracking.clients.items() if client.stale and mac in added
         }
         for mac in sorted(stale):
             unique_id = entity_unique_id(entry.entry_id, f"wifi_{mac.replace(':', '')}")
@@ -183,8 +200,14 @@ class ZteNetworkClientTracker(CoordinatorEntity, ScannerEntity, RestoreEntity): 
     _attr_source_type = SourceType.ROUTER
     _attr_entity_category = None
 
-    def __init__(self, coordinator: DataUpdateCoordinator[dict[str, Any]], tracking: NetworkClientTracking, mac: str,
-                 entry_id: str, router_name: str) -> None:
+    def __init__(
+        self,
+        coordinator: DataUpdateCoordinator[dict[str, Any]],
+        tracking: NetworkClientTracking,
+        mac: str,
+        entry_id: str,
+        router_name: str,
+    ) -> None:
         super().__init__(coordinator)
         self._tracking = tracking
         self._mac = mac
@@ -229,11 +252,13 @@ class ZteNetworkClientTracker(CoordinatorEntity, ScannerEntity, RestoreEntity): 
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        return {"last_seen": self._client.last_seen.isoformat() if self._client.last_seen else None,
-                "ipv6_address": self._client.metadata.get("ipv6_address"),
-                "interface_type": self._client.metadata.get("interface_type"),
-                "connection_type": self._client.metadata.get("connection_type"),
-                "connection_types": self._client.metadata.get("connection_types", [])}
+        return {
+            "last_seen": self._client.last_seen.isoformat() if self._client.last_seen else None,
+            "ipv6_address": self._client.metadata.get("ipv6_address"),
+            "interface_type": self._client.metadata.get("interface_type"),
+            "connection_type": self._client.metadata.get("connection_type"),
+            "connection_types": self._client.metadata.get("connection_types", []),
+        }
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()

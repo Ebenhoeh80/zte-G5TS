@@ -5,6 +5,7 @@ The config flow is loaded with lightweight stand-ins for ``homeassistant``,
 flow logic (validation, login-error mapping, reauth) without a running Home
 Assistant or a real router.
 """
+
 import importlib.util
 import json
 from pathlib import Path
@@ -87,13 +88,23 @@ def load_flow():
     zte_api_mod.ZteAuthError = MockAuthError
     package = types.ModuleType("zte_config_test")
     package.__path__ = [str(ROOT)]
-    spec = importlib.util.spec_from_file_location("zte_config_test.config_flow", ROOT / "config_flow.py")
+    spec = importlib.util.spec_from_file_location(
+        "zte_config_test.config_flow", ROOT / "config_flow.py"
+    )
     module = importlib.util.module_from_spec(spec)
-    with patch.dict(sys.modules, {"homeassistant": ha, "homeassistant.config_entries": entries,
-                                 "homeassistant.const": const, "homeassistant.core": core,
-                                 "aiohttp": aiohttp_mod,
-                                 "zte_config_test": package, spec.name: module,
-                                 "zte_config_test.zte_api": zte_api_mod}):
+    with patch.dict(
+        sys.modules,
+        {
+            "homeassistant": ha,
+            "homeassistant.config_entries": entries,
+            "homeassistant.const": const,
+            "homeassistant.core": core,
+            "aiohttp": aiohttp_mod,
+            "zte_config_test": package,
+            spec.name: module,
+            "zte_config_test.zte_api": zte_api_mod,
+        },
+    ):
         spec.loader.exec_module(module)
     return module
 
@@ -115,7 +126,9 @@ class TrackingConfigTests(unittest.IsolatedAsyncioTestCase):
     async def test_initial_schema_defaults_to_opt_out_and_persists_opt_in(self):
         config = flow.ZteNgRouterConfigFlow()
         form = await config.async_step_user()
-        values = form["data_schema"]({"name": "Router", "host": "https://192.0.2.1", "password": "test"})
+        values = form["data_schema"](
+            {"name": "Router", "host": "https://192.0.2.1", "password": "test"}
+        )
         self.assertFalse(values["track_wifi_clients"])
         self.assertTrue(values["verify_tls"])
         self.assertFalse(values["allow_insecure_http"])
@@ -132,9 +145,7 @@ class TrackingConfigTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_tls_fingerprint_is_validated_and_normalized(self):
         fingerprint = "AA" * 32
-        colon_separated = ":".join(
-            fingerprint[index:index + 2] for index in range(0, 64, 2)
-        )
+        colon_separated = ":".join(fingerprint[index : index + 2] for index in range(0, 64, 2))
         normalized, error = flow._validate_tls_fingerprint(colon_separated)
         self.assertEqual(normalized, fingerprint.lower())
         self.assertIsNone(error)
@@ -145,34 +156,40 @@ class TrackingConfigTests(unittest.IsolatedAsyncioTestCase):
 
         config = flow.ZteNgRouterConfigFlow()
         form = await config.async_step_user()
-        values = form["data_schema"]({
-            "name": "Router",
-            "host": "https://192.0.2.1",
-            "password": "test",
-            "tls_fingerprint": fingerprint,
-        })
+        values = form["data_schema"](
+            {
+                "name": "Router",
+                "host": "https://192.0.2.1",
+                "password": "test",
+                "tls_fingerprint": fingerprint,
+            }
+        )
         result = await config.async_step_user(values)
         self.assertEqual(result["data"]["tls_fingerprint"], fingerprint.lower())
 
         http_config = flow.ZteNgRouterConfigFlow()
-        http_values = form["data_schema"]({
-            "name": "Router",
-            "host": "http://192.0.2.1",
-            "password": "test",
-            "allow_insecure_http": True,
-            "tls_fingerprint": fingerprint,
-        })
+        http_values = form["data_schema"](
+            {
+                "name": "Router",
+                "host": "http://192.0.2.1",
+                "password": "test",
+                "allow_insecure_http": True,
+                "tls_fingerprint": fingerprint,
+            }
+        )
         rejected = await http_config.async_step_user(http_values)
         self.assertEqual(rejected["errors"]["base"], "tls_fingerprint_requires_https")
 
     async def test_http_requires_explicit_opt_in(self):
         config = flow.ZteNgRouterConfigFlow()
         form = await config.async_step_user()
-        values = form["data_schema"]({
-            "name": "Router",
-            "host": "http://192.0.2.1",
-            "password": "test",
-        })
+        values = form["data_schema"](
+            {
+                "name": "Router",
+                "host": "http://192.0.2.1",
+                "password": "test",
+            }
+        )
 
         rejected = await config.async_step_user(values)
         self.assertEqual(rejected["errors"]["base"], "insecure_http")
@@ -247,9 +264,15 @@ class TrackingConfigTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["data"]["password"], "new")
 
     async def test_options_preserve_credentials_and_existing_choices(self):
-        entry = types.SimpleNamespace(data={"host": "http://192.0.2.1", "password": "original",
-                                           "track_wifi_clients": True, "client_consider_home": 240},
-                                      options={"password": "override", "other_option": "keep"})
+        entry = types.SimpleNamespace(
+            data={
+                "host": "http://192.0.2.1",
+                "password": "original",
+                "track_wifi_clients": True,
+                "client_consider_home": 240,
+            },
+            options={"password": "override", "other_option": "keep"},
+        )
         options = make_options_flow(entry)
         form = await options.async_step_init()
         values = form["data_schema"]({})
@@ -269,8 +292,14 @@ class TrackingConfigTests(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(vol.Invalid):
                 form["data_schema"]({"client_consider_home": invalid})
         for valid in (0, 180, 3600):
-            self.assertEqual(form["data_schema"]({"client_consider_home": valid})["client_consider_home"], valid)
-        for path in (ROOT / "strings.json", ROOT / "translations/en.json", ROOT / "translations/de.json"):
+            self.assertEqual(
+                form["data_schema"]({"client_consider_home": valid})["client_consider_home"], valid
+            )
+        for path in (
+            ROOT / "strings.json",
+            ROOT / "translations/en.json",
+            ROOT / "translations/de.json",
+        ):
             translations = json.loads(path.read_text(encoding="utf-8"))
             for section, step in (("config", "user"), ("options", "init")):
                 labels = translations[section]["step"][step]["data"]

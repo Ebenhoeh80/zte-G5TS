@@ -62,10 +62,14 @@ class DeviceIdentifierCoverageTests(unittest.TestCase):
 
 class UniqueIdCoverageTests(unittest.TestCase):
     def test_entry_id_is_stable(self):
-        self.assertEqual(identity.entry_unique_id("aa:bb:cc:dd:ee:ff"), "zte_5g_router_aa:bb:cc:dd:ee:ff")
+        self.assertEqual(
+            identity.entry_unique_id("aa:bb:cc:dd:ee:ff"), "zte_5g_router_aa:bb:cc:dd:ee:ff"
+        )
 
     def test_non_prefixed_id_is_not_migrated(self):
-        self.assertFalse(identity.should_migrate_unique_id("https://192.0.2.1", "aa:bb:cc:dd:ee:ff"))
+        self.assertFalse(
+            identity.should_migrate_unique_id("https://192.0.2.1", "aa:bb:cc:dd:ee:ff")
+        )
 
     def test_already_migrated_and_mac_ids_are_not_migrated(self):
         mac = "aa:bb:cc:dd:ee:ff"
@@ -83,7 +87,9 @@ class UniqueIdCoverageTests(unittest.TestCase):
 
     def test_other_router_guard_for_mac_and_opaque_ids(self):
         mac = "aa:bb:cc:dd:ee:ff"
-        self.assertTrue(identity.is_other_router(identity.entry_unique_id(mac), "11:22:33:44:55:66"))
+        self.assertTrue(
+            identity.is_other_router(identity.entry_unique_id(mac), "11:22:33:44:55:66")
+        )
         self.assertFalse(identity.is_other_router(identity.entry_unique_id(mac), mac))
         self.assertFalse(identity.is_other_router(identity.entry_unique_id("ZTE123"), mac))
 

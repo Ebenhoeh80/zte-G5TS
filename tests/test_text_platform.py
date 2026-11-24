@@ -111,9 +111,7 @@ def load_text():
         modules[name] = module
 
     for modname, filename in (("const", "const.py"), ("entity", "entity.py")):
-        spec = importlib.util.spec_from_file_location(
-            f"zte_text_test.{modname}", ROOT / filename
-        )
+        spec = importlib.util.spec_from_file_location(f"zte_text_test.{modname}", ROOT / filename)
         module = importlib.util.module_from_spec(spec)
         modules[spec.name] = module
         with patch.dict(sys.modules, modules):
@@ -144,9 +142,7 @@ class TextPlatformTests(unittest.IsolatedAsyncioTestCase):
             sms_compose=sms_compose,
         )
         entry = types.SimpleNamespace(entry_id="entry", runtime_data=runtime)
-        entity = text.ZteTextEntity(
-            object(), coordinator, Api, entry, "Router", description
-        )
+        entity = text.ZteTextEntity(object(), coordinator, Api, entry, "Router", description)
         entity.async_write_ha_state = Mock()
         return entity, runtime
 

@@ -1,4 +1,5 @@
 """Offline WLAN/LAN tracker tests; no real router settings are touched."""
+
 from datetime import UTC, datetime, timedelta
 import importlib.util
 from pathlib import Path
@@ -40,9 +41,13 @@ def load_trackers():
     helpers = types.ModuleType("homeassistant.helpers")
     helpers.entity_registry = registry
     helpers.entity = entity_mod
-    modules.update({"homeassistant.helpers": helpers,
-                    "homeassistant.helpers.entity_registry": registry,
-                    "homeassistant.helpers.entity": entity_mod})
+    modules.update(
+        {
+            "homeassistant.helpers": helpers,
+            "homeassistant.helpers.entity_registry": registry,
+            "homeassistant.helpers.entity": entity_mod,
+        }
+    )
     symbols = {
         "homeassistant.components.device_tracker": {
             "ScannerEntity": type("ScannerEntity", (Entity,), {}),
@@ -57,7 +62,9 @@ def load_trackers():
         module = types.ModuleType(name)
         module.__dict__.update(attributes)
         modules[name] = module
-    spec = importlib.util.spec_from_file_location("zte_tracker_test.device_tracker", root / "device_tracker.py")
+    spec = importlib.util.spec_from_file_location(
+        "zte_tracker_test.device_tracker", root / "device_tracker.py"
+    )
     module = importlib.util.module_from_spec(spec)
     modules[spec.name] = module
     with patch.dict(sys.modules, modules):
@@ -71,34 +78,56 @@ START = datetime(2026, 10, 9, 12, tzinfo=UTC)
 
 
 def row(index=0):
-    return {"mac_address": f"02:12:34:56:{index // 256:02x}:{index % 256:02x}",
-            "hostname": "Laptop", "ip_address": "192.0.2.2", "ipv6_address": "2001:db8::2",
-            "interface_type": "main_5g"}
+    return {
+        "mac_address": f"02:12:34:56:{index // 256:02x}:{index % 256:02x}",
+        "hostname": "Laptop",
+        "ip_address": "192.0.2.2",
+        "ipv6_address": "2001:db8::2",
+        "interface_type": "main_5g",
+    }
 
 
 def snapshot(seconds=0, present=True, connection="wifi", complete=True):
-    return {"observed_at": START + timedelta(seconds=seconds), "clients": {
-        MAC: {"hostname": "Phone", "ip_address": "192.0.2.3", "interface_type": "main_2g",
-              "connection_type": connection, "connection_types": [connection]},
-    } if present else {}, "complete": complete}
+    return {
+        "observed_at": START + timedelta(seconds=seconds),
+        "clients": {
+            MAC: {
+                "hostname": "Phone",
+                "ip_address": "192.0.2.3",
+                "interface_type": "main_2g",
+                "connection_type": connection,
+                "connection_types": [connection],
+            },
+        }
+        if present
+        else {},
+        "complete": complete,
+    }
 
 
 class TrackerApiTests(unittest.IsolatedAsyncioTestCase):
     async def test_paginated_snapshot_is_complete_and_private(self):
         router = api()
         counts = {"access_total_num": 65, "wireless_num": 65, "lan_num": 0}
-        router.async_call_ubus_batch = AsyncMock(return_value=[
-            {"success": True, "data": {"wireless_access_list_info": [row(i) for i in range(64)]}},
-            {"success": True, "data": {"wireless_access_list_info": [row(64)]}},
-            {"success": True, "data": counts},
-        ])
+        router.async_call_ubus_batch = AsyncMock(
+            return_value=[
+                {
+                    "success": True,
+                    "data": {"wireless_access_list_info": [row(i) for i in range(64)]},
+                },
+                {"success": True, "data": {"wireless_access_list_info": [row(64)]}},
+                {"success": True, "data": counts},
+            ]
+        )
         result = await router._async_read_network_clients_locked(counts)
         self.assertEqual(len(result["clients"]), 65)
         self.assertTrue(result["complete"])
         self.assertIsNotNone(result["observed_at"].utcoffset())
         call = router.async_call_ubus_batch.call_args
-        self.assertEqual([c["params"] for c in call.args[0][:-1]],
-                         [{"start_id": 1, "end_id": 64}, {"start_id": 65, "end_id": 128}])
+        self.assertEqual(
+            [c["params"] for c in call.args[0][:-1]],
+            [{"start_id": 1, "end_id": 64}, {"start_id": 65, "end_id": 128}],
+        )
         self.assertEqual(call.args[0][-1]["method"], "router_get_user_list_num")
         self.assertNotIn("log_raw_response", call.kwargs)
         self.assertFalse(call.kwargs["retry_on_access_denied"])
@@ -118,12 +147,20 @@ class TrackerApiTests(unittest.IsolatedAsyncioTestCase):
         page = {"success": True, "data": {"wireless_access_list_info": [row()]}}
         final = {"success": True, "data": counts}
         for results in (
-            [], [page], [{"success": False}, final],
+            [],
+            [page],
+            [{"success": False}, final],
             [page, {"success": False}],
             [page, {"success": True, "data": {"access_total_num": 2, "wireless_num": 2}}],
             [{"success": True, "data": {}}, final],
             [{"success": True, "data": {"wireless_access_list_info": []}}, final],
-            [{"success": True, "data": {"wireless_access_list_info": [{"mac_address": "invalid"}]}}, final],
+            [
+                {
+                    "success": True,
+                    "data": {"wireless_access_list_info": [{"mac_address": "invalid"}]},
+                },
+                final,
+            ],
             [{"success": True, "data": {"wireless_access_list_info": [row()] * 65}}, final],
         ):
             router.async_call_ubus_batch = AsyncMock(return_value=results)
@@ -136,10 +173,12 @@ class TrackerApiTests(unittest.IsolatedAsyncioTestCase):
         router = api()
         counts = {"access_total_num": 1, "wireless_num": 0, "lan_num": 1}
         wired = {**row(), "interface_type": None, "hostname": "Wired PC"}
-        router.async_call_ubus_batch = AsyncMock(return_value=[
-            {"success": True, "data": {"lan_access_list_info": [wired]}},
-            {"success": True, "data": counts},
-        ])
+        router.async_call_ubus_batch = AsyncMock(
+            return_value=[
+                {"success": True, "data": {"lan_access_list_info": [wired]}},
+                {"success": True, "data": counts},
+            ]
+        )
         result = await router._async_read_network_clients_locked(counts)
         client = result["clients"][wired["mac_address"]]
         self.assertEqual(client["connection_type"], "lan")
@@ -147,8 +186,10 @@ class TrackerApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(client["interface_type"])
         self.assertTrue(result["complete"])
         calls = router.async_call_ubus_batch.call_args.args[0]
-        self.assertEqual([call["method"] for call in calls],
-                         ["router_lan_access_list", "router_get_user_list_num"])
+        self.assertEqual(
+            [call["method"] for call in calls],
+            ["router_lan_access_list", "router_get_user_list_num"],
+        )
         self.assertEqual(calls[0]["params"], {})
 
     async def test_mixed_lists_and_same_mac_are_merged_without_duplicates(self):
@@ -157,11 +198,13 @@ class TrackerApiTests(unittest.IsolatedAsyncioTestCase):
         wireless = {**row(), "ip_address": ""}
         same_mac = {**row(), "mac_address": row()["mac_address"].upper()}
         wired = row(1)
-        router.async_call_ubus_batch = AsyncMock(return_value=[
-            {"success": True, "data": {"wireless_access_list_info": [wireless]}},
-            {"success": True, "data": {"lan_access_list_info": [same_mac, wired]}},
-            {"success": True, "data": counts},
-        ])
+        router.async_call_ubus_batch = AsyncMock(
+            return_value=[
+                {"success": True, "data": {"wireless_access_list_info": [wireless]}},
+                {"success": True, "data": {"lan_access_list_info": [same_mac, wired]}},
+                {"success": True, "data": counts},
+            ]
+        )
         result = await router._async_read_network_clients_locked(counts)
         self.assertTrue(result["complete"])
         self.assertEqual(len(result["clients"]), 2)
@@ -183,9 +226,13 @@ class TrackerApiTests(unittest.IsolatedAsyncioTestCase):
             {"success": True, "data": {"lan_access_list_info": [{"mac_address": "invalid"}]}},
             {"success": True, "data": {"lan_access_list_info": [row(1)] * 2049}},
         ):
-            router.async_call_ubus_batch = AsyncMock(return_value=[
-                wifi_page, bad_lan, {"success": True, "data": counts},
-            ])
+            router.async_call_ubus_batch = AsyncMock(
+                return_value=[
+                    wifi_page,
+                    bad_lan,
+                    {"success": True, "data": counts},
+                ]
+            )
             result = await router._async_read_network_clients_locked(counts)
             self.assertFalse(result["complete"])
             self.assertEqual(list(result["clients"]), [row()["mac_address"]])
@@ -195,9 +242,13 @@ class TrackerApiTests(unittest.IsolatedAsyncioTestCase):
         router = api()
         counts = {"access_total_num": 2, "wireless_num": 1, "lan_num": 1}
         final = {"success": True, "data": counts}
-        router.async_call_ubus_batch = AsyncMock(return_value=[
-            {"success": False}, {"success": True, "data": {"lan_access_list_info": [row(1)]}}, final,
-        ])
+        router.async_call_ubus_batch = AsyncMock(
+            return_value=[
+                {"success": False},
+                {"success": True, "data": {"lan_access_list_info": [row(1)]}},
+                final,
+            ]
+        )
         result = await router._async_read_network_clients_locked(counts)
         self.assertFalse(result["complete"])
         self.assertEqual(result["clients"][row(1)["mac_address"]]["connection_type"], "lan")
@@ -207,27 +258,37 @@ class TrackerApiTests(unittest.IsolatedAsyncioTestCase):
     async def test_lan_count_change_invalidates_whole_snapshot(self):
         router = api()
         counts = {"access_total_num": 2, "wireless_num": 1, "lan_num": 1}
-        router.async_call_ubus_batch = AsyncMock(return_value=[
-            {"success": True, "data": {"wireless_access_list_info": [row()]}},
-            {"success": True, "data": {"lan_access_list_info": [row(1)]}},
-            {"success": True, "data": {**counts, "lan_num": 0}},
-        ])
+        router.async_call_ubus_batch = AsyncMock(
+            return_value=[
+                {"success": True, "data": {"wireless_access_list_info": [row()]}},
+                {"success": True, "data": {"lan_access_list_info": [row(1)]}},
+                {"success": True, "data": {**counts, "lan_num": 0}},
+            ]
+        )
         self.assertIsNone(await router._async_read_network_clients_locked(counts))
 
     async def test_invalid_counts_and_goform_never_issue_guessed_calls(self):
         router = api()
         router.async_call_ubus_batch = AsyncMock()
-        for counts in (None, {}, {"access_total_num": 1, "wireless_num": 2},
-                       {"access_total_num": 99999, "wireless_num": 1},
-                       {"access_total_num": True, "wireless_num": 0},
-                       {"access_total_num": -1, "wireless_num": 0},
-                       {"access_total_num": 1, "wireless_num": "1.5"},
-                       {"access_total_num": 1, "wireless_num": 0, "lan_num": True},
-                       {"access_total_num": 1, "wireless_num": 0, "lan_num": 2},
-                       {"access_total_num": 1, "wireless_num": 0, "lan_num": -1}):
+        for counts in (
+            None,
+            {},
+            {"access_total_num": 1, "wireless_num": 2},
+            {"access_total_num": 99999, "wireless_num": 1},
+            {"access_total_num": True, "wireless_num": 0},
+            {"access_total_num": -1, "wireless_num": 0},
+            {"access_total_num": 1, "wireless_num": "1.5"},
+            {"access_total_num": 1, "wireless_num": 0, "lan_num": True},
+            {"access_total_num": 1, "wireless_num": 0, "lan_num": 2},
+            {"access_total_num": 1, "wireless_num": 0, "lan_num": -1},
+        ):
             self.assertIsNone(await router._async_read_network_clients_locked(counts))
         router._api_mode = "goform"
-        self.assertIsNone(await router._async_read_network_clients_locked({"access_total_num": 1, "wireless_num": 1}))
+        self.assertIsNone(
+            await router._async_read_network_clients_locked(
+                {"access_total_num": 1, "wireless_num": 1}
+            )
+        )
         router.async_call_ubus_batch.assert_not_awaited()
 
     async def test_off_by_default_optional_failures_do_not_break_core_and_fast_never_tracks(self):
@@ -255,9 +316,18 @@ class TrackerApiTests(unittest.IsolatedAsyncioTestCase):
     def test_mac_and_address_normalization(self):
         for value in ("02:12:34:56:78:90", "02-12-34-56-78-90", "0212.3456.7890", "021234567890"):
             self.assertEqual(ZteRouterApi.normalize_client_mac(value), MAC)
-        for value in (None, "", "ff:ff:ff:ff:ff:ff", "00:00:00:00:00:00", "01:12:34:56:78:90", "x021234567890"):
+        for value in (
+            None,
+            "",
+            "ff:ff:ff:ff:ff:ff",
+            "00:00:00:00:00:00",
+            "01:12:34:56:78:90",
+            "x021234567890",
+        ):
             self.assertIsNone(ZteRouterApi.normalize_client_mac(value))
-        normalized = ZteRouterApi._normalize_network_client({**row(), "ip_address": "0.0.0.0", "ipv6_address": "bad"})
+        normalized = ZteRouterApi._normalize_network_client(
+            {**row(), "ip_address": "0.0.0.0", "ipv6_address": "bad"}
+        )
         self.assertIsNone(normalized["ip_address"])
         self.assertIsNone(normalized["ipv6_address"])
 
@@ -329,13 +399,14 @@ class TrackerPresenceTests(unittest.TestCase):
         self.assertTrue(client.connected)
         self.assertEqual(client.metadata["connection_type"], "wifi")
 
-
     def test_zero_grace_and_invalid_snapshot(self):
         tracking = trackers.NetworkClientTracking(0)
         tracking.update(snapshot(), now=0)
         tracking.update({"clients": {}, "observed_at": datetime(2026, 1, 1)}, now=1)
         self.assertFalse(tracking.available)
-        tracking.update({"clients": {"invalid": {}}, "observed_at": START + timedelta(seconds=1)}, now=1)
+        tracking.update(
+            {"clients": {"invalid": {}}, "observed_at": START + timedelta(seconds=1)}, now=1
+        )
         self.assertFalse(tracking.available)
         tracking.update(snapshot(2, False), now=2)
         self.assertFalse(tracking.clients[MAC].connected)
@@ -363,7 +434,9 @@ class TrackerPlatformTests(unittest.IsolatedAsyncioTestCase):
             listeners.append(listener)
             return lambda: listeners.remove(listener)
 
-        coordinator = types.SimpleNamespace(data=data or {}, last_update_success=True, async_add_listener=listen)
+        coordinator = types.SimpleNamespace(
+            data=data or {}, last_update_success=True, async_add_listener=listen
+        )
         store = types.SimpleNamespace(
             coordinator=coordinator,
             name="Router",
@@ -371,8 +444,13 @@ class TrackerPlatformTests(unittest.IsolatedAsyncioTestCase):
         )
         hass = types.SimpleNamespace(registry=registry or Registry())
         unloads = []
-        entry = types.SimpleNamespace(entry_id="entry", data={}, options={"track_wifi_clients": enabled},
-                                      runtime_data=store, async_on_unload=unloads.append)
+        entry = types.SimpleNamespace(
+            entry_id="entry",
+            data={},
+            options={"track_wifi_clients": enabled},
+            runtime_data=store,
+            async_on_unload=unloads.append,
+        )
         return hass, entry, coordinator, store, listeners, unloads
 
     async def test_opt_out_does_not_discover_or_subscribe(self):
@@ -384,7 +462,9 @@ class TrackerPlatformTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(store.reset_client_absence)
 
     async def test_dynamic_discovery_unique_ids_disabled_default_and_cleanup(self):
-        hass, entry, coordinator, store, listeners, unloads = self.setup(data={"network_clients": snapshot()})
+        hass, entry, coordinator, store, listeners, unloads = self.setup(
+            data={"network_clients": snapshot()}
+        )
         entities = []
         await trackers.async_setup_entry(hass, entry, entities.extend)
         entity = entities[0]
@@ -413,7 +493,9 @@ class TrackerPlatformTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(store.reset_client_absence)
 
     async def test_pause_hook_restarts_grace_and_discovery_continues(self):
-        hass, entry, coordinator, store, listeners, _ = self.setup(data={"network_clients": snapshot()})
+        hass, entry, coordinator, store, listeners, _ = self.setup(
+            data={"network_clients": snapshot()}
+        )
         entities = []
         with patch.object(trackers.time, "monotonic", return_value=0):
             await trackers.async_setup_entry(hass, entry, entities.extend)
@@ -456,18 +538,33 @@ class TrackerPlatformTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(entities), 1)
 
     async def test_offline_registered_trackers_reappear_and_restore_metadata_not_presence(self):
-        registry = Registry([types.SimpleNamespace(domain="device_tracker", platform="zte_5g_router",
-                                         unique_id="entry_wifi_021234567890")])
-        hass, entry, _, _, _, _ = self.setup(data={"network_clients": snapshot(0, False)}, registry=registry)
+        registry = Registry(
+            [
+                types.SimpleNamespace(
+                    domain="device_tracker",
+                    platform="zte_5g_router",
+                    unique_id="entry_wifi_021234567890",
+                )
+            ]
+        )
+        hass, entry, _, _, _, _ = self.setup(
+            data={"network_clients": snapshot(0, False)}, registry=registry
+        )
         entities = []
         await trackers.async_setup_entry(hass, entry, entities.extend)
         self.assertEqual(len(entities), 1)
         entity = entities[0]
         self.assertIsNone(entity.is_connected)
-        entity.restored_state = types.SimpleNamespace(state="home", attributes={
-            "last_seen": START.isoformat(), "host_name": "Old name", "ip": "192.0.2.5",
-            "connection_type": "lan", "connection_types": ["lan"],
-        })
+        entity.restored_state = types.SimpleNamespace(
+            state="home",
+            attributes={
+                "last_seen": START.isoformat(),
+                "host_name": "Old name",
+                "ip": "192.0.2.5",
+                "connection_type": "lan",
+                "connection_types": ["lan"],
+            },
+        )
         await entity.async_added_to_hass()
         self.assertEqual(entity.hostname, "Old name")
         self.assertEqual(entity.extra_state_attributes["last_seen"], START.isoformat())

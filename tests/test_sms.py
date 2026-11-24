@@ -42,9 +42,7 @@ def seal(value, key=KEY):
 
 def unseal(value, key=KEY):
     raw = base64.b64decode(value, validate=True)
-    return AESGCM(bytes.fromhex(key)).decrypt(
-        raw[:12], raw[28:] + raw[12:28], None
-    ).decode()
+    return AESGCM(bytes.fromhex(key)).decrypt(raw[:12], raw[28:] + raw[12:28], None).decode()
 
 
 def api(model="g5tc"):
@@ -61,8 +59,16 @@ class SmsFieldsTests(unittest.TestCase):
         for identity in ("G51F", "BD_MC7510_V1.0.0", "ZTE G51F", "BD_G51FV1.0", "MC7510HW1.0"):
             router = api(identity)
             self.assertEqual(unseal(router._encrypt_sms_field("+48123")), "+48123")
-        for identity in ("G5TC", "BD_MC8830_V1.0.0", "G5TS", "G5C", "G5 Max", "G5 Ultra",
-                         "BD_G5TCV1.0.0B22", "G5TCHW1.0"):
+        for identity in (
+            "G5TC",
+            "BD_MC8830_V1.0.0",
+            "G5TS",
+            "G5C",
+            "G5 Max",
+            "G5 Ultra",
+            "BD_G5TCV1.0.0B22",
+            "G5TCHW1.0",
+        ):
             router = api(identity)
             self.assertEqual(router._encrypt_sms_field("+48123"), "+48123")
 
@@ -88,20 +94,25 @@ class SmsFieldsTests(unittest.TestCase):
         self.assertIsNone(router._sms_encryption)
 
     def test_capacity_uses_components_like_webui_without_mutating_response(self):
-        raw = {"sms_nvused_total": 0, "sms_nv_rev_total": "12",
-               "sms_nv_send_total": 2, "sms_nv_draftbox_total": "1",
-               "sms_dev_unread_num": 4}
+        raw = {
+            "sms_nvused_total": 0,
+            "sms_nv_rev_total": "12",
+            "sms_nv_send_total": 2,
+            "sms_nv_draftbox_total": "1",
+            "sms_dev_unread_num": 4,
+        }
         capacity = ZteRouterApi._normalize_sms_capacity(raw)
         self.assertEqual(capacity["sms_nvused_total"], 15)
         self.assertEqual(capacity["sms_dev_unread_num"], 4)
         self.assertEqual(raw["sms_nvused_total"], 0)
 
     def test_capacity_preserves_firmware_total_when_components_unavailable(self):
-        for counts in ({}, {"sms_nv_rev_total": 2},
-                       {"sms_nv_rev_total": "bad", "sms_nv_send_total": 0,
-                        "sms_nv_draftbox_total": 0},
-                       {"sms_nv_rev_total": -1, "sms_nv_send_total": 0,
-                        "sms_nv_draftbox_total": 0}):
+        for counts in (
+            {},
+            {"sms_nv_rev_total": 2},
+            {"sms_nv_rev_total": "bad", "sms_nv_send_total": 0, "sms_nv_draftbox_total": 0},
+            {"sms_nv_rev_total": -1, "sms_nv_send_total": 0, "sms_nv_draftbox_total": 0},
+        ):
             raw = {"sms_nvused_total": "7", **counts}
             self.assertEqual(ZteRouterApi._normalize_sms_capacity(raw), raw)
         self.assertEqual(ZteRouterApi._normalize_sms_capacity(None), {})
@@ -120,9 +131,12 @@ class SmsFieldsTests(unittest.TestCase):
         for sender in ("+48123456789", "Orange"):
             text = "Hello \u0141\u00f3d\u017a \U0001f600"
             raw = seal(text.encode("utf-16-be").hex())
-            message = router._parse_sms_message({
-                "number": seal(sender.encode("utf-16-be").hex()), "content": raw,
-            })
+            message = router._parse_sms_message(
+                {
+                    "number": seal(sender.encode("utf-16-be").hex()),
+                    "content": raw,
+                }
+            )
             self.assertEqual(message["number"], sender)
             self.assertEqual(message["content_decoded"], text)
             self.assertEqual(message["content_raw"], raw)
@@ -132,9 +146,17 @@ class SmsFieldsTests(unittest.TestCase):
         router = api("g51f")
         tampered = bytearray(base64.b64decode(seal("hello")))
         tampered[-1] ^= 1
-        values = [None, "", "+48123456789", "12345678", "004F00720061006E00670065",
-                  "!" * 60, "A" * 40, seal("hello", NEW_KEY),
-                  base64.b64encode(tampered).decode()]
+        values = [
+            None,
+            "",
+            "+48123456789",
+            "12345678",
+            "004F00720061006E00670065",
+            "!" * 60,
+            "A" * 40,
+            seal("hello", NEW_KEY),
+            base64.b64encode(tampered).decode(),
+        ]
         for value in values:
             self.assertEqual(router._decrypt_sms_field(value), value)
         self.assertEqual(unseal(router._encrypt_sms_field("hello")), "hello")
@@ -171,21 +193,29 @@ class SmsSendTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_session_key_is_used_only_after_router_accepts_it(self):
         private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-        public_key = private_key.public_key().public_bytes(
-            serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo,
-        ).decode()
+        public_key = (
+            private_key.public_key()
+            .public_bytes(
+                serialization.Encoding.PEM,
+                serialization.PublicFormat.SubjectPublicKeyInfo,
+            )
+            .decode()
+        )
         for accepted in (False, True):
             router = api("g51f")
             router._http_encryption_key = None
-            router.async_call_ubus = AsyncMock(side_effect=[
-                {"success": True, "data": {"result": public_key}},
-                {"success": accepted},
-            ])
+            router.async_call_ubus = AsyncMock(
+                side_effect=[
+                    {"success": True, "data": {"result": public_key}},
+                    {"success": accepted},
+                ]
+            )
             await router._async_setup_http_encryption()
             if accepted:
                 call = router.async_call_ubus.call_args_list[-1].args[0]
                 negotiated = private_key.decrypt(
-                    base64.b64decode(call["params"]["web_enstr"]), padding.PKCS1v15(),
+                    base64.b64decode(call["params"]["web_enstr"]),
+                    padding.PKCS1v15(),
                 ).decode()
                 self.assertEqual(router._http_encryption_key, negotiated)
                 self.assertEqual(len(bytes.fromhex(negotiated)), 32)
@@ -202,14 +232,19 @@ class SmsSendTests(unittest.IsolatedAsyncioTestCase):
             router._http_encryption_key = KEY
 
         router._async_ensure_logged_in = AsyncMock(side_effect=login)
-        router.async_call_ubus = AsyncMock(side_effect=[
-            {"success": True}, {"success": True, "data": {"sms_cmd_status_result": "3"}},
-        ])
+        router.async_call_ubus = AsyncMock(
+            side_effect=[
+                {"success": True},
+                {"success": True, "data": {"sms_cmd_status_result": "3"}},
+            ]
+        )
         with patch("asyncio.sleep", new_callable=AsyncMock):
             self.assertTrue(await router.async_send_sms("+48123", "Hello \U0001f600"))
         payload = router.async_call_ubus.call_args_list[0].args[0]["params"]
         self.assertEqual(unseal(payload["number"]), "+48123")
-        self.assertEqual(unseal(payload["message_body"]), router._encode_sms_message("Hello \U0001f600"))
+        self.assertEqual(
+            unseal(payload["message_body"]), router._encode_sms_message("Hello \U0001f600")
+        )
         self.assertEqual(payload["encode_type"], "UNICODE")
 
     async def test_access_denied_rebuilds_ciphertext_with_new_key(self):
@@ -220,10 +255,13 @@ class SmsSendTests(unittest.IsolatedAsyncioTestCase):
                 router._http_encryption_key = NEW_KEY
 
         router._async_ensure_logged_in = AsyncMock(side_effect=login)
-        router.async_call_ubus = AsyncMock(side_effect=[
-            {"success": False, "error": {"code": -32002}}, {"success": True},
-            {"success": True, "data": {"sms_cmd_status_result": 3}},
-        ])
+        router.async_call_ubus = AsyncMock(
+            side_effect=[
+                {"success": False, "error": {"code": -32002}},
+                {"success": True},
+                {"success": True, "data": {"sms_cmd_status_result": 3}},
+            ]
+        )
         with patch("asyncio.sleep", new_callable=AsyncMock):
             self.assertTrue(await router.async_send_sms("+48123", "Hi"))
         calls = router.async_call_ubus.call_args_list
@@ -235,9 +273,12 @@ class SmsSendTests(unittest.IsolatedAsyncioTestCase):
     async def test_plain_send_unchanged_and_failed_status_is_not_resent(self):
         router = api()
         router._async_ensure_logged_in = AsyncMock()
-        router.async_call_ubus = AsyncMock(side_effect=[
-            {"success": True}, {"success": True, "data": {"sms_cmd_status_result": 2}},
-        ])
+        router.async_call_ubus = AsyncMock(
+            side_effect=[
+                {"success": True},
+                {"success": True, "data": {"sms_cmd_status_result": 2}},
+            ]
+        )
         with patch("asyncio.sleep", new_callable=AsyncMock):
             self.assertFalse(await router.async_send_sms("+48123", "Hi"))
         self.assertEqual(router.async_call_ubus.await_count, 2)
@@ -246,8 +287,10 @@ class SmsSendTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(payload["message_body"], "00480069")
 
     async def test_transport_failure_and_repeated_denial_are_not_resent(self):
-        for response, count in (({"success": False, "error": {"message": "timeout"}}, 1),
-                                ({"success": False, "error": {"code": -32002}}, 2)):
+        for response, count in (
+            ({"success": False, "error": {"message": "timeout"}}, 1),
+            ({"success": False, "error": {"code": -32002}}, 2),
+        ):
             router = api("g51f")
             router._async_ensure_logged_in = AsyncMock()
             router.async_call_ubus = AsyncMock(return_value=response)
@@ -259,12 +302,26 @@ class SmsSendTests(unittest.IsolatedAsyncioTestCase):
 
         async def batch(calls, **kwargs):
             return [
-                {"success": True, "data": {"messages": [{
-                    "number": seal("002B00340038"), "content": seal("00480069"),
-                }]} if call["method"] == "zte_libwms_get_sms_data" else {
-                    "sms_nvused_total": 0, "sms_nv_rev_total": 12,
-                    "sms_nv_send_total": 0, "sms_nv_draftbox_total": 0,
-                } if call["method"] == "zwrt_wms_get_wms_capacity" else {}}
+                {
+                    "success": True,
+                    "data": {
+                        "messages": [
+                            {
+                                "number": seal("002B00340038"),
+                                "content": seal("00480069"),
+                            }
+                        ]
+                    }
+                    if call["method"] == "zte_libwms_get_sms_data"
+                    else {
+                        "sms_nvused_total": 0,
+                        "sms_nv_rev_total": 12,
+                        "sms_nv_send_total": 0,
+                        "sms_nv_draftbox_total": 0,
+                    }
+                    if call["method"] == "zwrt_wms_get_wms_capacity"
+                    else {},
+                }
                 for call in calls
             ]
 

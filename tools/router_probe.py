@@ -30,25 +30,25 @@ async def probe_scheme(base_url: str, fingerprint: str | None) -> dict[str, obje
     ssl_arg = make_ssl_argument(url, fingerprint)
     timeout = aiohttp.ClientTimeout(total=12)
     try:
-        async with aiohttp.ClientSession(
-            timeout=timeout, trust_env=False
-        ) as session:
-            async with session.get(
+        async with (
+            aiohttp.ClientSession(timeout=timeout, trust_env=False) as session,
+            session.get(
                 url,
                 allow_redirects=True,
                 max_redirects=5,
                 ssl=ssl_arg,
-            ) as response:
-                await response.read()
-                return {
-                    "scheme": parsed.scheme,
-                    "ok": 200 <= response.status < 400,
-                    "status": response.status,
-                    "redirect_statuses": [item.status for item in response.history],
-                    "redirect_count": len(response.history),
-                    "final_scheme": response.url.scheme,
-                    "content_type": response.content_type,
-                }
+            ) as response,
+        ):
+            await response.read()
+            return {
+                "scheme": parsed.scheme,
+                "ok": 200 <= response.status < 400,
+                "status": response.status,
+                "redirect_statuses": [item.status for item in response.history],
+                "redirect_count": len(response.history),
+                "final_scheme": response.url.scheme,
+                "content_type": response.content_type,
+            }
     except Exception as err:
         return {
             "scheme": parsed.scheme,

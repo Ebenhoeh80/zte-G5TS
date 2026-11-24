@@ -61,7 +61,12 @@ def test_optional_core_nonzero_result_is_info_once(caplog):
         router_api._log_batch_failures("core", calls, results)
 
     warnings = [r for r in caplog.records if r.levelno >= logging.WARNING]
-    infos = [r for r in caplog.records if r.levelno == logging.INFO and "optional unsupported or unavailable calls" in r.getMessage()]
+    infos = [
+        r
+        for r in caplog.records
+        if r.levelno == logging.INFO
+        and "optional unsupported or unavailable calls" in r.getMessage()
+    ]
     assert not warnings
     assert len(infos) == 1
     assert "uci.get (ubus 4)" in infos[0].getMessage()
@@ -134,12 +139,24 @@ def test_optional_core_failures_match_core_batch_calls():
         {"service": "zwrt_zte_mdm.api", "method": "get_sim_info"},
         {"service": "zwrt_router.api", "method": "router_get_status"},
         {"service": "zwrt_router.api", "method": "router_get_user_list_num"},
-        {"service": "uci", "method": "get", "params": {"config": "zwrt_common_info", "section": "common_config"}},
+        {
+            "service": "uci",
+            "method": "get",
+            "params": {"config": "zwrt_common_info", "section": "common_config"},
+        },
         {"service": "zwrt_led", "method": "get_ODU_switch_state", "params": {}},
         {"service": "uci", "method": "get", "params": {"config": "wireless", "section": "main_2g"}},
         {"service": "uci", "method": "get", "params": {"config": "wireless", "section": "main_5g"}},
-        {"service": "zwrt_data", "method": "get_wwandst", "params": {"source_module": "web", "cid": 1, "type": 4}},
-        {"service": "zwrt_data", "method": "get_wwaniface", "params": {"source_module": "web", "cid": 1}},
+        {
+            "service": "zwrt_data",
+            "method": "get_wwandst",
+            "params": {"source_module": "web", "cid": 1, "type": 4},
+        },
+        {
+            "service": "zwrt_data",
+            "method": "get_wwaniface",
+            "params": {"source_module": "web", "cid": 1},
+        },
     ]
     core_keys = {api_instance._batch_failure_key(call) for call in core_batch_calls}
     missing = ZteRouterApi._OPTIONAL_CORE_BATCH_FAILURES - core_keys

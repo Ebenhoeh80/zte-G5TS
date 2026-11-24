@@ -61,13 +61,25 @@ def load_init():
             self.closed = False
             self.error = FakeApi.error
             self.fast_error = FakeApi.fast_error
-            self.all_data = FakeApi.all_data if FakeApi.all_data is not None else {
-                "common_config": {"wa_inner_version": "V1.0"},
-                "sms": {"messages": [
-                    {"id": "1", "mem_store": "SM", "date": "2026-01-01 10:00", "tag": "0",
-                     "number": "+43123456789", "content_decoded": "Hello"}
-                ]},
-            }
+            self.all_data = (
+                FakeApi.all_data
+                if FakeApi.all_data is not None
+                else {
+                    "common_config": {"wa_inner_version": "V1.0"},
+                    "sms": {
+                        "messages": [
+                            {
+                                "id": "1",
+                                "mem_store": "SM",
+                                "date": "2026-01-01 10:00",
+                                "tag": "0",
+                                "number": "+43123456789",
+                                "content_decoded": "Hello",
+                            }
+                        ]
+                    },
+                }
+            )
             self.fast_data = None if FakeApi.empty_fast else FakeApi.fast_data
             if FakeApi.empty_all:
                 self.all_data = None
@@ -99,11 +111,11 @@ def load_init():
 
     repairs_calls = {"create": [], "delete": []}
     repairs = types.ModuleType("zte_init_test.repairs")
-    repairs.async_create_auth_issue = (
-        lambda hass, entry_id, name: repairs_calls["create"].append((hass, entry_id, name))
+    repairs.async_create_auth_issue = lambda hass, entry_id, name: repairs_calls["create"].append(
+        (hass, entry_id, name)
     )
-    repairs.async_delete_auth_issue = (
-        lambda hass, entry_id: repairs_calls["delete"].append((hass, entry_id))
+    repairs.async_delete_auth_issue = lambda hass, entry_id: repairs_calls["delete"].append(
+        (hass, entry_id)
     )
 
     coordinator = types.ModuleType("zte_init_test.coordinator")
@@ -117,11 +129,10 @@ def load_init():
     registry_calls = []
     device_registry = types.ModuleType("homeassistant.helpers.device_registry")
     device_registry.async_get = lambda hass: types.SimpleNamespace(
-        async_get_device=lambda identifiers: device
-        if identifiers == {("zte_5g_router", "entry")} else None,
-        async_update_device=lambda device_id, **kwargs: registry_calls.append(
-            (device_id, kwargs)
+        async_get_device=lambda identifiers: (
+            device if identifiers == {("zte_5g_router", "entry")} else None
         ),
+        async_update_device=lambda device_id, **kwargs: registry_calls.append((device_id, kwargs)),
     )
 
     ha = types.ModuleType("homeassistant")
@@ -142,7 +153,7 @@ def load_init():
         "homeassistant.exceptions": {"ConfigEntryAuthFailed": ConfigEntryAuthFailed},
         "homeassistant.helpers.device_registry": device_registry,
         "homeassistant.helpers.config_validation": {
-            "config_entry_only_config_schema": lambda domain: (lambda config: config)
+            "config_entry_only_config_schema": lambda domain: lambda config: config
         },
         "homeassistant.helpers.typing": {"ConfigType": dict},
         "homeassistant.helpers.update_coordinator": {
@@ -166,9 +177,7 @@ def load_init():
         ("identity", "identity.py"),
         ("sms_events", "sms_events.py"),
     ):
-        spec = importlib.util.spec_from_file_location(
-            f"zte_init_test.{modname}", ROOT / filename
-        )
+        spec = importlib.util.spec_from_file_location(f"zte_init_test.{modname}", ROOT / filename)
         module = importlib.util.module_from_spec(spec)
         modules[spec.name] = module
         with patch.dict(sys.modules, modules):
@@ -204,7 +213,8 @@ class InitModuleTests(unittest.IsolatedAsyncioTestCase):
         )
         entry = types.SimpleNamespace(
             entry_id="entry",
-            data=data or {
+            data=data
+            or {
                 "name": "Router",
                 "host": "https://192.168.0.1",
                 "password": "pw",
@@ -234,9 +244,7 @@ class InitModuleTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(entry.runtime_data.coordinator_fast.data, {"fast": True})
         self.assertEqual(entry.runtime_data.coordinator.update_interval, timedelta(seconds=60))
-        self.assertEqual(
-            entry.runtime_data.coordinator_fast.update_interval, timedelta(seconds=5)
-        )
+        self.assertEqual(entry.runtime_data.coordinator_fast.update_interval, timedelta(seconds=5))
         hass.config_entries.async_forward_entry_setups.assert_awaited_once_with(
             entry, init.PLATFORMS
         )
@@ -260,10 +268,18 @@ class InitModuleTests(unittest.IsolatedAsyncioTestCase):
         await init.async_setup_entry(hass, entry)
         store = entry.runtime_data
         data = {
-            "sms": {"messages": [
-                {"id": "2", "mem_store": "SM", "date": "2026-01-02 10:00", "tag": "1",
-                 "number": "+43123456789", "content_decoded": "Second"}
-            ]}
+            "sms": {
+                "messages": [
+                    {
+                        "id": "2",
+                        "mem_store": "SM",
+                        "date": "2026-01-02 10:00",
+                        "tag": "1",
+                        "number": "+43123456789",
+                        "content_decoded": "Second",
+                    }
+                ]
+            }
         }
         init._fire_sms_events(hass, entry, store, data)
         hass.bus.async_fire.assert_called_once()
@@ -278,12 +294,8 @@ class InitModuleTests(unittest.IsolatedAsyncioTestCase):
         await init.async_setup_entry(hass, entry)
         store = entry.runtime_data
         store.pause_until = datetime.now(UTC) + timedelta(minutes=5)
-        self.assertEqual(
-            await store.coordinator.update_method(), store.coordinator.data
-        )
-        self.assertEqual(
-            await store.coordinator_fast.update_method(), store.coordinator_fast.data
-        )
+        self.assertEqual(await store.coordinator.update_method(), store.coordinator.data)
+        self.assertEqual(await store.coordinator_fast.update_method(), store.coordinator_fast.data)
 
     async def test_auth_failure_raises_repair_and_closes_api(self):
         Api.error = init.ZteAuthError("bad password")

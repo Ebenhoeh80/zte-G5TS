@@ -61,15 +61,18 @@ def load_repairs():
 
     spec = importlib.util.spec_from_file_location("zte_repairs_test.repairs", ROOT / "repairs.py")
     module = importlib.util.module_from_spec(spec)
-    with patch.dict(sys.modules, {
-        "zte_repairs_test": package,
-        "homeassistant.components": components,
-        "homeassistant.components.repairs": repairs_component,
-        "homeassistant.config_entries": entries,
-        "homeassistant.core": core,
-        "homeassistant.helpers": helpers,
-        "homeassistant.helpers.issue_registry": issue_registry,
-    }):
+    with patch.dict(
+        sys.modules,
+        {
+            "zte_repairs_test": package,
+            "homeassistant.components": components,
+            "homeassistant.components.repairs": repairs_component,
+            "homeassistant.config_entries": entries,
+            "homeassistant.core": core,
+            "homeassistant.helpers": helpers,
+            "homeassistant.helpers.issue_registry": issue_registry,
+        },
+    ):
         spec.loader.exec_module(module)
     return module, created, deleted, FlowType
 
@@ -109,9 +112,7 @@ class RepairTests(unittest.IsolatedAsyncioTestCase):
     async def test_fix_flow_starts_reauth_and_clears_issue(self):
         start_flow = AsyncMock(return_value={"flow_id": "flow-1"})
         hass = types.SimpleNamespace(
-            config_entries=types.SimpleNamespace(
-                flow=types.SimpleNamespace(async_init=start_flow)
-            )
+            config_entries=types.SimpleNamespace(flow=types.SimpleNamespace(async_init=start_flow))
         )
         flow = repairs.ZteAuthRepairFlow()
         flow.hass = hass

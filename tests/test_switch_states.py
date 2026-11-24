@@ -53,31 +53,64 @@ class SwitchStateTests(unittest.TestCase):
 
     def test_mobile_status_is_cellular_not_primary_wan_or_enable_flag(self):
         for connected in ("ipv4_connected", "ipv6_connected", "ipv4_ipv6_connected"):
-            self.assertTrue(self.state("mobile_data", {
-                "wan": {"current_wan_status": "ppp_disconnected"},
-                "wwaniface": {"connect_status": connected, "enable": 0},
-            }))
-        self.assertFalse(self.state("mobile_data", {
-            "wan": {"current_wan_status": "ipv4_connected"},
-            "wwaniface": {"connect_status": "disconnected", "enable": 1},
-        }))
+            self.assertTrue(
+                self.state(
+                    "mobile_data",
+                    {
+                        "wan": {"current_wan_status": "ppp_disconnected"},
+                        "wwaniface": {"connect_status": connected, "enable": 0},
+                    },
+                )
+            )
+        self.assertFalse(
+            self.state(
+                "mobile_data",
+                {
+                    "wan": {"current_wan_status": "ipv4_connected"},
+                    "wwaniface": {"connect_status": "disconnected", "enable": 1},
+                },
+            )
+        )
 
     def test_mobile_legacy_fallbacks(self):
-        self.assertFalse(self.state("mobile_data", {"wan": {
-            "current_wan_status": "ipv4_connected", "lte_connect_status": "disconnected",
-        }}))
-        self.assertTrue(self.state("mobile_data", {
-            "wan": {"current_wan_status": "ipv4_connected"},
-        }))
+        self.assertFalse(
+            self.state(
+                "mobile_data",
+                {
+                    "wan": {
+                        "current_wan_status": "ipv4_connected",
+                        "lte_connect_status": "disconnected",
+                    }
+                },
+            )
+        )
+        self.assertTrue(
+            self.state(
+                "mobile_data",
+                {
+                    "wan": {"current_wan_status": "ipv4_connected"},
+                },
+            )
+        )
         self.assertFalse(self.state("mobile_data", {}))
 
     def test_wifi_band_states_respect_master_and_inverted_disabled_flag(self):
         for band in ("wifi_main_2g", "wifi_main_5g"):
-            for master, disabled, expected in (("0", "0", False), ("1", "0", True),
-                                               ("1", "1", False)):
-                self.assertEqual(self.state(band, {
-                    "wifi_module": {"wifi_onoff": master}, band: {"disabled": disabled},
-                }), expected)
+            for master, disabled, expected in (
+                ("0", "0", False),
+                ("1", "0", True),
+                ("1", "1", False),
+            ):
+                self.assertEqual(
+                    self.state(
+                        band,
+                        {
+                            "wifi_module": {"wifi_onoff": master},
+                            band: {"disabled": disabled},
+                        },
+                    ),
+                    expected,
+                )
 
 
 if __name__ == "__main__":
