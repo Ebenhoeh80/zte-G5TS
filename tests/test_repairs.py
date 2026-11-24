@@ -99,6 +99,13 @@ class RepairTests(unittest.IsolatedAsyncioTestCase):
         repairs.async_delete_auth_issue(Mock(), "entry-1")
         self.assertEqual(deleted[0][0][1:], ("zte_5g_router", "auth_failed_entry-1"))
 
+    async def test_init_step_shows_confirmation(self):
+        flow = repairs.ZteAuthRepairFlow()
+        flow.hass = Mock()
+        flow.data = {"entry_id": "entry-1"}
+        form = await flow.async_step_init()
+        self.assertEqual(form["step_id"], "confirm")
+
     async def test_fix_flow_starts_reauth_and_clears_issue(self):
         start_flow = AsyncMock(return_value={"flow_id": "flow-1"})
         hass = types.SimpleNamespace(

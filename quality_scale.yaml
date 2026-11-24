@@ -111,8 +111,9 @@ rules:
   test-coverage:
     status: todo
     comment: >-
-      Coverage is measured in CI (--cov with a 50% floor, currently ~56%).
-      Changed shared modules are fully covered, but the 95% per-module rule is
+      Coverage is measured in CI (--cov with a 50% floor, currently ~64%).
+      __init__.py, text.py, coordinator.py, entity.py, repairs.py and the small
+      helper modules are fully covered, but the 95% per-module rule is still
       not met for the large legacy zte_api.py/sensor.py/switch.py modules.
 
   # -------------------------------- Gold ----------------------------------

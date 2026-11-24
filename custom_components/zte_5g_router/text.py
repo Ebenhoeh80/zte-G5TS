@@ -35,21 +35,18 @@ TEXTS: tuple[ZteTextDescription, ...] = (
     ZteTextDescription(
         key="cell_lock_4g_text",
         name="Cell Lock 4G",
-        icon="mdi:cellphone-signal",
         entity_category=EntityCategory.CONFIG,
         kind="4g",
     ),
     ZteTextDescription(
         key="cell_lock_5g_text",
         name="Cell Lock 5G",
-        icon="mdi:cellphone-signal",
         entity_category=EntityCategory.CONFIG,
         kind="5g",
     ),
     ZteTextDescription(
         key="sms_compose_text",
         name="SMS Compose",
-        icon="mdi:message-text-outline",
         entity_category=EntityCategory.CONFIG,
         kind="sms",
     ),
