@@ -15,6 +15,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Verify tag matches manifest version
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME#v}"
+          version="$(python -c 'import json; print(json.load(open("custom_components/zte_5g_router/manifest.json"))["version"])')"
+          if [ "$tag" != "$version" ]; then
+            echo "Tag $tag does not match manifest version $version" >&2
+            exit 1
+          fi
+
       - name: Build zip (root files, no folder)
         run: |
           set -euxo pipefail

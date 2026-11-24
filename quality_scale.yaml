@@ -1,7 +1,7 @@
 # Integration quality scale audit (54 rules: Bronze 20, Silver 10, Gold 21, Platinum 3).
 # Status follows https://developers.home-assistant.io/docs/core/integration-quality-scale/rules/
 # "todo" = not implemented or not verified yet; "exempt" = not applicable to this integration.
-# Last reviewed with v2.5.0-beta.6; the last two todo rules closed in beta.3.
+# Last reviewed with v2.5.0; the last two todo rules closed in beta.3.
 
 rules:
   # ------------------------------- Bronze ----------------------------------
@@ -111,7 +111,7 @@ rules:
   test-coverage:
     status: done
     comment: >-
-      672 tests plus 296 subtests; total coverage 99.86% with 95% total and
+      676 tests plus 619 subtests; total coverage 99.86% with 95% total and
       per-module CI floors. 14 of 15 modules are at 100%; the four open lines in
       zte_api.py are unreachable defensive fallbacks (pre-validated hex,
       latin-1 decode, base64 length guard).
@@ -151,7 +151,9 @@ rules:
     comment: README documents side-by-side operation and firmware limitations.
   docs-supported-devices:
     status: done
-    comment: README lists supported models (G5TS, G5TC, G5C, G5 Max, G5 Ultra, MC801A, MC888).
+    comment: >-
+      README lists supported models (G5TS, G5TC, G5C, G5 Max, G5 Ultra, MC801A,
+      MC888, MC889, G51F, MC7510); the config-flow description matches.
   docs-supported-functions:
     status: done
     comment: README's Features section describes the provided entities and actions.
@@ -175,10 +177,14 @@ rules:
     comment: Newly discovered client trackers are disabled until enabled by the user.
   entity-translations:
     status: done
-    comment: Entity names come from strings.json with en/de translations.
+    comment: >-
+      Entity names come from strings.json with en/de translations; a test checks
+      every SENSOR_DEFS key against all three translation files.
   exception-translations:
     status: done
-    comment: Config flow errors and aborts are defined in strings.json.
+    comment: >-
+      Config flow errors (including wrong_device) and aborts are defined in
+      strings.json; a test checks every flow error key against all translations.
   icon-translations:
     status: done
     comment: >-

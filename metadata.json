@@ -1,7 +1,7 @@
 {
-  "name": "ZTE NG 5G Router Manager",
-  "description": "Management dashboard for ZTE 5G CPE routers, based on the original ha-zte-ng-router project by rosenrot00.",
-  "prompt": "Rewrite the imported ZTE NG router project as a React application preserving all core features and business logic.",
+  "name": "ZTE 5G Router (G5TS fork)",
+  "description": "Home Assistant custom integration for ZTE 5G/4G routers over their local web API, derived from the original ha-zte-ng-router project by rosenrot00.",
+  "prompt": "Maintain the Ebenhoeh80/zte-G5TS Home Assistant integration fork, preserving its local UBUS/GoForm API features, quality-scale work and test coverage.",
   "permissions": [],
   "capabilities": []
 }
