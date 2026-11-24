@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0-beta.6] - 2026-11-24
+
+Cosmetic corrections from the final independent sign-off. Not recommended for
+production use yet.
+
+### Changed
+- `quality_scale.yaml` header now references the current release.
+- Release notes describe the repo-wide Ruff formatting scope precisely: 58
+  files, of which 47 are Python and 11 are Markdown.
+
+### Tests
+- Unchanged: 672 tests plus 296 subtests, 99.86% coverage, Full-Strict-mypy,
+  repo-wide `ruff check .` and `ruff format --check .` all green.
+
 ## [2.5.0-beta.5] - 2026-11-24
 
 Final hygiene pass: no known open findings remain. Not recommended for
