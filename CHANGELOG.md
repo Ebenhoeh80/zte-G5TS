@@ -5,6 +5,29 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0-beta.3] - 2026-11-24
+
+Final quality-scale test release: no `todo` rules remain. Not recommended for
+production use yet.
+
+### Added
+- Offline coverage tests for `zte_api.py`, `sensor.py`, `switch.py`, `button.py`,
+  `config_flow.py` and `identity.py`: 668 tests plus 289 subtests, 99% total
+  coverage and at least 97% in every module.
+- CI now enforces a 95% total *and* per-module coverage floor, plus a full
+  strict-mypy job.
+
+### Changed
+- All 15 source files pass `mypy --config-file pyproject.toml
+  custom_components/zte_5g_router` with `strict = true`; API payloads are typed
+  with casts and typed locals, behaviour is unchanged.
+- `quality_scale.yaml`: `test-coverage` and `strict-typing` are now `done` (0
+  `todo` rules, 43 `done`, 11 `exempt`).
+
+### Fixed
+- Closed an unawaited `AsyncMock` coroutine in the API coverage tests, so the
+  suite runs without warnings.
+
 ## [2.5.0-beta.2] - 2026-11-24
 
 Follow-up quick wins for the beta. Not recommended for production use yet.

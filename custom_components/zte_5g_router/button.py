@@ -17,7 +17,11 @@ from .entity import device_info, entity_unique_id
 PARALLEL_UPDATES = 1
 
 if TYPE_CHECKING:
+    from homeassistant.helpers.entity_platform import AddEntitiesCallback
+    from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+
     from . import ZteNgRouterConfigEntry
+    from .zte_api import ZteRouterApi
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -61,7 +65,7 @@ BUTTON_DEFS: list[ZteActionButtonDef] = [
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ZteNgRouterConfigEntry,
-    async_add_entities,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     runtime_data = entry.runtime_data
 
@@ -79,13 +83,13 @@ async def async_setup_entry(
     )
 
 
-class ZteActionButton(CoordinatorEntity, ButtonEntity):
+class ZteActionButton(CoordinatorEntity, ButtonEntity):  # type: ignore[misc]  # HA bases are Any here
     _attr_has_entity_name = True
 
     def __init__(
         self,
-        coordinator,
-        api,
+        coordinator: DataUpdateCoordinator[dict[str, Any]],
+        api: ZteRouterApi,
         entry: ZteNgRouterConfigEntry,
         device_name: str,
         btn_def: ZteActionButtonDef,

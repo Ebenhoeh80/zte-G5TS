@@ -109,12 +109,13 @@ rules:
     status: done
     comment: async_step_reauth / reauth_confirm with a live login check.
   test-coverage:
-    status: todo
+    status: done
     comment: >-
-      Coverage is measured in CI (--cov with a 50% floor, currently ~64%).
-      __init__.py, text.py, coordinator.py, entity.py, repairs.py and the small
-      helper modules are fully covered, but the 95% per-module rule is still
-      not met for the large legacy zte_api.py/sensor.py/switch.py modules.
+      668 tests plus 289 subtests; total coverage 99.7% with 95% total and
+      per-module CI floors. Every module is above 95% (13 at 100%; zte_api.py
+      99%, device_tracker.py 97%). The four open lines in zte_api.py are
+      unreachable defensive fallbacks (pre-validated hex, latin-1 decode, base64
+      length guard); device_tracker.py has five defensive registry branches.
 
   # -------------------------------- Gold ----------------------------------
   devices:
@@ -213,10 +214,11 @@ rules:
       connector. HA's shared ClientSession cannot provide either; injected
       sessions are supported for tests and are never closed by the API.
   strict-typing:
-    status: todo
+    status: done
     comment: >-
-      pyproject.toml now configures mypy strict plus missing-import overrides;
-      the new/shared modules (const, identity, sms_events, entity, diagnostics,
-      coordinator) pass a strict run with --follow-imports=silent. The legacy
-      zte_api.py, sensor.py and switch.py modules still need typed payloads
-      before a full strict run and a core .strict-typing entry can be clean.
+      pyproject.toml configures mypy strict for all 15 source files; the full
+      run (mypy --config-file pyproject.toml custom_components/zte_5g_router)
+      is clean and enforced in CI. API payloads are narrowed with casts and
+      typed locals; 16 type-ignore comments remain (15 new, one pre-existing in
+      coordinator.py), all for untyped HA bases/decorators or aiohttp's numeric
+      timeout argument.

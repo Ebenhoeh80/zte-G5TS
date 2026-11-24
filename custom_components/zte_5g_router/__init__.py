@@ -4,7 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 import logging
-from typing import Any
+from typing import Any, TypeAlias
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PASSWORD
@@ -59,7 +59,9 @@ class ZteNgRouterRuntimeData:
     sms_seen: set[str] | None = None
 
 
-ZteNgRouterConfigEntry = ConfigEntry[ZteNgRouterRuntimeData]
+# Home Assistant is untyped here, so the generic ConfigEntry resolves to Any;
+# the explicit alias keeps this name usable as a type in platform modules.
+ZteNgRouterConfigEntry: TypeAlias = ConfigEntry[ZteNgRouterRuntimeData]  # noqa: UP040 - keep the runtime alias object
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
@@ -254,7 +256,7 @@ def _async_migrate_entry_identity(
 async def async_unload_entry(hass: HomeAssistant, entry: ZteNgRouterConfigEntry) -> bool:
     """Unload a config entry."""
     store = entry.runtime_data
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    unload_ok: bool = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         await store.api.async_close()
     return unload_ok

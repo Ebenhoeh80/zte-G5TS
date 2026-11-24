@@ -19,13 +19,16 @@ from .zte_api import ZteRouterApi
 PARALLEL_UPDATES = 1
 
 if TYPE_CHECKING:
+    from homeassistant.helpers.entity_platform import AddEntitiesCallback
+    from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+
     from . import ZteNgRouterConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, kw_only=True)
-class ZteTextDescription(TextEntityDescription):
+class ZteTextDescription(TextEntityDescription):  # type: ignore[misc]  # HA base is Any here
     """Description for ZTE text entities."""
 
     kind: str  # "4g", "5g", "sms"
@@ -56,7 +59,7 @@ TEXTS: tuple[ZteTextDescription, ...] = (
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ZteNgRouterConfigEntry,
-    async_add_entities,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     runtime_data = entry.runtime_data
     if not runtime_data.sms_compose:
@@ -75,7 +78,7 @@ async def async_setup_entry(
     ])
 
 
-class ZteTextEntity(CoordinatorEntity, TextEntity):
+class ZteTextEntity(CoordinatorEntity, TextEntity):  # type: ignore[misc]  # HA bases are Any here
     """Editable cell lock text input.
 
     Behavior:
@@ -91,7 +94,7 @@ class ZteTextEntity(CoordinatorEntity, TextEntity):
     def __init__(
         self,
         hass: HomeAssistant,
-        coordinator,
+        coordinator: DataUpdateCoordinator[dict[str, Any]],
         api: ZteRouterApi,
         entry: ZteNgRouterConfigEntry,
         device_name: str,

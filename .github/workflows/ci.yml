@@ -31,6 +31,21 @@ jobs:
       - name: Ruff lint
         run: ruff check custom_components tests
 
+  mypy:
+    name: Mypy strict
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install test dependencies
+        run: pip install -r requirements_test.txt
+      - name: Mypy strict (all source files)
+        run: mypy --config-file pyproject.toml custom_components/zte_5g_router
+
   test:
     name: Python Tests
     runs-on: ubuntu-latest
@@ -52,4 +67,23 @@ jobs:
           pytest tests
           --cov=custom_components/zte_5g_router
           --cov-report=term-missing
-          --cov-fail-under=50
+          --cov-report=json:coverage.json
+          --cov-fail-under=95
+      - name: Enforce 95% coverage per module
+        run: |
+          python - <<'PY'
+          import json
+          import sys
+
+          with open("coverage.json", encoding="utf-8") as handle:
+              files = json.load(handle)["files"]
+          low = {
+              name: data["summary"]["percent_covered"]
+              for name, data in files.items()
+              if data["summary"]["percent_covered"] < 95
+          }
+          if low:
+              print("Modules below 95% coverage:", low)
+              sys.exit(1)
+          print("Every module has at least 95% coverage")
+          PY

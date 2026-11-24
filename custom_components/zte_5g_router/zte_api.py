@@ -11,7 +11,7 @@ import os
 import re
 import string
 import time
-from typing import Any
+from typing import Any, cast
 from urllib.parse import urlsplit, urlunsplit
 
 import aiohttp
@@ -562,11 +562,11 @@ class ZteRouterApi:
 
         # LTE primary
         try:
-            lte_earfcn = int(netinfo.get("lte_action_channel"))
+            lte_earfcn = int(cast(str | int | float, netinfo.get("lte_action_channel")))
         except (TypeError, ValueError):
             lte_earfcn = None
         try:
-            lte_bw = float(netinfo.get("lte_bandwidth"))
+            lte_bw = float(cast(str | int | float, netinfo.get("lte_bandwidth")))
         except (TypeError, ValueError):
             lte_bw = None
 
@@ -578,11 +578,11 @@ class ZteRouterApi:
 
         # NR primary
         try:
-            nr_arfcn = int(netinfo.get("nr5g_action_channel"))
+            nr_arfcn = int(cast(str | int | float, netinfo.get("nr5g_action_channel")))
         except (TypeError, ValueError):
             nr_arfcn = None
         try:
-            nr_bw = float(netinfo.get("nr5g_bandwidth"))
+            nr_bw = float(cast(str | int | float, netinfo.get("nr5g_bandwidth")))
         except (TypeError, ValueError):
             nr_bw = None
 
@@ -723,6 +723,7 @@ class ZteRouterApi:
             from cryptography import x509
             from cryptography.hazmat.primitives import serialization
             from cryptography.hazmat.primitives.asymmetric import padding
+            from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 
             crt_res = await self.async_call_ubus(
                 {
@@ -769,7 +770,7 @@ class ZteRouterApi:
             # WebUI uses CryptoJS WordArray.random(32).toString(Hex): 32 bytes
             # rendered as 64 hex characters.
             key_hex = os.urandom(32).hex()
-            encrypted = public_key.encrypt(
+            encrypted = cast(RSAPublicKey, public_key).encrypt(
                 key_hex.encode("utf-8"),
                 padding.PKCS1v15(),
             )
@@ -855,7 +856,7 @@ class ZteRouterApi:
                 payload = await resp.json(content_type=None)
                 if raise_errors and not isinstance(payload, dict):
                     raise RuntimeError("response was not a JSON object")
-                return payload
+                return cast(dict[str, Any], payload)
         except Exception as exc:
             if raise_errors:
                 if isinstance(exc, RouterResponseError):
@@ -899,7 +900,7 @@ class ZteRouterApi:
                 payload = await resp.json(content_type=None)
                 if raise_errors and not isinstance(payload, dict):
                     raise RuntimeError("response was not a JSON object")
-                return payload
+                return cast(dict[str, Any], payload)
         except Exception as exc:
             if raise_errors:
                 if isinstance(exc, RouterResponseError):
@@ -1293,13 +1294,13 @@ class ZteRouterApi:
     # --------------------------------------------------------------------
     async def async_call_ubus(
         self,
-        call: dict,
+        call: dict[str, Any],
         session_id: str | None = None,
         *,
         z_mode_override: str | None = None,
         retry_on_access_denied: bool = True,
         retry_on_connreset_104: bool = True,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Call ubus. If access denied (-32002), try a re-login and retry once."""
 
         if self._api_mode == "goform" and not self._session_id:
@@ -1371,7 +1372,7 @@ class ZteRouterApi:
                 url,
                 data=json.dumps(req, separators=(",", ":")),
                 headers=headers,
-                timeout=10,
+                timeout=10,  # type: ignore[arg-type]  # aiohttp accepts int seconds; keep the wire signature
             ) as resp:
                 _LOGGER.debug(
                     "UBUS response: endpoint=/ubus/ service=%s method=%s status=%s",
@@ -1585,7 +1586,7 @@ class ZteRouterApi:
                 url,
                 data=json.dumps(req, separators=(",", ":")),
                 headers=headers,
-                timeout=10,
+                timeout=10,  # type: ignore[arg-type]  # aiohttp accepts int seconds; keep the wire signature
             ) as resp:
                 resp.raise_for_status()
                 raw_text = await resp.text()
@@ -1682,7 +1683,7 @@ class ZteRouterApi:
         for item in res_list:
             if not isinstance(item, dict):
                 continue
-            rpc_id = item.get("id")
+            rpc_id = cast(int, item.get("id"))
             if rpc_id not in id_to_index:
                 continue
             idx = id_to_index[rpc_id]
@@ -2061,7 +2062,7 @@ class ZteRouterApi:
                 await self._async_ensure_logged_in(force=True)
                 return await self._async_goform_update_fast()
 
-        batch_calls = [
+        batch_calls: list[dict[str, Any]] = [
             {"service": "zwrt_router.api", "method": "router_get_status"},
             {
                 "service": "zwrt_data",
@@ -2142,7 +2143,7 @@ class ZteRouterApi:
             value = data.get(field)
             if isinstance(value, bool) or not re.fullmatch(r"[0-9]+", str(value)):
                 return None
-            values.append(int(value))
+            values.append(int(cast(str | int | float, value)))
         total, wireless, lan = values
         return (total, wireless, lan) if max(wireless, lan) <= total <= cls._MAX_WIFI_CLIENTS else None
 
@@ -2228,7 +2229,7 @@ class ZteRouterApi:
                 await self._async_ensure_logged_in(force=True)
                 return await self._async_goform_update_all()
 
-        core_batch_calls = [
+        core_batch_calls: list[dict[str, Any]] = [
             {"service": "zte_nwinfo_api", "method": "nwinfo_get_netinfo"},
             {"service": "zwrt_wlan", "method": "report"},
             {"service": "uci", "method": "get", "params": {"config": "wireless", "section": "zte_mbb"}},
@@ -2252,7 +2253,7 @@ class ZteRouterApi:
                 "params": {"source_module": "web", "cid": 1},
             },
         ]
-        monthly_batch_calls = [
+        monthly_batch_calls: list[dict[str, Any]] = [
             {
                 "service": "zwrt_data",
                 "method": "get_wwandst",
@@ -2265,7 +2266,7 @@ class ZteRouterApi:
                 "source_module": "web", "cid": 1,
             }),
         ]
-        sms_batch_calls = [
+        sms_batch_calls: list[dict[str, Any]] = [
             {
                 "service": "zwrt_wms",
                 "method": "zte_libwms_get_sms_data",

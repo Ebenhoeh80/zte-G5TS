@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 import math
 import re
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -226,7 +226,7 @@ FAST_SENSOR_KEYS = frozenset({
 })
 
 
-def _as_number(value: Any) -> Any:
+def _as_number(value: Any) -> float | None:
     """Convert router value to float or return None for empty/invalid values.
 
     Home Assistant expects numeric sensors (measurement + unit) to expose either
@@ -275,15 +275,17 @@ def _data_limit_value(data: dict[str, Any], key: str) -> Any:
     """Expose read-only limit settings without inventing a volume unit."""
     limit = data.get("data_limit") or {}
     reset = data.get("traffic_reset") or {}
-    flags = {
+    flags: dict[str, Any] = {
         "data_limit_enabled": limit.get("enable"),
         "data_limit_exceeded": limit.get("overflow"),
         "traffic_auto_reset": reset.get("enable"),
     }
     if key in flags:
-        return {"0": "off", "1": "on"}.get(_as_text(flags[key]))
+        labels: dict[str | None, str] = {"0": "off", "1": "on"}
+        return labels.get(_as_text(flags[key]))
     if key == "data_limit_type":
-        return {"1": "connection_time", "2": "data_volume"}.get(_as_text(limit.get("type")))
+        type_labels: dict[str | None, str] = {"1": "connection_time", "2": "data_volume"}
+        return type_labels.get(_as_text(limit.get("type")))
     if key == "data_limit_value":
         value = limit.get("value")
         # Preserve integer precision; reject fractional, negative or non-finite limits.
@@ -488,7 +490,7 @@ def _seconds_ago_to_datetime(value: Any) -> datetime | None:
     seconds = _as_number(value)
     if seconds is None or seconds < 0:
         return None
-    return dt_util.utcnow() - timedelta(seconds=float(seconds))
+    return cast(datetime, dt_util.utcnow() - timedelta(seconds=float(seconds)))
 
 
 def _connected_session_seconds(data: dict[str, Any]) -> float | None:
@@ -947,7 +949,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class ZteNgRouterSensor(CoordinatorEntity, SensorEntity):
+class ZteNgRouterSensor(CoordinatorEntity, SensorEntity):  # type: ignore[misc]  # HA bases are Any here
     """Single ZTE NG Router sensor entity reading from the coordinator."""
 
     _attr_should_poll = False
