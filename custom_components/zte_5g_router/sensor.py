@@ -40,12 +40,10 @@ SENSOR_DEFS = [
     # General network info
     ("network_provider", "Network Provider", None, None, None),
     ("connection_type", "Connection Type", None, None, None),
-
     # Wi-Fi (public zwrt_wlan/report)
     ("wifi_onoff", "WiFi Enabled", None, None, None),
     ("main2g_ssid", "WiFi 2.4 GHz SSID", None, None, None),
     ("main5g_ssid", "WiFi 5 GHz SSID", None, None, None),
-
     # Net identifiers / locks
     ("signalbar", "Signal Bars", None, None, SensorStateClass.MEASUREMENT),
     ("rmcc", "RMCC", None, None, None),
@@ -56,14 +54,11 @@ SENSOR_DEFS = [
     ("lac_code", "LAC Code", None, None, None),
     ("lte_band_lock", "LTE Band Lock", None, None, None),
     ("gw_band_lock", "GW Band Lock", None, None, None),
-
     # Bands and total bandwidth
     ("bands_summary", "Bands", None, None, None),
     ("total_bandwidth", "Total Bandwidth", None, "MHz", SensorStateClass.MEASUREMENT),
-
     # Primary RSRP (LTE preferred, NR fallback)
-    #("primary_rsrp", "Primary RSRP", None, "dBm", SensorStateClass.MEASUREMENT),
-
+    # ("primary_rsrp", "Primary RSRP", None, "dBm", SensorStateClass.MEASUREMENT),
     # LTE metrics
     ("lte_pci", "LTE PCI", None, None, None),
     ("lte_earfcn", "LTE EARFCN", None, None, None),
@@ -71,7 +66,6 @@ SENSOR_DEFS = [
     ("lte_rsrq", "LTE RSRQ", None, "dB", SensorStateClass.MEASUREMENT),
     ("lte_sinr", "LTE SINR", None, "dB", SensorStateClass.MEASUREMENT),
     ("lte_rssi", "LTE RSSI", None, "dBm", SensorStateClass.MEASUREMENT),
-
     # NR / 5G metrics
     ("nr_pci", "NR PCI", None, None, None),
     ("nr_arfcn", "NR ARFCN", None, None, None),
@@ -79,7 +73,6 @@ SENSOR_DEFS = [
     ("nr_rsrq", "NR RSRQ", None, "dB", SensorStateClass.MEASUREMENT),
     ("nr_sinr", "NR SINR", None, "dB", SensorStateClass.MEASUREMENT),
     ("nr_rssi", "NR RSSI", None, "dBm", SensorStateClass.MEASUREMENT),
-
     # WAN / system
     ("wan_ipv4", "WAN IPv4", None, None, None),
     ("wan_ipv6", "WAN IPv6", None, None, None),
@@ -88,32 +81,87 @@ SENSOR_DEFS = [
     ("modem_main_state", "Modem Main State", None, None, None),
     ("radio_off", "Radio Off", None, None, None),
     ("hightemp_datalimit_status", "High Temperature Limit Status", None, None, None),
-    ("5g_modem_temperature", "5G Modem Temperature", SensorDeviceClass.TEMPERATURE,
-     UnitOfTemperature.CELSIUS, SensorStateClass.MEASUREMENT),
-    ("modem_temperature", "Modem Temperature", SensorDeviceClass.TEMPERATURE,
-     UnitOfTemperature.CELSIUS, SensorStateClass.MEASUREMENT),
+    (
+        "5g_modem_temperature",
+        "5G Modem Temperature",
+        SensorDeviceClass.TEMPERATURE,
+        UnitOfTemperature.CELSIUS,
+        SensorStateClass.MEASUREMENT,
+    ),
+    (
+        "modem_temperature",
+        "Modem Temperature",
+        SensorDeviceClass.TEMPERATURE,
+        UnitOfTemperature.CELSIUS,
+        SensorStateClass.MEASUREMENT,
+    ),
     ("pa_temp_level", "PA Temp Level", None, None, None),
     ("tj_temp_level", "TJ Temp Level", None, None, None),
     ("connected_lan_devices", "Connected LAN Devices", None, None, SensorStateClass.MEASUREMENT),
     ("connected_wifi_devices", "Connected WiFi Devices", None, None, SensorStateClass.MEASUREMENT),
-    ("download_rate", "Download Rate", SensorDeviceClass.DATA_RATE, UnitOfDataRate.BITS_PER_SECOND, SensorStateClass.MEASUREMENT),
-    ("upload_rate", "Upload Rate", SensorDeviceClass.DATA_RATE, UnitOfDataRate.BITS_PER_SECOND, SensorStateClass.MEASUREMENT),
-    ("monthly_download_mb", "Monthly Download", SensorDeviceClass.DATA_SIZE, UnitOfInformation.BYTES, SensorStateClass.TOTAL_INCREASING),
-    ("monthly_upload_mb", "Monthly Upload", SensorDeviceClass.DATA_SIZE, UnitOfInformation.BYTES, SensorStateClass.TOTAL_INCREASING),
-    ("daily_download", "Daily Download", SensorDeviceClass.DATA_SIZE,
-     UnitOfInformation.BYTES, SensorStateClass.TOTAL_INCREASING),
-    ("daily_upload", "Daily Upload", SensorDeviceClass.DATA_SIZE,
-     UnitOfInformation.BYTES, SensorStateClass.TOTAL_INCREASING),
+    (
+        "download_rate",
+        "Download Rate",
+        SensorDeviceClass.DATA_RATE,
+        UnitOfDataRate.BITS_PER_SECOND,
+        SensorStateClass.MEASUREMENT,
+    ),
+    (
+        "upload_rate",
+        "Upload Rate",
+        SensorDeviceClass.DATA_RATE,
+        UnitOfDataRate.BITS_PER_SECOND,
+        SensorStateClass.MEASUREMENT,
+    ),
+    (
+        "monthly_download_mb",
+        "Monthly Download",
+        SensorDeviceClass.DATA_SIZE,
+        UnitOfInformation.BYTES,
+        SensorStateClass.TOTAL_INCREASING,
+    ),
+    (
+        "monthly_upload_mb",
+        "Monthly Upload",
+        SensorDeviceClass.DATA_SIZE,
+        UnitOfInformation.BYTES,
+        SensorStateClass.TOTAL_INCREASING,
+    ),
+    (
+        "daily_download",
+        "Daily Download",
+        SensorDeviceClass.DATA_SIZE,
+        UnitOfInformation.BYTES,
+        SensorStateClass.TOTAL_INCREASING,
+    ),
+    (
+        "daily_upload",
+        "Daily Upload",
+        SensorDeviceClass.DATA_SIZE,
+        UnitOfInformation.BYTES,
+        SensorStateClass.TOTAL_INCREASING,
+    ),
     ("data_limit_enabled", "Data Limit Enabled", None, None, None),
     ("data_limit_type", "Data Limit Type", None, None, None),
     ("data_limit_value", "Data Limit Value", None, None, None),
-    ("data_limit_warning_percent", "Data Limit Warning Threshold", None, PERCENTAGE,
-     SensorStateClass.MEASUREMENT),
+    (
+        "data_limit_warning_percent",
+        "Data Limit Warning Threshold",
+        None,
+        PERCENTAGE,
+        SensorStateClass.MEASUREMENT,
+    ),
     ("data_limit_exceeded", "Data Limit Exceeded", None, None, None),
     ("traffic_auto_reset", "Traffic Auto Reset Enabled", None, None, None),
     ("traffic_reset_day", "Traffic Reset Day", None, None, None),
     ("rx_packet_errors", "Received Packet Errors", None, None, SensorStateClass.TOTAL_INCREASING),
-    ("tx_packet_errors", "Transmitted Packet Errors", None, None, SensorStateClass.TOTAL_INCREASING),
+    (
+        "tx_packet_errors",
+        "Transmitted Packet Errors",
+        None,
+        None,
+        SensorStateClass.TOTAL_INCREASING,
+    ),
     ("rx_packet_drops", "Received Packet Drops", None, None, SensorStateClass.TOTAL_INCREASING),
     ("tx_packet_drops", "Transmitted Packet Drops", None, None, SensorStateClass.TOTAL_INCREASING),
     ("sms_count", "SMS Count", None, None, SensorStateClass.MEASUREMENT),
@@ -122,20 +170,28 @@ SENSOR_DEFS = [
     ("sms_sim_total", "SMS SIM Total", None, None, SensorStateClass.MEASUREMENT),
     ("sms_nv_used_total", "SMS NV Used", None, None, SensorStateClass.MEASUREMENT),
     ("sms_latest", "Latest SMS", None, None, None),
-    ("connected_time", "Connected Since", SensorDeviceClass.TIMESTAMP,
-     None, None),
+    ("connected_time", "Connected Since", SensorDeviceClass.TIMESTAMP, None, None),
     ("hardware_version", "Hardware Version", None, None, None),
     ("wa_inner_version", "WA Inner Version", None, None, None),
     ("cpu_usage", "CPU Usage", None, PERCENTAGE, SensorStateClass.MEASUREMENT),
     ("ram_usage", "RAM Usage", None, PERCENTAGE, SensorStateClass.MEASUREMENT),
-    ("cpu_temp", "CPU Temperature", SensorDeviceClass.TEMPERATURE,
-     UnitOfTemperature.CELSIUS, SensorStateClass.MEASUREMENT),
-    ("uptime", "Device Started", SensorDeviceClass.TIMESTAMP,
-     None, None),
+    (
+        "cpu_temp",
+        "CPU Temperature",
+        SensorDeviceClass.TEMPERATURE,
+        UnitOfTemperature.CELSIUS,
+        SensorStateClass.MEASUREMENT,
+    ),
+    ("uptime", "Device Started", SensorDeviceClass.TIMESTAMP, None, None),
     ("firmware_update_status", "Firmware Update Status", None, None, None),
     ("firmware_latest_version", "Firmware Latest Version", None, None, None),
-    ("firmware_download_progress", "Firmware Download Progress", None, PERCENTAGE,
-     SensorStateClass.MEASUREMENT),
+    (
+        "firmware_download_progress",
+        "Firmware Download Progress",
+        None,
+        PERCENTAGE,
+        SensorStateClass.MEASUREMENT,
+    ),
     ("gnss_latitude", "GNSS Latitude", None, DEGREE, None),
     ("gnss_longitude", "GNSS Longitude", None, DEGREE, None),
     ("gnss_fix", "GNSS Fix", None, None, None),
@@ -147,7 +203,6 @@ DIAGNOSTIC_SENSOR_KEYS = {
     "wifi_onoff",
     "main2g_ssid",
     "main5g_ssid",
-
     # Network identifiers and lock/debug values.
     "rmcc",
     "rmnc",
@@ -155,7 +210,6 @@ DIAGNOSTIC_SENSOR_KEYS = {
     "lac_code",
     "lte_band_lock",
     "gw_band_lock",
-
     # Low-level radio diagnostics.
     "lte_pci",
     "lte_earfcn",
@@ -169,7 +223,6 @@ DIAGNOSTIC_SENSOR_KEYS = {
     "nr_rsrq",
     "nr_sinr",
     "nr_rssi",
-
     # Interface and device health details.
     "wan_ipv4",
     "wan_ipv6",
@@ -202,7 +255,6 @@ DIAGNOSTIC_SENSOR_KEYS = {
     "gnss_latitude",
     "gnss_longitude",
     "gnss_fix",
-
     # SMS storage internals; unread/latest/count remain normal sensors.
     "sms_nv_total",
     "sms_sim_total",
@@ -219,11 +271,21 @@ G5TC_OPTIONAL_SENSOR_KEYS = {
 
 
 # Traffic counters share the fast rate response; RAM shares the CPU request.
-FAST_SENSOR_KEYS = frozenset({
-    "connected_time", "download_rate", "upload_rate", "cpu_usage", "ram_usage",
-    "daily_download", "daily_upload",
-    "rx_packet_errors", "tx_packet_errors", "rx_packet_drops", "tx_packet_drops",
-})
+FAST_SENSOR_KEYS = frozenset(
+    {
+        "connected_time",
+        "download_rate",
+        "upload_rate",
+        "cpu_usage",
+        "ram_usage",
+        "daily_download",
+        "daily_upload",
+        "rx_packet_errors",
+        "tx_packet_errors",
+        "rx_packet_drops",
+        "tx_packet_drops",
+    }
+)
 
 
 def _as_number(value: Any) -> float | None:
@@ -245,6 +307,7 @@ def _as_number(value: Any) -> float | None:
         except ValueError:
             return None
     return None
+
 
 def _to_bit_per_s(value: Any) -> Any:
     """Convert router speed value to bit/s.
@@ -681,7 +744,9 @@ def _extract_value(data: dict[str, Any], key: str) -> Any:
         return _as_text(wan.get("mwan_wanlan1_link_state"))
 
     if key == "modem_main_state":
-        return _as_text(sim_info.get("modem_main_state")) or _as_text(netinfo.get("modem_main_state"))
+        return _as_text(sim_info.get("modem_main_state")) or _as_text(
+            netinfo.get("modem_main_state")
+        )
 
     if key == "radio_off":
         # Newer UBUS firmwares expose radio state through zwrt_wlan.report,
@@ -828,7 +893,12 @@ def _extract_value(data: dict[str, Any], key: str) -> Any:
     if key == "firmware_download_progress":
         total = _as_number(firmware.get("dm_pkg_total_size"))
         downloaded = _as_number(firmware.get("dm_download_pkg_size"))
-        if total is None or downloaded is None or not math.isfinite(total) or not math.isfinite(downloaded):
+        if (
+            total is None
+            or downloaded is None
+            or not math.isfinite(total)
+            or not math.isfinite(downloaded)
+        ):
             return None
         if total <= 0 or downloaded < 0:
             return None
@@ -1029,18 +1099,27 @@ class ZteNgRouterSensor(CoordinatorEntity, SensorEntity):  # type: ignore[misc] 
         data: dict[str, Any] = self.coordinator.data or {}
         if self._key == "data_limit_value":
             limit_type = _extract_value(data, "data_limit_type")
-            return {"limit_type": limit_type,
-                    "value_unit": "s" if limit_type == "connection_time" else
-                                  "router_native" if limit_type == "data_volume" else None}
+            return {
+                "limit_type": limit_type,
+                "value_unit": "s"
+                if limit_type == "connection_time"
+                else "router_native"
+                if limit_type == "data_volume"
+                else None,
+            }
         if self._key in {"gnss_latitude", "gnss_longitude", "gnss_fix"}:
             gnss = data.get("gnss") or {}
-            return {"fix": _as_text(gnss.get("FIX")),
-                    "source": _as_text(gnss.get("SOURCE")),
-                    "fix_time": _as_text(gnss.get("FIX_TIME"))}
+            return {
+                "fix": _as_text(gnss.get("FIX")),
+                "source": _as_text(gnss.get("SOURCE")),
+                "fix_time": _as_text(gnss.get("FIX_TIME")),
+            }
         if self._key == "firmware_update_status":
             firmware = data.get("firmware") or {}
-            return {"new_version_state": firmware.get("new_version_state"),
-                    "current_upgrade_state": firmware.get("current_upgrade_state")}
+            return {
+                "new_version_state": firmware.get("new_version_state"),
+                "current_upgrade_state": firmware.get("current_upgrade_state"),
+            }
         if self._key != "sms_latest":
             return None
 

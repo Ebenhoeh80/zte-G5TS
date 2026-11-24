@@ -155,14 +155,10 @@ class ButtonCoverageTests(unittest.IsolatedAsyncioTestCase):
         )
 
     def entity(self, key, data=None, sms_compose="", available=True):
-        definition = next(
-            item for item in buttons.BUTTON_DEFS if key in {item.key, item.kind}
-        )
+        definition = next(item for item in buttons.BUTTON_DEFS if key in {item.key, item.kind})
         runtime = self.runtime(data, sms_compose, available)
         entry = self.entry(runtime)
-        entity = buttons.ZteActionButton(
-            runtime.coordinator, self.api, entry, "Router", definition
-        )
+        entity = buttons.ZteActionButton(runtime.coordinator, self.api, entry, "Router", definition)
         return entity, runtime.coordinator
 
     async def test_setup_entry_creates_all_button_entities(self):
@@ -277,9 +273,7 @@ class ButtonCoverageTests(unittest.IsolatedAsyncioTestCase):
         coordinator.async_request_refresh.assert_not_awaited()
 
     async def test_sms_press_with_default_compose_does_nothing(self):
-        entity, coordinator = self.entity(
-            "send_sms", sms_compose=buttons.SMS_COMPOSE_DEFAULT
-        )
+        entity, coordinator = self.entity("send_sms", sms_compose=buttons.SMS_COMPOSE_DEFAULT)
 
         await entity.async_press()
 

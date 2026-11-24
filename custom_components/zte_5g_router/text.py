@@ -65,17 +65,19 @@ async def async_setup_entry(
     if not runtime_data.sms_compose:
         runtime_data.sms_compose = SMS_COMPOSE_DEFAULT
 
-    async_add_entities([
-        ZteTextEntity(
-            hass,
-            runtime_data.coordinator,
-            runtime_data.api,
-            entry,
-            runtime_data.name,
-            desc,
-        )
-        for desc in TEXTS
-    ])
+    async_add_entities(
+        [
+            ZteTextEntity(
+                hass,
+                runtime_data.coordinator,
+                runtime_data.api,
+                entry,
+                runtime_data.name,
+                desc,
+            )
+            for desc in TEXTS
+        ]
+    )
 
 
 class ZteTextEntity(CoordinatorEntity, TextEntity):  # type: ignore[misc]  # HA bases are Any here
@@ -116,9 +118,7 @@ class ZteTextEntity(CoordinatorEntity, TextEntity):  # type: ignore[misc]  # HA 
         if self._kind == "sms":
             self._attr_unique_id = entity_unique_id(entry.entry_id, "sms_compose_text")
         else:
-            self._attr_unique_id = entity_unique_id(
-                entry.entry_id, f"cell_lock_{self._kind}_text"
-            )
+            self._attr_unique_id = entity_unique_id(entry.entry_id, f"cell_lock_{self._kind}_text")
 
         self._attr_device_info = device_info(entry.entry_id, device_name)
 
@@ -150,9 +150,7 @@ class ZteTextEntity(CoordinatorEntity, TextEntity):  # type: ignore[misc]  # HA 
     @property
     def native_value(self) -> str:
         if self._kind == "sms":
-            return str(
-                self._entry.runtime_data.sms_compose or SMS_COMPOSE_DEFAULT
-            )
+            return str(self._entry.runtime_data.sms_compose or SMS_COMPOSE_DEFAULT)
 
         netinfo = self._netinfo()
 

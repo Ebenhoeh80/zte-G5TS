@@ -100,12 +100,8 @@ async def probe_endpoint(
 async def async_discover(base_url: str, fingerprint: str | None) -> dict[str, object]:
     headers = {"User-Agent": "Mozilla/5.0 (Home Assistant; ZTE 5G Router)"}
     timeout = aiohttp.ClientTimeout(total=12)
-    async with aiohttp.ClientSession(
-        timeout=timeout, trust_env=False, headers=headers
-    ) as session:
-        index = await probe_endpoint(
-            session, base_url, "/index.html", fingerprint=fingerprint
-        )
+    async with aiohttp.ClientSession(timeout=timeout, trust_env=False, headers=headers) as session:
+        index = await probe_endpoint(session, base_url, "/index.html", fingerprint=fingerprint)
         ubus_headers = {
             "Content-Type": "application/json",
             "Accept-Language": "de-DE,de;q=0.9,en;q=0.8",
@@ -164,12 +160,12 @@ async def async_authenticated_discovery(
         slow_data = await api.async_update_all()
         return {
             **safe_api(
-            {
-                "login_method": api.login_method,
-                "session_established": api.is_logged_in,
-                "fast_data": fast_data or {},
-                "slow_data": slow_data or {},
-            }
+                {
+                    "login_method": api.login_method,
+                    "session_established": api.is_logged_in,
+                    "fast_data": fast_data or {},
+                    "slow_data": slow_data or {},
+                }
             ),
             "api_calls": batches,
         }
@@ -185,15 +181,11 @@ async def async_main() -> int:
         help="Perform one login and read-only status API checks using ZTEPWD.",
     )
     args = parser.parse_args()
-    base_url, password, fingerprint = router_settings(
-        require_password=args.authenticate
-    )
+    base_url, password, fingerprint = router_settings(require_password=args.authenticate)
     if urlsplit(base_url).scheme != "https" and not base_url.startswith("http://"):
         raise SystemExit("ZTE_ROUTER_URL must be an http(s) origin.")
 
-    report: dict[str, object] = {
-        "discovery": await async_discover(base_url, fingerprint)
-    }
+    report: dict[str, object] = {"discovery": await async_discover(base_url, fingerprint)}
     if args.authenticate:
         try:
             report["authenticated_api_summary"] = await async_authenticated_discovery(

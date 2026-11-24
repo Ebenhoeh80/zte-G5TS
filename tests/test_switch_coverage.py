@@ -241,7 +241,9 @@ class SwitchCoverageTests(unittest.IsolatedAsyncioTestCase):
     # --- ZteActionSwitch states ----------------------------------------------------
 
     def test_generic_is_on_reads_state_key_and_stringifies(self):
-        entity, coordinator = self.action_entity("odu_led", {"odu_led": {"switch": "1", "offtime": "7"}})
+        entity, coordinator = self.action_entity(
+            "odu_led", {"odu_led": {"switch": "1", "offtime": "7"}}
+        )
         self.assertTrue(entity.is_on)
         coordinator.data = {"odu_led": {"switch": 1}}
         self.assertTrue(entity.is_on)
@@ -265,7 +267,9 @@ class SwitchCoverageTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(entity.is_on)
 
     def test_mobile_data_state_uses_cellular_connect_status(self):
-        entity, coordinator = self.action_entity("mobile_data", {"wwaniface": {"connect_status": "ipv4_connected"}})
+        entity, coordinator = self.action_entity(
+            "mobile_data", {"wwaniface": {"connect_status": "ipv4_connected"}}
+        )
         for status in ("ipv4_connected", "ipv6_connected", "ipv4_ipv6_connected"):
             coordinator.data = {"wwaniface": {"connect_status": status, "enable": "0"}}
             self.assertTrue(entity.is_on)
@@ -302,7 +306,9 @@ class SwitchCoverageTests(unittest.IsolatedAsyncioTestCase):
                 self.assertFalse(entity.is_on)
 
     def test_extra_state_attributes_return_definition_node(self):
-        entity, coordinator = self.action_entity("odu_led", {"odu_led": {"switch": "1", "offtime": "9"}})
+        entity, coordinator = self.action_entity(
+            "odu_led", {"odu_led": {"switch": "1", "offtime": "9"}}
+        )
         self.assertEqual(entity.extra_state_attributes, {"switch": "1", "offtime": "9"})
         coordinator.data = None
         self.assertEqual(entity.extra_state_attributes, {})
@@ -313,7 +319,12 @@ class SwitchCoverageTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_turn_on_and_off_update_state_optimistically_without_refresh(self):
         cases = [
-            ("odu_led", {"odu_led": {}}, {"switch": "1", "offtime": "15"}, {"switch": "0", "offtime": "15"}),
+            (
+                "odu_led",
+                {"odu_led": {}},
+                {"switch": "1", "offtime": "15"},
+                {"switch": "0", "offtime": "15"},
+            ),
             (
                 "wifi_master",
                 {"wifi_module": {"wifi_onoff": "0"}},
@@ -330,7 +341,10 @@ class SwitchCoverageTests(unittest.IsolatedAsyncioTestCase):
                 entity, coordinator = self.action_entity(key, data)
                 entity._api = self.api
                 await entity.async_turn_on()
-                self.assertEqual(self.api.calls[0]["method"], "set" if key != "odu_led" else "set_ODU_switch_state")
+                self.assertEqual(
+                    self.api.calls[0]["method"],
+                    "set" if key != "odu_led" else "set_ODU_switch_state",
+                )
                 for expected_key, expected_value in on_values.items():
                     section = self.api.calls[0]["params"]
                     if key == "wifi_master":
@@ -361,10 +375,14 @@ class SwitchCoverageTests(unittest.IsolatedAsyncioTestCase):
             with self.subTest(method=method):
                 Api.reset()
                 self.api = Api()
-                entity, coordinator = self.action_entity("mobile_data", {"wwaniface": {"enable": 0}})
+                entity, coordinator = self.action_entity(
+                    "mobile_data", {"wwaniface": {"enable": 0}}
+                )
                 entity._api = self.api
                 await getattr(entity, method)()
-                self.assertEqual(self.api.calls[0]["params"]["enable"], 1 if method.endswith("on") else 0)
+                self.assertEqual(
+                    self.api.calls[0]["params"]["enable"], 1 if method.endswith("on") else 0
+                )
                 coordinator.async_set_updated_data.assert_not_called()
                 coordinator.async_request_refresh.assert_awaited_once()
 
@@ -408,17 +426,29 @@ class SwitchCoverageTests(unittest.IsolatedAsyncioTestCase):
 
         original = {"wifi_module": {"wifi_onoff": "0"}}
         entity, coordinator = self.action_entity("wifi_master", original)
-        self.assertTrue(entity._apply_optimistic_state({"params": {"zte_mbb": {"wifi_onoff": "1"}}}))
-        self.assertEqual(coordinator.async_set_updated_data.call_args.args[0]["wifi_module"]["wifi_onoff"], "1")
+        self.assertTrue(
+            entity._apply_optimistic_state({"params": {"zte_mbb": {"wifi_onoff": "1"}}})
+        )
+        self.assertEqual(
+            coordinator.async_set_updated_data.call_args.args[0]["wifi_module"]["wifi_onoff"], "1"
+        )
         self.assertEqual(original, {"wifi_module": {"wifi_onoff": "0"}})
 
         entity, coordinator = self.action_entity("wifi_master", {"wlan": {"wifi_onoff": "0"}})
-        self.assertTrue(entity._apply_optimistic_state({"params": {"zte_mbb": {"wifi_onoff": "1"}}}))
-        self.assertEqual(coordinator.async_set_updated_data.call_args.args[0]["wlan"]["wifi_onoff"], "1")
+        self.assertTrue(
+            entity._apply_optimistic_state({"params": {"zte_mbb": {"wifi_onoff": "1"}}})
+        )
+        self.assertEqual(
+            coordinator.async_set_updated_data.call_args.args[0]["wlan"]["wifi_onoff"], "1"
+        )
 
-        entity, coordinator = self.action_entity("wifi_main_5g", {"wifi_main_5g": {"disabled": "1"}})
+        entity, coordinator = self.action_entity(
+            "wifi_main_5g", {"wifi_main_5g": {"disabled": "1"}}
+        )
         self.assertTrue(entity._apply_optimistic_state({"params": {"main_5g": {"disabled": "0"}}}))
-        self.assertEqual(coordinator.async_set_updated_data.call_args.args[0]["wifi_main_5g"]["disabled"], "0")
+        self.assertEqual(
+            coordinator.async_set_updated_data.call_args.args[0]["wifi_main_5g"]["disabled"], "0"
+        )
 
         entity, coordinator = self.action_entity("odu_led", {"odu_led": {"switch": "0"}})
         self.assertTrue(entity._apply_optimistic_state({"params": {"switch": "1"}}))
@@ -446,12 +476,8 @@ class SwitchCoverageTests(unittest.IsolatedAsyncioTestCase):
             entity, _ = self.action_entity("wifi_master", data)
             return entity._action_for_turn_on()["params"]["zte_mbb"]
 
-        self.assertEqual(
-            params({"wifi_module": {"lbd": "0", "mlo": "1"}, "wlan": {}})["lbd"], "0"
-        )
-        self.assertEqual(
-            params({"wifi_module": {"lbd": "0", "mlo": "1"}, "wlan": {}})["mlo"], "1"
-        )
+        self.assertEqual(params({"wifi_module": {"lbd": "0", "mlo": "1"}, "wlan": {}})["lbd"], "0")
+        self.assertEqual(params({"wifi_module": {"lbd": "0", "mlo": "1"}, "wlan": {}})["mlo"], "1")
         self.assertEqual(params({"wlan": {"lbd_enable": "0", "mlo_enable": "1"}})["lbd"], "0")
         self.assertEqual(params({"wlan": {"lbd": "0", "mlo": "1"}})["mlo"], "1")
         self.assertEqual(params({})["lbd"], "1")
@@ -459,7 +485,9 @@ class SwitchCoverageTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(params(None)["lbd"], "1")
         self.assertEqual(params({"wifi_module": {"lbd": "maybe", "mlo": "x"}})["lbd"], "1")
         self.assertEqual(params({"wifi_module": {"lbd": "maybe", "mlo": "x"}})["mlo"], "0")
-        self.assertEqual(definition.turn_on["params"]["zte_mbb"], {"wifi_onoff": "1", "lbd": "1", "mlo": "0"})
+        self.assertEqual(
+            definition.turn_on["params"]["zte_mbb"], {"wifi_onoff": "1", "lbd": "1", "mlo": "0"}
+        )
 
         # Empty definition values exercise the final fallback of both chains.
         custom = switches.ZteActionSwitchDef(
@@ -475,7 +503,9 @@ class SwitchCoverageTests(unittest.IsolatedAsyncioTestCase):
         entity = switches.ZteActionSwitch(
             self.coordinator(), self.api, self.entry(), "Router", custom
         )
-        self.assertEqual(entity._action_for_turn_on()["params"]["zte_mbb"], {"lbd": "1", "mlo": "0"})
+        self.assertEqual(
+            entity._action_for_turn_on()["params"]["zte_mbb"], {"lbd": "1", "mlo": "0"}
+        )
 
     def test_band_actions_include_webui_metadata_and_keep_source_module(self):
         definition = next(item for item in switches.SWITCH_DEFS if item.key == "wifi_main_2g")
@@ -606,7 +636,9 @@ class SwitchCoverageTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(entity._attr_name, name)
                 self.assertEqual(entity._attr_translation_key, f"cell_lock_{kind}")
                 self.assertEqual(entity._attr_unique_id, f"entry_cell_lock_{kind}_enabled")
-                self.assertEqual(entity._attr_device_info["identifiers"], {("zte_5g_router", "entry")})
+                self.assertEqual(
+                    entity._attr_device_info["identifiers"], {("zte_5g_router", "entry")}
+                )
                 self.assertIsNone(entity._text_entity_id)
                 self.assertTrue(entity._attr_has_entity_name)
         with self.assertRaisesRegex(ValueError, "kind must be"):
@@ -636,8 +668,12 @@ class SwitchCoverageTests(unittest.IsolatedAsyncioTestCase):
         Api.suggestion_5g = "8,9,10"
         four_g, _ = self.cell_entity("4g", {"netinfo": {}})
         five_g, _ = self.cell_entity("5g", {"netinfo": {}})
-        self.assertEqual(four_g.extra_state_attributes, {"lock_lte_cell": "1,2", "suggested": "3,4"})
-        self.assertEqual(five_g.extra_state_attributes, {"lock_nr_cell": "5,6,7", "suggested": "8,9,10"})
+        self.assertEqual(
+            four_g.extra_state_attributes, {"lock_lte_cell": "1,2", "suggested": "3,4"}
+        )
+        self.assertEqual(
+            five_g.extra_state_attributes, {"lock_nr_cell": "5,6,7", "suggested": "8,9,10"}
+        )
 
     async def test_cell_lock_resolves_text_entity_with_cache_and_error(self):
         for kind in ("4g", "5g"):
@@ -645,7 +681,9 @@ class SwitchCoverageTests(unittest.IsolatedAsyncioTestCase):
                 entity, _ = self.cell_entity(kind)
                 registry = Mock()
                 registry.async_get_entity_id.return_value = f"text.cell_lock_{kind}"
-                with patch.object(switches, "async_get_entity_registry", return_value=registry) as getter:
+                with patch.object(
+                    switches, "async_get_entity_registry", return_value=registry
+                ) as getter:
                     self.assertEqual(
                         await entity._resolve_text_entity_id(), f"text.cell_lock_{kind}"
                     )
@@ -658,7 +696,9 @@ class SwitchCoverageTests(unittest.IsolatedAsyncioTestCase):
                 )
 
         entity, _ = self.cell_entity("4g")
-        with patch.object(switches, "async_get_entity_registry", side_effect=RuntimeError("no registry")):
+        with patch.object(
+            switches, "async_get_entity_registry", side_effect=RuntimeError("no registry")
+        ):
             self.assertIsNone(await entity._resolve_text_entity_id())
         with patch.object(switches, "async_get_entity_registry", return_value=Mock()) as getter:
             getter.return_value.async_get_entity_id.return_value = None
@@ -701,11 +741,14 @@ class SwitchCoverageTests(unittest.IsolatedAsyncioTestCase):
         for kind in ("4g", "5g"):
             with self.subTest(kind=kind):
                 entity, coordinator = self.cell_entity(kind)
-                with patch.object(
-                    switches,
-                    "async_get_entity_registry",
-                    return_value=Mock(async_get_entity_id=Mock(return_value=None)),
-                ), self.assertRaisesRegex(HomeAssistantError, "companion text entity not found"):
+                with (
+                    patch.object(
+                        switches,
+                        "async_get_entity_registry",
+                        return_value=Mock(async_get_entity_id=Mock(return_value=None)),
+                    ),
+                    self.assertRaisesRegex(HomeAssistantError, "companion text entity not found"),
+                ):
                     await entity.async_turn_on()
                 self.assertEqual(self.api.cell_calls, [])
                 coordinator.async_request_refresh.assert_not_awaited()
@@ -718,7 +761,9 @@ class SwitchCoverageTests(unittest.IsolatedAsyncioTestCase):
                 with patch.object(switches, "async_get_entity_registry") as getter:
                     getter.return_value.async_get_entity_id.return_value = f"text.cell_lock_{kind}"
                     with (
-                        patch.object(self.api, method, new=AsyncMock(side_effect=ValueError("down"))),
+                        patch.object(
+                            self.api, method, new=AsyncMock(side_effect=ValueError("down"))
+                        ),
                         self.assertRaisesRegex(HomeAssistantError, "error=ValueError"),
                     ):
                         await entity.async_turn_on()

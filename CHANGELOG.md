@@ -5,6 +5,22 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0-beta.5] - 2026-11-24
+
+Final hygiene pass: no known open findings remain. Not recommended for
+production use yet.
+
+### Changed
+- `ruff check .` and `ruff format --check .` are now clean across the entire
+  repository (58 files), including `tools/`. The two ASYNC109 findings in
+  `tools/ha_e2e.py` are documented polling deadlines, not library timeouts.
+- CI lint now checks the whole repository (`ruff check .`) and enforces
+  formatting (`ruff format --check .`), not just `custom_components` and `tests`.
+
+### Tests
+- 672 tests plus 296 subtests, 99.86% coverage, Full-Strict-mypy and Python
+  syntax checks on all 47 files remain green.
+
 ## [2.5.0-beta.4] - 2026-11-24
 
 Small follow-up quick wins after beta.3. Not recommended for production use yet.

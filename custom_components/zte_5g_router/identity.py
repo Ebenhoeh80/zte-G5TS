@@ -16,9 +16,7 @@ import re
 from typing import Any
 
 _MAC_HEX = re.compile(r"^[0-9a-f]{12}$", re.IGNORECASE)
-_UUID_LIKE = re.compile(
-    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-)
+_UUID_LIKE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 
 # Keys that may carry a device-owned identifier, in priority order. The WLAN
 # MAC is preferred because it is present on virtually every firmware.
@@ -45,7 +43,7 @@ def normalize_mac(value: Any) -> str | None:
     if not _MAC_HEX.fullmatch(compact):
         return None
     compact = compact.lower()
-    return ":".join(compact[i:i + 2] for i in range(0, 12, 2))
+    return ":".join(compact[i : i + 2] for i in range(0, 12, 2))
 
 
 def normalize_identifier(value: Any) -> str | None:

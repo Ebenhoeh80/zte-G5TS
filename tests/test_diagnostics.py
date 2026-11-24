@@ -7,11 +7,7 @@ import types
 import unittest
 from unittest.mock import patch
 
-ROOT = (
-    Path(__file__).resolve().parents[1]
-    / "custom_components"
-    / "zte_5g_router"
-)
+ROOT = Path(__file__).resolve().parents[1] / "custom_components" / "zte_5g_router"
 
 
 def load_diagnostics():

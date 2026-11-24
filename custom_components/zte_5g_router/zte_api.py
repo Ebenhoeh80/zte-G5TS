@@ -40,30 +40,161 @@ class ZteAuthError(RuntimeError):
 
 class ZteRouterApi:
     """Async low-level API wrapper for ZTE 5G routers (e.g. G5TC)."""
+
     _GOFORM_MAX_CONCURRENCY = 8
     _GOFORM_STATIC_FIELDS = frozenset({"hardware_version", "wa_inner_version"})
     _WIFI_CLIENT_PAGE_SIZE = 64
     _MAX_WIFI_CLIENTS = 2048
     _GSM7_TABLE_HEX = {
-        "000A", "000C", "000D", "0020", "0021", "0022", "0023", "0024", "0025",
-        "0026", "0027", "0028", "0029", "002A", "002B", "002C", "002D", "002E",
-        "002F", "0030", "0031", "0032", "0033", "0034", "0035", "0036", "0037",
-        "0038", "0039", "003A", "003B", "003C", "003D", "003E", "003F", "0040",
-        "0041", "0042", "0043", "0044", "0045", "0046", "0047", "0048", "0049",
-        "004A", "004B", "004C", "004D", "004E", "004F", "0050", "0051", "0052",
-        "0053", "0054", "0055", "0056", "0057", "0058", "0059", "005A", "005B",
-        "005C", "005D", "005E", "005F", "0061", "0062", "0063", "0064", "0065",
-        "0066", "0067", "0068", "0069", "006A", "006B", "006C", "006D", "006E",
-        "006F", "0070", "0071", "0072", "0073", "0074", "0075", "0076", "0077",
-        "0078", "0079", "007A", "007B", "007C", "007D", "007E", "00A0", "00A1",
-        "00A3", "00A4", "00A5", "00A7", "00BF", "00C4", "00C5", "00C6", "00C7",
-        "00C9", "00D1", "00D6", "00D8", "00DC", "00DF", "00E0", "00E4", "00E5",
-        "00E6", "00E8", "00E9", "00EC", "00F1", "00F2", "00F6", "00F8", "00F9",
-        "00FC", "0393", "0394", "0398", "039B", "039E", "03A0", "03A3", "03A6",
-        "03A8", "03A9", "20AC",
+        "000A",
+        "000C",
+        "000D",
+        "0020",
+        "0021",
+        "0022",
+        "0023",
+        "0024",
+        "0025",
+        "0026",
+        "0027",
+        "0028",
+        "0029",
+        "002A",
+        "002B",
+        "002C",
+        "002D",
+        "002E",
+        "002F",
+        "0030",
+        "0031",
+        "0032",
+        "0033",
+        "0034",
+        "0035",
+        "0036",
+        "0037",
+        "0038",
+        "0039",
+        "003A",
+        "003B",
+        "003C",
+        "003D",
+        "003E",
+        "003F",
+        "0040",
+        "0041",
+        "0042",
+        "0043",
+        "0044",
+        "0045",
+        "0046",
+        "0047",
+        "0048",
+        "0049",
+        "004A",
+        "004B",
+        "004C",
+        "004D",
+        "004E",
+        "004F",
+        "0050",
+        "0051",
+        "0052",
+        "0053",
+        "0054",
+        "0055",
+        "0056",
+        "0057",
+        "0058",
+        "0059",
+        "005A",
+        "005B",
+        "005C",
+        "005D",
+        "005E",
+        "005F",
+        "0061",
+        "0062",
+        "0063",
+        "0064",
+        "0065",
+        "0066",
+        "0067",
+        "0068",
+        "0069",
+        "006A",
+        "006B",
+        "006C",
+        "006D",
+        "006E",
+        "006F",
+        "0070",
+        "0071",
+        "0072",
+        "0073",
+        "0074",
+        "0075",
+        "0076",
+        "0077",
+        "0078",
+        "0079",
+        "007A",
+        "007B",
+        "007C",
+        "007D",
+        "007E",
+        "00A0",
+        "00A1",
+        "00A3",
+        "00A4",
+        "00A5",
+        "00A7",
+        "00BF",
+        "00C4",
+        "00C5",
+        "00C6",
+        "00C7",
+        "00C9",
+        "00D1",
+        "00D6",
+        "00D8",
+        "00DC",
+        "00DF",
+        "00E0",
+        "00E4",
+        "00E5",
+        "00E6",
+        "00E8",
+        "00E9",
+        "00EC",
+        "00F1",
+        "00F2",
+        "00F6",
+        "00F8",
+        "00F9",
+        "00FC",
+        "0393",
+        "0394",
+        "0398",
+        "039B",
+        "039E",
+        "03A0",
+        "03A3",
+        "03A6",
+        "03A8",
+        "03A9",
+        "20AC",
     }
     _GSM7_TABLE_EXT_HEX = {
-        "007B", "007D", "005B", "005D", "007E", "005C", "005E", "20AC", "007C",
+        "007B",
+        "007D",
+        "005B",
+        "005D",
+        "007E",
+        "005C",
+        "005E",
+        "20AC",
+        "007C",
     }
 
     def __init__(
@@ -237,10 +368,7 @@ class ZteRouterApi:
         exception_name = type(exc).__name__
         if isinstance(exc, asyncio.TimeoutError):
             return "request timed out"
-        if (
-            "Certificate" in exception_name
-            or "CERTIFICATE_VERIFY_FAILED" in str(exc)
-        ):
+        if "Certificate" in exception_name or "CERTIFICATE_VERIFY_FAILED" in str(exc):
             return (
                 "TLS certificate validation failed; trust the router certificate "
                 "or explicitly disable verification for this trusted router"
@@ -367,9 +495,11 @@ class ZteRouterApi:
             if len(raw) < 28:
                 return value
             iv, tag, ciphertext = raw[:12], raw[12:28], raw[28:]
-            plaintext = AESGCM(bytes.fromhex(self._http_encryption_key)).decrypt(
-                iv, ciphertext + tag, None
-            ).decode("utf-8")
+            plaintext = (
+                AESGCM(bytes.fromhex(self._http_encryption_key))
+                .decrypt(iv, ciphertext + tag, None)
+                .decode("utf-8")
+            )
         except (binascii.Error, ValueError, InvalidTag, UnicodeDecodeError):
             return value
 
@@ -634,9 +764,7 @@ class ZteRouterApi:
     async def _async_ubus_login(self) -> None:
         """Perform UBUS-based web_login to ZTE router and store ubus session ID."""
 
-        _LOGGER.debug(
-            "Starting router login: method=ubus endpoint=/ubus/ stage=challenge"
-        )
+        _LOGGER.debug("Starting router login: method=ubus endpoint=/ubus/ stage=challenge")
         # 1) get salt
         salt_req = {
             "service": "zwrt_web",
@@ -651,25 +779,14 @@ class ZteRouterApi:
 
         if not salt_res.get("success"):
             error = salt_res.get("error")
-            if (
-                isinstance(error, dict)
-                and (
-                    error.get("code") == -32601
-                    or error.get("status") in {404, 405, 501}
-                )
+            if isinstance(error, dict) and (
+                error.get("code") == -32601 or error.get("status") in {404, 405, 501}
             ):
-                raise UnsupportedLoginProtocol(
-                    "web_login_info endpoint is not available"
-                )
-            raise RuntimeError(
-                "UBUS web_login_info failed: "
-                f"{self._describe_rpc_failure(error)}"
-            )
+                raise UnsupportedLoginProtocol("web_login_info endpoint is not available")
+            raise RuntimeError(f"UBUS web_login_info failed: {self._describe_rpc_failure(error)}")
         data = salt_res.get("data")
         if not isinstance(data, dict):
-            raise UnsupportedLoginProtocol(
-                "web_login_info response was not a JSON object"
-            )
+            raise UnsupportedLoginProtocol("web_login_info response was not a JSON object")
         salt = data.get("zte_web_sault") or data.get("salt")
         if not isinstance(salt, str) or not salt:
             raise UnsupportedLoginProtocol(
@@ -693,8 +810,7 @@ class ZteRouterApi:
         )
         if not login_res.get("success"):
             raise ZteAuthError(
-                "UBUS web_login failed: "
-                f"{self._describe_rpc_failure(login_res.get('error'))}"
+                f"UBUS web_login failed: {self._describe_rpc_failure(login_res.get('error'))}"
             )
         d = login_res.get("data")
         sid = d.get("ubus_rpc_session") if isinstance(d, dict) else None
@@ -744,9 +860,7 @@ class ZteRouterApi:
             pem_candidates = [normalized_crt]
             if "-----BEGIN" not in crt:
                 pem_candidates.append(
-                    "-----BEGIN PUBLIC KEY-----\n"
-                    + crt
-                    + "\n-----END PUBLIC KEY-----\n"
+                    "-----BEGIN PUBLIC KEY-----\n" + crt + "\n-----END PUBLIC KEY-----\n"
                 )
 
             public_key = None
@@ -838,8 +952,7 @@ class ZteRouterApi:
         }
         try:
             async with session.get(
-                url, params=params, headers=headers,
-                timeout=aiohttp.ClientTimeout(total=15)
+                url, params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=15)
             ) as resp:
                 _LOGGER.debug(
                     "GoForm response: endpoint=/goform/goform_get_cmd_process cmd=%s status=%s",
@@ -884,8 +997,7 @@ class ZteRouterApi:
         }
         try:
             async with session.post(
-                url, data=data, headers=headers,
-                timeout=aiohttp.ClientTimeout(total=15)
+                url, data=data, headers=headers, timeout=aiohttp.ClientTimeout(total=15)
             ) as resp:
                 _LOGGER.debug(
                     "GoForm response: endpoint=/goform/goform_set_cmd_process status=%s",
@@ -927,8 +1039,7 @@ class ZteRouterApi:
         except Exception as exc:
             if raise_errors:
                 raise RuntimeError(
-                    "GoForm session init failed: "
-                    f"{self._safe_exception_summary(exc)}"
+                    f"GoForm session init failed: {self._safe_exception_summary(exc)}"
                 ) from exc
             _LOGGER.warning(
                 "GoForm session init failed: endpoint=/index.html error=%s",
@@ -938,9 +1049,8 @@ class ZteRouterApi:
     async def _async_goform_login(self) -> None:
         """Login via GoForm API (SHA256(SHA256(password).upper() + LD))."""
         import hashlib
-        _LOGGER.debug(
-            "Starting router login: method=goform endpoint=/goform/ stage=session"
-        )
+
+        _LOGGER.debug("Starting router login: method=goform endpoint=/goform/ stage=session")
         # 1. Establish session cookie
         await self._async_goform_init_session(raise_errors=True)
         # 2. Get LD nonce
@@ -952,11 +1062,14 @@ class ZteRouterApi:
         h1 = hashlib.sha256(self.password.encode("utf-8")).hexdigest().upper()
         final = hashlib.sha256((h1 + ld).encode("utf-8")).hexdigest().upper()
         # 4. POST login
-        login_resp = await self._async_goform_set({
-            "isTest": "false",
-            "goformId": "LOGIN",
-            "password": final,
-        }, raise_errors=True)
+        login_resp = await self._async_goform_set(
+            {
+                "isTest": "false",
+                "goformId": "LOGIN",
+                "password": final,
+            },
+            raise_errors=True,
+        )
         result = login_resp.get("result", "")
         if str(result) != "0":
             raise ZteAuthError("GoForm login was rejected by the router")
@@ -1003,27 +1116,67 @@ class ZteRouterApi:
         """
         # Define which fields we need (grouped for documentation)
         basic_fields = [
-            "network_type", "network_signalbar", "network_provider_fullname",
-            "lte_pci", "lte_rssi", "lte_rsrq", "lte_snr", "network_lte_rsrp",
-            "Z5g_rsrp", "Z5g_rsrq", "Z5g_snr", "Z5g_SINR", "Z5g_rssi",
-            "network_Z5g_PCI", "network_Z5g_CELL_ID", "nr5g_action_channel",
-            "wan_active_channel", "network_lte_ca_pcell_arfcn",
-            "network_lte_ca_pcell_band", "network_lte_ca_pcell_bandwidth",
-            "nr5g_action_band", "nr5g_nsa_bandwidth",
-            "network_rmcc", "network_rmnc",
-            "modem_main_state", "RadioOff", "hightemp_datalimit_status",
-            "5g_modem_temperature", "modem_5g_temperature", "Z5g_modem_temperature",
-            "nr5g_modem_temperature", "nr5g_modem_temp", "modem_temperature",
-            "modem_temp", "pa_temp_level", "pa_temperature_level",
-            "tj_temp_level", "tj_temperature_level",
-            "cpu_usage", "cpuUsage", "cpu_load", "cpuload",
-            "wifi_onoff_state", "wifi_chip1_ssid1_ssid", "wifi_chip2_ssid1_ssid",
-            "wifi_chip1_ssid1_access_sta_num", "wifi_chip2_ssid1_access_sta_num",
-            "mwan_wanlan1_wan_ipaddr", "mwan_wanlan1_link_state", "mwan_wanlan1_ipv6_wan_ipaddr",
-            "ppp_status", "wan_ipaddr", "ipv6_wan_ipaddr",
-            "hardware_version", "wa_inner_version", "device_uptime",
-            "flux_realtime_rx_thrpt", "flux_realtime_tx_thrpt", "flux_realtime_time",
-            "flux_monthly_rx_bytes", "flux_monthly_tx_bytes",
+            "network_type",
+            "network_signalbar",
+            "network_provider_fullname",
+            "lte_pci",
+            "lte_rssi",
+            "lte_rsrq",
+            "lte_snr",
+            "network_lte_rsrp",
+            "Z5g_rsrp",
+            "Z5g_rsrq",
+            "Z5g_snr",
+            "Z5g_SINR",
+            "Z5g_rssi",
+            "network_Z5g_PCI",
+            "network_Z5g_CELL_ID",
+            "nr5g_action_channel",
+            "wan_active_channel",
+            "network_lte_ca_pcell_arfcn",
+            "network_lte_ca_pcell_band",
+            "network_lte_ca_pcell_bandwidth",
+            "nr5g_action_band",
+            "nr5g_nsa_bandwidth",
+            "network_rmcc",
+            "network_rmnc",
+            "modem_main_state",
+            "RadioOff",
+            "hightemp_datalimit_status",
+            "5g_modem_temperature",
+            "modem_5g_temperature",
+            "Z5g_modem_temperature",
+            "nr5g_modem_temperature",
+            "nr5g_modem_temp",
+            "modem_temperature",
+            "modem_temp",
+            "pa_temp_level",
+            "pa_temperature_level",
+            "tj_temp_level",
+            "tj_temperature_level",
+            "cpu_usage",
+            "cpuUsage",
+            "cpu_load",
+            "cpuload",
+            "wifi_onoff_state",
+            "wifi_chip1_ssid1_ssid",
+            "wifi_chip2_ssid1_ssid",
+            "wifi_chip1_ssid1_access_sta_num",
+            "wifi_chip2_ssid1_access_sta_num",
+            "mwan_wanlan1_wan_ipaddr",
+            "mwan_wanlan1_link_state",
+            "mwan_wanlan1_ipv6_wan_ipaddr",
+            "ppp_status",
+            "wan_ipaddr",
+            "ipv6_wan_ipaddr",
+            "hardware_version",
+            "wa_inner_version",
+            "device_uptime",
+            "flux_realtime_rx_thrpt",
+            "flux_realtime_tx_thrpt",
+            "flux_realtime_time",
+            "flux_monthly_rx_bytes",
+            "flux_monthly_tx_bytes",
         ]
 
         main = {
@@ -1041,7 +1194,9 @@ class ZteRouterApi:
                 self._goform_field_cache[field] = value
 
         if not self._goform_has_usable_payload(main):
-            raise RuntimeError("GoForm returned no usable payload (session expired or unsupported response)")
+            raise RuntimeError(
+                "GoForm returned no usable payload (session expired or unsupported response)"
+            )
 
         # Query independent special endpoints in parallel.
         lan_resp, sms_cap_resp, sms_msgs_resp = await asyncio.gather(
@@ -1068,7 +1223,8 @@ class ZteRouterApi:
             "rmnc": main.get("network_rmnc"),
             "nr5g_cell_id": main.get("network_Z5g_CELL_ID"),
             "lte_pci": main.get("lte_pci"),
-            "lte_action_channel": main.get("wan_active_channel") or main.get("network_lte_ca_pcell_arfcn"),
+            "lte_action_channel": main.get("wan_active_channel")
+            or main.get("network_lte_ca_pcell_arfcn"),
             "lte_action_band": main.get("network_lte_ca_pcell_band"),
             "network_lte_ca_pcell_band": main.get("network_lte_ca_pcell_band"),
             "lte_bandwidth": main.get("network_lte_ca_pcell_bandwidth"),
@@ -1120,8 +1276,10 @@ class ZteRouterApi:
             "tj_temperature_level": main.get("tj_temperature_level"),
         }
         wan: dict[str, Any] = {
-            "mwan_wanlan1_wan_ipaddr": main.get("mwan_wanlan1_wan_ipaddr") or main.get("wan_ipaddr"),
-            "mwan_wanlan1_ipv6_wan_ipaddr": main.get("mwan_wanlan1_ipv6_wan_ipaddr") or main.get("ipv6_wan_ipaddr"),
+            "mwan_wanlan1_wan_ipaddr": main.get("mwan_wanlan1_wan_ipaddr")
+            or main.get("wan_ipaddr"),
+            "mwan_wanlan1_ipv6_wan_ipaddr": main.get("mwan_wanlan1_ipv6_wan_ipaddr")
+            or main.get("ipv6_wan_ipaddr"),
             "mwan_wanlan1_link_state": main.get("mwan_wanlan1_link_state"),
             "current_wan_status": main.get("ppp_status"),
             "real_rx_speed": main.get("flux_realtime_rx_thrpt"),
@@ -1165,9 +1323,8 @@ class ZteRouterApi:
         except (TypeError, ValueError):
             nv_used = 0
         try:
-            unread = (
-                int(sms_cap_raw.get("sms_nv_rev_total") or 0)
-                + int(sms_cap_raw.get("sms_sim_rev_total") or 0)
+            unread = int(sms_cap_raw.get("sms_nv_rev_total") or 0) + int(
+                sms_cap_raw.get("sms_sim_rev_total") or 0
             )
         except (TypeError, ValueError):
             unread = 0
@@ -1177,7 +1334,9 @@ class ZteRouterApi:
             "sms_nvused_total": str(nv_used),
             "sms_dev_unread_num": str(unread),
         }
-        raw_messages = (sms_msgs_resp.get("messages") or []) if isinstance(sms_msgs_resp, dict) else []
+        raw_messages = (
+            (sms_msgs_resp.get("messages") or []) if isinstance(sms_msgs_resp, dict) else []
+        )
         sms_messages: list[dict[str, Any]] = []
         for msg in raw_messages:
             if not isinstance(msg, dict):
@@ -1530,7 +1689,6 @@ class ZteRouterApi:
             "error": {"message": "ubus_result_failure", "result": result},
         }
 
-
     async def async_call_ubus_batch(
         self,
         calls: list[dict[str, Any]],
@@ -1608,7 +1766,9 @@ class ZteRouterApi:
                                 break
 
                     if any_denied:
-                        _LOGGER.debug("ubus batch access denied (-32002) detected; re-login and retry once")
+                        _LOGGER.debug(
+                            "ubus batch access denied (-32002) detected; re-login and retry once"
+                        )
                         self._mark_session_stale()
                         await self._async_ensure_logged_in(force=True)
                         return await self.async_call_ubus_batch(
@@ -1675,7 +1835,10 @@ class ZteRouterApi:
         if not isinstance(res_list, list):
             _LOGGER.warning("Invalid JSON from ubus batch – marking session as stale for re-login")
             self._mark_session_stale()
-            return [{"success": False, "data": None, "error": {"message": "invalid_json"}} for _ in calls]
+            return [
+                {"success": False, "data": None, "error": {"message": "invalid_json"}}
+                for _ in calls
+            ]
 
         # Prepare output list
         out: list[dict[str, Any]] = [{"success": False, "data": None, "error": None} for _ in calls]
@@ -1709,22 +1872,26 @@ class ZteRouterApi:
     # A nonzero router response for these is expected; log them once as INFO to
     # keep a visible trace while avoiding poll-time warning spam. Real
     # transport/RPC/HTTP failures remain warnings.
-    _OPTIONAL_CORE_BATCH_FAILURES: frozenset[tuple[str, str, tuple[tuple[str, Any], ...]]] = frozenset(
-        {
-            ("zwrt_led", "get_ODU_switch_state", ()),
-            (
-                "uci",
-                "get",
-                (("config", "zwrt_common_info"), ("section", "common_config")),
-            ),
-            ("uci", "get", (("config", "wireless"), ("section", "main_2g"))),
-            ("uci", "get", (("config", "wireless"), ("section", "main_5g"))),
-        }
+    _OPTIONAL_CORE_BATCH_FAILURES: frozenset[tuple[str, str, tuple[tuple[str, Any], ...]]] = (
+        frozenset(
+            {
+                ("zwrt_led", "get_ODU_switch_state", ()),
+                (
+                    "uci",
+                    "get",
+                    (("config", "zwrt_common_info"), ("section", "common_config")),
+                ),
+                ("uci", "get", (("config", "wireless"), ("section", "main_2g"))),
+                ("uci", "get", (("config", "wireless"), ("section", "main_5g"))),
+            }
+        )
     )
     _OPTIONAL_CORE_NONZERO_UBUS_STATUS = {1, 2, 3, 4, 5, 8}
 
     @classmethod
-    def _batch_failure_key(cls, call: dict[str, Any]) -> tuple[str, str, tuple[tuple[str, Any], ...]] | None:
+    def _batch_failure_key(
+        cls, call: dict[str, Any]
+    ) -> tuple[str, str, tuple[tuple[str, Any], ...]] | None:
         params = call.get("params")
         if params is None:
             param_key: tuple[tuple[str, Any], ...] = ()
@@ -1754,7 +1921,10 @@ class ZteRouterApi:
         if isinstance(error.get("status"), int) or isinstance(error.get("code"), int):
             return False
         ubus_status = error.get("ubus_status")
-        if isinstance(ubus_status, int) and ubus_status not in cls._OPTIONAL_CORE_NONZERO_UBUS_STATUS:
+        if (
+            isinstance(ubus_status, int)
+            and ubus_status not in cls._OPTIONAL_CORE_NONZERO_UBUS_STATUS
+        ):
             return False
         key = cls._batch_failure_key(call)
         return key in cls._OPTIONAL_CORE_BATCH_FAILURES if key is not None else False
@@ -1845,7 +2015,6 @@ class ZteRouterApi:
             "params": params or {},
         }
 
-
     async def async_execute_ubus_action(
         self,
         call: dict[str, Any],
@@ -1911,7 +2080,6 @@ class ZteRouterApi:
             return bool(v)
 
         return str(v) in success_values
-
 
     async def async_execute_action_def(self, action: dict[str, Any]) -> bool:
         """Execute an action definition.
@@ -1982,10 +2150,15 @@ class ZteRouterApi:
         """Choose only WebUI-defined update actions for explicitly ready states."""
         upgrade = str(info.get("current_upgrade_state") or "").strip()
         if upgrade == "download_completed":
-            return {"service": "zwrt_fota_res.api", "method": "start_update",
-                    "params": {"moduleName": "zte_web"}}
+            return {
+                "service": "zwrt_fota_res.api",
+                "method": "start_update",
+                "params": {"moduleName": "zte_web"},
+            }
         available = str(info.get("new_version_state") or "").strip() in {
-            "1", "version_has_new_critical_software", "version_has_new_optional_software",
+            "1",
+            "version_has_new_critical_software",
+            "version_has_new_optional_software",
         }
         if available and upgrade in {"", "idle", "fota_idle", "upgrade_pack_redownload"}:
             return {"service": "zwrt_zte_dm", "method": "confirm_download", "params": {}}
@@ -2091,8 +2264,6 @@ class ZteRouterApi:
             "device": device,
         }
 
-
-
     # --------------------------------------------------------------------
     # Public API used by the HA DataUpdateCoordinator
     # --------------------------------------------------------------------
@@ -2106,7 +2277,7 @@ class ZteRouterApi:
             return None
         if compact == "0" * 12 or int(compact[:2], 16) & 1:
             return None
-        return ":".join(compact[i:i + 2] for i in range(0, 12, 2))
+        return ":".join(compact[i : i + 2] for i in range(0, 12, 2))
 
     @staticmethod
     def _normalize_network_client(row: Any) -> dict[str, Any] | None:
@@ -2129,10 +2300,15 @@ class ZteRouterApi:
             except ValueError:
                 return None
 
-        return {"mac_address": mac, "hostname": text("hostname"),
-                "ip_address": address("ip_address", 4), "ipv6_address": address("ipv6_address", 6),
-                "interface_type": str(row["interface_type"]) if isinstance(row.get("interface_type"), int)
-                                  else text("interface_type")}
+        return {
+            "mac_address": mac,
+            "hostname": text("hostname"),
+            "ip_address": address("ip_address", 4),
+            "ipv6_address": address("ipv6_address", 6),
+            "interface_type": str(row["interface_type"])
+            if isinstance(row.get("interface_type"), int)
+            else text("interface_type"),
+        }
 
     @classmethod
     def _network_client_counts(cls, data: Any) -> tuple[int, int, int] | None:
@@ -2145,24 +2321,42 @@ class ZteRouterApi:
                 return None
             values.append(int(cast(str | int | float, value)))
         total, wireless, lan = values
-        return (total, wireless, lan) if max(wireless, lan) <= total <= cls._MAX_WIFI_CLIENTS else None
+        return (
+            (total, wireless, lan) if max(wireless, lan) <= total <= cls._MAX_WIFI_CLIENTS else None
+        )
 
-    async def _async_read_network_clients_locked(self, initial_counts: Any) -> dict[str, Any] | None:
+    async def _async_read_network_clients_locked(
+        self, initial_counts: Any
+    ) -> dict[str, Any] | None:
         """Read both active client lists; partial snapshots only prove presence."""
         counts = self._network_client_counts(initial_counts)
         if self._api_mode != "ubus" or counts is None:
             return None
         total, wireless, lan = counts
         # Match the WebUI's total-count pagination, then verify the WLAN count.
-        calls = [self.build_ubus_call("zwrt_router.api", "router_wireless_access_list", {
-            "start_id": start, "end_id": start + self._WIFI_CLIENT_PAGE_SIZE - 1,
-        }) for start in range(1, total + 1, self._WIFI_CLIENT_PAGE_SIZE)] if wireless else []
+        calls = (
+            [
+                self.build_ubus_call(
+                    "zwrt_router.api",
+                    "router_wireless_access_list",
+                    {
+                        "start_id": start,
+                        "end_id": start + self._WIFI_CLIENT_PAGE_SIZE - 1,
+                    },
+                )
+                for start in range(1, total + 1, self._WIFI_CLIENT_PAGE_SIZE)
+            ]
+            if wireless
+            else []
+        )
         wifi_pages = len(calls)
         if lan:
             calls.append(self.build_ubus_call("zwrt_router.api", "router_lan_access_list"))
         calls.append(self.build_ubus_call("zwrt_router.api", "router_get_user_list_num"))
         results = await self.async_call_ubus_batch(
-            calls, batch_name="network_clients", z_mode_override="0",
+            calls,
+            batch_name="network_clients",
+            z_mode_override="0",
             retry_on_access_denied=False,
         )
         if len(results) != len(calls) or not results[-1].get("success"):
@@ -2170,13 +2364,19 @@ class ZteRouterApi:
         final_counts = self._network_client_counts(results[-1].get("data"))
         if final_counts != counts:
             return None
-        def collect(pages: list[dict[str, Any]], key: str, expected: int,
-                    page_limit: int) -> dict[str, dict[str, Any]] | None:
+
+        def collect(
+            pages: list[dict[str, Any]], key: str, expected: int, page_limit: int
+        ) -> dict[str, dict[str, Any]] | None:
             clients = {}
             for result in pages:
                 payload = result.get("data")
                 rows = payload.get(key) if isinstance(payload, dict) else None
-                if not result.get("success") or not isinstance(rows, list) or len(rows) > page_limit:
+                if (
+                    not result.get("success")
+                    or not isinstance(rows, list)
+                    or len(rows) > page_limit
+                ):
                     return None
                 for row in rows:
                     client = self._normalize_network_client(row)
@@ -2185,10 +2385,12 @@ class ZteRouterApi:
                     clients[client["mac_address"]] = client
             return clients if len(clients) == expected else None
 
-        wifi_clients = collect(results[:wifi_pages], "wireless_access_list_info",
-                               wireless, self._WIFI_CLIENT_PAGE_SIZE)
-        lan_clients = collect(results[wifi_pages:-1], "lan_access_list_info",
-                              lan, self._MAX_WIFI_CLIENTS)
+        wifi_clients = collect(
+            results[:wifi_pages], "wireless_access_list_info", wireless, self._WIFI_CLIENT_PAGE_SIZE
+        )
+        lan_clients = collect(
+            results[wifi_pages:-1], "lan_access_list_info", lan, self._MAX_WIFI_CLIENTS
+        )
         if wifi_clients is None and lan_clients is None:
             return None
         complete = wifi_clients is not None and lan_clients is not None
@@ -2232,16 +2434,32 @@ class ZteRouterApi:
         core_batch_calls: list[dict[str, Any]] = [
             {"service": "zte_nwinfo_api", "method": "nwinfo_get_netinfo"},
             {"service": "zwrt_wlan", "method": "report"},
-            {"service": "uci", "method": "get", "params": {"config": "wireless", "section": "zte_mbb"}},
+            {
+                "service": "uci",
+                "method": "get",
+                "params": {"config": "wireless", "section": "zte_mbb"},
+            },
             {"service": "zwrt_bsp.thermal", "method": "get_cpu_temp"},
             {"service": "zwrt_mc.device.manager", "method": "get_device_info"},
             {"service": "zwrt_zte_mdm.api", "method": "get_sim_info"},
             {"service": "zwrt_router.api", "method": "router_get_status"},
             {"service": "zwrt_router.api", "method": "router_get_user_list_num"},
-            {"service": "uci", "method": "get", "params": {"config": "zwrt_common_info", "section": "common_config"}},
+            {
+                "service": "uci",
+                "method": "get",
+                "params": {"config": "zwrt_common_info", "section": "common_config"},
+            },
             {"service": "zwrt_led", "method": "get_ODU_switch_state", "params": {}},
-            {"service": "uci", "method": "get", "params": {"config": "wireless", "section": "main_2g"}},
-            {"service": "uci", "method": "get", "params": {"config": "wireless", "section": "main_5g"}},
+            {
+                "service": "uci",
+                "method": "get",
+                "params": {"config": "wireless", "section": "main_2g"},
+            },
+            {
+                "service": "uci",
+                "method": "get",
+                "params": {"config": "wireless", "section": "main_5g"},
+            },
             {
                 "service": "zwrt_data",
                 "method": "get_wwandst",
@@ -2259,12 +2477,22 @@ class ZteRouterApi:
                 "method": "get_wwandst",
                 "params": {"source_module": "web", "cid": 1, "type": 2},
             },
-            self.build_ubus_call("zwrt_data", "get_wwandst_monthlimit", {
-                "source_module": "web", "cid": 1,
-            }),
-            self.build_ubus_call("zwrt_data", "get_wwandst_clearday", {
-                "source_module": "web", "cid": 1,
-            }),
+            self.build_ubus_call(
+                "zwrt_data",
+                "get_wwandst_monthlimit",
+                {
+                    "source_module": "web",
+                    "cid": 1,
+                },
+            ),
+            self.build_ubus_call(
+                "zwrt_data",
+                "get_wwandst_clearday",
+                {
+                    "source_module": "web",
+                    "cid": 1,
+                },
+            ),
         ]
         sms_batch_calls: list[dict[str, Any]] = [
             {
@@ -2286,13 +2514,20 @@ class ZteRouterApi:
         ]
 
         core_results = await self.async_call_ubus_batch(core_batch_calls, batch_name="core")
-        monthly_results = await self.async_call_ubus_batch(monthly_batch_calls, batch_name="monthly")
+        monthly_results = await self.async_call_ubus_batch(
+            monthly_batch_calls, batch_name="monthly"
+        )
         metadata_results = await self.async_call_ubus_batch(
             [
                 self.build_ubus_call("zwrt_zte_dm", "get_update_info"),
-                self.build_ubus_call("uci", "get", {
-                    "config": "zwrt_zte_topsw_gnss_gen", "section": "INFO",
-                }),
+                self.build_ubus_call(
+                    "uci",
+                    "get",
+                    {
+                        "config": "zwrt_zte_topsw_gnss_gen",
+                        "section": "INFO",
+                    },
+                ),
             ],
             batch_name="firmware_gnss",
             z_mode_override="0",
@@ -2362,7 +2597,9 @@ class ZteRouterApi:
                 _LOGGER.debug("Network client snapshot unavailable")
             snapshot_ok = network_clients is not None and network_clients.get("complete", True)
             if not snapshot_ok and self._client_snapshot_ok is not False:
-                _LOGGER.warning("Network client tracking incomplete: missing clients cannot be confirmed absent")
+                _LOGGER.warning(
+                    "Network client tracking incomplete: missing clients cannot be confirmed absent"
+                )
             elif snapshot_ok and self._client_snapshot_ok is False:
                 _LOGGER.info("Network client tracking recovered")
             self._client_snapshot_ok = snapshot_ok
@@ -2420,6 +2657,7 @@ class ZteRouterApi:
             "bands_summary": bands_summary,
             "total_bw_mhz": total_bw_mhz,
         }
+
     # --------------------------------------------------------------------
     # Cell lock helpers (4G / 5G)
     # --------------------------------------------------------------------
@@ -2518,6 +2756,7 @@ class ZteRouterApi:
             return f"{int(pci)},{int(arfcn)},{int(band)}"
         except (TypeError, ValueError):
             return ""
+
     @classmethod
     def is_4g_cell_lock_active(cls, netinfo: dict[str, Any] | None) -> bool:
         """Return True if LTE cell lock is active according to netinfo."""
@@ -2612,7 +2851,9 @@ class ZteRouterApi:
         pci, arfcn, band = self.parse_5g_cell_lock_input(value)
         return await self.async_lock_5g_cell(pci, arfcn, band)
 
-    async def async_set_4g_cell_lock_enabled(self, enabled: bool, *, value: str | None = None) -> bool:
+    async def async_set_4g_cell_lock_enabled(
+        self, enabled: bool, *, value: str | None = None
+    ) -> bool:
         """Convenience for HA switch: enable uses `value`, disable sets 0,0."""
         if not enabled:
             return await self.async_unlock_4g_cell()
@@ -2677,7 +2918,9 @@ class ZteRouterApi:
 
         return False
 
-    async def async_set_5g_cell_lock_enabled(self, enabled: bool, *, value: str | None = None) -> bool:
+    async def async_set_5g_cell_lock_enabled(
+        self, enabled: bool, *, value: str | None = None
+    ) -> bool:
         """Convenience for HA switch: enable uses `value`, disable sets 0,0,0."""
         if not enabled:
             return await self.async_unlock_5g_cell()

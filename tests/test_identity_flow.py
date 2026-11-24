@@ -54,9 +54,11 @@ class ConfigFlowIdentityTests(unittest.IsolatedAsyncioTestCase):
         handler = flow.ZteNgRouterConfigFlow()
         handler.hass = SimpleNamespace()
         handler.async_show_form = lambda **kwargs: {"type": "form", **kwargs}
-        handler.async_update_reload_and_abort = (
-            lambda entry, **kwargs: {"type": "abort", "entry": entry, **kwargs}
-        )
+        handler.async_update_reload_and_abort = lambda entry, **kwargs: {
+            "type": "abort",
+            "entry": entry,
+            **kwargs,
+        }
         if entry is not None:
             handler._get_reconfigure_entry = lambda: entry
         return handler
@@ -82,13 +84,15 @@ class ConfigFlowIdentityTests(unittest.IsolatedAsyncioTestCase):
             title="Router",
         )
         handler = self._flow(entry)
-        result = await handler.async_step_reconfigure({
-            "host": "https://192.0.2.2",
-            "password": "",
-            "verify_tls": True,
-            "tls_fingerprint": "",
-            "allow_insecure_http": False,
-        })
+        result = await handler.async_step_reconfigure(
+            {
+                "host": "https://192.0.2.2",
+                "password": "",
+                "verify_tls": True,
+                "tls_fingerprint": "",
+                "allow_insecure_http": False,
+            }
+        )
         self.assertEqual(result["type"], "abort")
         self.assertEqual(result["options"]["host"], "https://192.0.2.2")
         self.assertEqual(result["data"]["password"], "old")
@@ -103,13 +107,15 @@ class ConfigFlowIdentityTests(unittest.IsolatedAsyncioTestCase):
         )
         ProbeApi.identifier = "11:22:33:44:55:66"
         handler = self._flow(entry)
-        result = await handler.async_step_reconfigure({
-            "host": "https://192.0.2.2",
-            "password": "",
-            "verify_tls": True,
-            "tls_fingerprint": "",
-            "allow_insecure_http": False,
-        })
+        result = await handler.async_step_reconfigure(
+            {
+                "host": "https://192.0.2.2",
+                "password": "",
+                "verify_tls": True,
+                "tls_fingerprint": "",
+                "allow_insecure_http": False,
+            }
+        )
         self.assertEqual(result["type"], "form")
         self.assertEqual(result["errors"], {"base": "wrong_device"})
 

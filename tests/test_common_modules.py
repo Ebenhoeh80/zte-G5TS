@@ -36,11 +36,14 @@ def load_coordinator():
     helpers.update_coordinator = update
     spec = importlib.util.spec_from_file_location("zte_coordinator_test", ROOT / "coordinator.py")
     module = importlib.util.module_from_spec(spec)
-    with patch.dict(sys.modules, {
-        "homeassistant.core": core,
-        "homeassistant.helpers": helpers,
-        "homeassistant.helpers.update_coordinator": update,
-    }):
+    with patch.dict(
+        sys.modules,
+        {
+            "homeassistant.core": core,
+            "homeassistant.helpers": helpers,
+            "homeassistant.helpers.update_coordinator": update,
+        },
+    ):
         spec.loader.exec_module(module)
     return module
 
@@ -55,10 +58,13 @@ def load_entity():
     entity_mod.DeviceInfo = dict
     spec = importlib.util.spec_from_file_location("zte_entity_test.entity", ROOT / "entity.py")
     module = importlib.util.module_from_spec(spec)
-    with patch.dict(sys.modules, {
-        "zte_entity_test": package,
-        "homeassistant.helpers.entity": entity_mod,
-    }):
+    with patch.dict(
+        sys.modules,
+        {
+            "zte_entity_test": package,
+            "homeassistant.helpers.entity": entity_mod,
+        },
+    ):
         spec.loader.exec_module(module)
     return module
 
@@ -80,7 +86,8 @@ class CoordinatorAvailabilityTests(unittest.IsolatedAsyncioTestCase):
 
     def _coordinator(self):
         return coordinator_mod.ZteDataUpdateCoordinator(
-            Mock(), self.logger,
+            Mock(),
+            self.logger,
             name="test_router",
             update_method=self._update,
             update_interval=60,

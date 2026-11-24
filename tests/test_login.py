@@ -18,10 +18,7 @@ def load_api():
     core = types.ModuleType("homeassistant.core")
     core.HomeAssistant = object
     path = (
-        Path(__file__).resolve().parents[1]
-        / "custom_components"
-        / "zte_5g_router"
-        / "zte_api.py"
+        Path(__file__).resolve().parents[1] / "custom_components" / "zte_5g_router" / "zte_api.py"
     )
     spec = importlib.util.spec_from_file_location("zte_login_test_api", path)
     module = importlib.util.module_from_spec(spec)
@@ -82,19 +79,19 @@ class LoginDiagnosticTests(unittest.IsolatedAsyncioTestCase):
         router = api()
         salt = "router-salt"
         session_id = "private-router-session"
-        router.async_call_ubus = AsyncMock(side_effect=[
-            {"success": True, "data": {"zte_web_sault": salt}},
-            {"success": True, "data": {"ubus_rpc_session": session_id}},
-        ])
+        router.async_call_ubus = AsyncMock(
+            side_effect=[
+                {"success": True, "data": {"zte_web_sault": salt}},
+                {"success": True, "data": {"ubus_rpc_session": session_id}},
+            ]
+        )
         router._async_setup_http_encryption = AsyncMock()
 
         with self.assertLogs("zte_login_test_api", level="DEBUG") as captured:
             await router._async_ubus_login()
 
         password_hash = hashlib.sha256(router.password.encode()).hexdigest().upper()
-        expected = hashlib.sha256(
-            (password_hash + salt).encode()
-        ).hexdigest().upper()
+        expected = hashlib.sha256((password_hash + salt).encode()).hexdigest().upper()
         login_call = router.async_call_ubus.call_args_list[1]
         self.assertEqual(login_call.args[0]["params"]["password"], expected)
         self.assertEqual(router._session_id, session_id)
@@ -109,9 +106,7 @@ class LoginDiagnosticTests(unittest.IsolatedAsyncioTestCase):
         await router._async_goform_login()
 
         password_hash = hashlib.sha256(router.password.encode()).hexdigest().upper()
-        expected = hashlib.sha256(
-            (password_hash + "router-nonce").encode()
-        ).hexdigest().upper()
+        expected = hashlib.sha256((password_hash + "router-nonce").encode()).hexdigest().upper()
         router._async_goform_init_session.assert_awaited_once_with(raise_errors=True)
         router._async_goform_get.assert_awaited_once_with("LD", raise_errors=True)
         self.assertEqual(
@@ -123,10 +118,12 @@ class LoginDiagnosticTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_ubus_web_login_rejection_raises_typed_auth_error(self):
         router = api()
-        router.async_call_ubus = AsyncMock(side_effect=[
-            {"success": True, "data": {"zte_web_sault": "router-salt"}},
-            {"success": False, "error": {"message": "login failed"}},
-        ])
+        router.async_call_ubus = AsyncMock(
+            side_effect=[
+                {"success": True, "data": {"zte_web_sault": "router-salt"}},
+                {"success": False, "error": {"message": "login failed"}},
+            ]
+        )
         router._async_setup_http_encryption = AsyncMock()
 
         with self.assertRaises(router_module.ZteAuthError):
@@ -147,9 +144,7 @@ class LoginDiagnosticTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_ubus_authentication_error_does_not_trigger_goform_fallback(self):
         router = api()
-        router._async_ubus_login = AsyncMock(
-            side_effect=RuntimeError("UBUS login rejected")
-        )
+        router._async_ubus_login = AsyncMock(side_effect=RuntimeError("UBUS login rejected"))
         router._async_goform_login = AsyncMock()
 
         with self.assertRaisesRegex(RuntimeError, "UBUS login rejected"):
@@ -197,9 +192,7 @@ class LoginDiagnosticTests(unittest.IsolatedAsyncioTestCase):
                 return None
 
             async def text(self):
-                return json.dumps(
-                    [{"id": 1, "result": [0, {"wifi_key": "do-not-log-this"}]}]
-                )
+                return json.dumps([{"id": 1, "result": [0, {"wifi_key": "do-not-log-this"}]}])
 
         router = api()
         router._session_id = "do-not-log-session"

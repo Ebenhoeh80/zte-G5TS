@@ -18,9 +18,7 @@ def auth_issue_id(entry_id: str) -> str:
     return f"{AUTH_ISSUE}_{entry_id}"
 
 
-def async_create_auth_issue(
-    hass: HomeAssistant, entry_id: str, router_name: str
-) -> None:
+def async_create_auth_issue(hass: HomeAssistant, entry_id: str, router_name: str) -> None:
     """Raise a repair when the stored router password was rejected."""
     ir.async_create_issue(
         hass,
@@ -44,9 +42,7 @@ def async_delete_auth_issue(hass: HomeAssistant, entry_id: str) -> None:
 class ZteAuthRepairFlow(RepairsFlow):  # type: ignore[misc]  # HA base is Any without stubs
     """Offer to start the regular reauthentication flow."""
 
-    async def async_step_init(
-        self, user_input: dict[str, str] | None = None
-    ) -> RepairsFlowResult:
+    async def async_step_init(self, user_input: dict[str, str] | None = None) -> RepairsFlowResult:
         """Start with the confirmation step."""
         return await self.async_step_confirm(user_input)
 

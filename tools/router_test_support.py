@@ -12,7 +12,6 @@ from urllib.parse import urlsplit
 
 import aiohttp
 
-
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_ROUTER_URL = "https://192.168.0.1"
 
@@ -66,9 +65,7 @@ def load_api_class() -> type:
     return module.ZteRouterApi
 
 
-def make_ssl_argument(
-    url: str, fingerprint: str | None
-) -> bool | aiohttp.Fingerprint | None:
+def make_ssl_argument(url: str, fingerprint: str | None) -> bool | aiohttp.Fingerprint | None:
     """Keep normal TLS checks enabled, or verify the exact supplied certificate."""
     if not url.lower().startswith("https://"):
         return None
@@ -110,9 +107,7 @@ def safe_api(api: Any) -> dict[str, Any]:
         "device_info_received": bool(device),
         "wan_status_received": bool(wan or fast.get("wan")),
         "network_data_received": bool(netinfo),
-        "signal_data_received": present(
-            netinfo, ("rsrp", "RSRP", "sinr", "SINR", "rssi", "RSSI")
-        ),
+        "signal_data_received": present(netinfo, ("rsrp", "RSRP", "sinr", "SINR", "rssi", "RSSI")),
         "statistics_received": bool(slow.get("wwandst") or fast.get("wwandst")),
         "response_sections": sorted(
             key

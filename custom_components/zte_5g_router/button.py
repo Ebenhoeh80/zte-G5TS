@@ -52,12 +52,16 @@ BUTTON_DEFS: list[ZteActionButtonDef] = [
         action={},
     ),
     ZteActionButtonDef(
-        key="check_firmware_update", name="Check Firmware Update",
-        kind="check_firmware", action={},
+        key="check_firmware_update",
+        name="Check Firmware Update",
+        kind="check_firmware",
+        action={},
     ),
     ZteActionButtonDef(
-        key="start_firmware_update", name="Start Firmware Update",
-        kind="start_firmware", action={},
+        key="start_firmware_update",
+        name="Start Firmware Update",
+        kind="start_firmware",
+        action={},
     ),
 ]
 
@@ -133,7 +137,9 @@ class ZteActionButton(CoordinatorEntity, ButtonEntity):  # type: ignore[misc]  #
             except ValueError as exc:
                 raise HomeAssistantError(str(exc)) from exc
             if not ok:
-                raise HomeAssistantError("Router rejected the firmware command; see integration logs")
+                raise HomeAssistantError(
+                    "Router rejected the firmware command; see integration logs"
+                )
             await self.coordinator.async_request_refresh()
             return
 

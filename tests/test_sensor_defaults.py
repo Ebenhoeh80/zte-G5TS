@@ -22,11 +22,14 @@ def load_sensors():
         "homeassistant.components.sensor": {
             "SensorEntity": type("SensorEntity", (), {}),
             "SensorDeviceClass": types.SimpleNamespace(
-                TEMPERATURE="temperature", DATA_RATE="data_rate", DATA_SIZE="data_size",
+                TEMPERATURE="temperature",
+                DATA_RATE="data_rate",
+                DATA_SIZE="data_size",
                 TIMESTAMP="timestamp",
             ),
             "SensorStateClass": types.SimpleNamespace(
-                MEASUREMENT="measurement", TOTAL_INCREASING="total_increasing",
+                MEASUREMENT="measurement",
+                TOTAL_INCREASING="total_increasing",
             ),
         },
         "homeassistant.const": {
@@ -37,10 +40,12 @@ def load_sensors():
             "UnitOfTemperature": types.SimpleNamespace(CELSIUS="C"),
         },
         "homeassistant.helpers.update_coordinator": {
-            "CoordinatorEntity": CoordinatorEntity, "DataUpdateCoordinator": object,
+            "CoordinatorEntity": CoordinatorEntity,
+            "DataUpdateCoordinator": object,
         },
         "homeassistant.helpers.entity": {
-            "DeviceInfo": dict, "EntityCategory": types.SimpleNamespace(DIAGNOSTIC="diagnostic"),
+            "DeviceInfo": dict,
+            "EntityCategory": types.SimpleNamespace(DIAGNOSTIC="diagnostic"),
         },
         "homeassistant.config_entries": {"ConfigEntry": object},
         "homeassistant.core": {"HomeAssistant": object},
@@ -74,8 +79,11 @@ class SensorDefaultTests(unittest.TestCase):
         ):
             with self.subTest(identity=identity):
                 data = {section: {field: identity}}
-                disabled = {key for key, *_ in sensors.SENSOR_DEFS
-                            if not sensors._sensor_enabled_by_default(data, key)}
+                disabled = {
+                    key
+                    for key, *_ in sensors.SENSOR_DEFS
+                    if not sensors._sensor_enabled_by_default(data, key)
+                }
                 self.assertEqual(disabled, OPTIONAL_KEYS)
 
     def test_other_and_unknown_models_keep_all_sensors_enabled(self):
@@ -90,8 +98,9 @@ class SensorDefaultTests(unittest.TestCase):
                 with self.subTest(key=key, value=value):
                     data = {"common_config": {"model_name": "G5TC"}, "thermal": {key: value}}
                     for candidate in OPTIONAL_KEYS:
-                        self.assertEqual(sensors._sensor_enabled_by_default(data, candidate),
-                                         candidate == key)
+                        self.assertEqual(
+                            sensors._sensor_enabled_by_default(data, candidate), candidate == key
+                        )
 
     def test_existing_aliases_and_sources_are_used(self):
         for key, section, alias, value in (
@@ -108,8 +117,10 @@ class SensorDefaultTests(unittest.TestCase):
             for value in (None, "", "-"):
                 data = {"common_config": {"model_name": "G5TC"}, "thermal": {key: value}}
                 self.assertFalse(sensors._sensor_enabled_by_default(data, key))
-        data = {"common_config": {"model_name": "G5TC"},
-                "thermal": {"modem_temperature": "unavailable"}}
+        data = {
+            "common_config": {"model_name": "G5TC"},
+            "thermal": {"modem_temperature": "unavailable"},
+        }
         self.assertFalse(sensors._sensor_enabled_by_default(data, "modem_temperature"))
 
     def test_entities_are_retained_with_same_ids_and_values(self):
@@ -117,7 +128,14 @@ class SensorDefaultTests(unittest.TestCase):
         coordinator = types.SimpleNamespace(data=data)
         for key, name, device_class, unit, state_class in sensors.SENSOR_DEFS:
             entity = sensors.ZteNgRouterSensor(
-                coordinator, "entry", "Router", key, name, device_class, unit, state_class,
+                coordinator,
+                "entry",
+                "Router",
+                key,
+                name,
+                device_class,
+                unit,
+                state_class,
             )
             self.assertEqual(entity._attr_unique_id, f"entry_{key}")
             self.assertEqual(entity._attr_entity_registry_enabled_default, key not in OPTIONAL_KEYS)

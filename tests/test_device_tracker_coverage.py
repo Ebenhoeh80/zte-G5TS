@@ -1,4 +1,5 @@
 """Extra offline coverage for device-tracker registry and restore edge cases."""
+
 from datetime import datetime
 import types
 import unittest
@@ -18,24 +19,40 @@ def make_tracker(metadata=None, last_seen=None):
 class RegistryCleanupTests(unittest.IsolatedAsyncioTestCase):
     async def test_foreign_registry_entries_are_ignored(self):
         entries = [
-            types.SimpleNamespace(domain="sensor", platform="zte_5g_router",
-                                  unique_id="entry_wifi_021234567890"),
-            types.SimpleNamespace(domain="device_tracker", platform="other_integration",
-                                  unique_id="entry_wifi_021234567890"),
-            types.SimpleNamespace(domain="device_tracker", platform="zte_5g_router",
-                                  unique_id="entry_lan_021234567890"),
-            types.SimpleNamespace(domain="device_tracker", platform="zte_5g_router",
-                                  unique_id="entry_wifi_021234567890"),
+            types.SimpleNamespace(
+                domain="sensor", platform="zte_5g_router", unique_id="entry_wifi_021234567890"
+            ),
+            types.SimpleNamespace(
+                domain="device_tracker",
+                platform="other_integration",
+                unique_id="entry_wifi_021234567890",
+            ),
+            types.SimpleNamespace(
+                domain="device_tracker",
+                platform="zte_5g_router",
+                unique_id="entry_lan_021234567890",
+            ),
+            types.SimpleNamespace(
+                domain="device_tracker",
+                platform="zte_5g_router",
+                unique_id="entry_wifi_021234567890",
+            ),
         ]
         coordinator = types.SimpleNamespace(
-            data={"network_clients": snapshot()}, last_update_success=True,
+            data={"network_clients": snapshot()},
+            last_update_success=True,
             async_add_listener=lambda listener: lambda: None,
         )
-        store = types.SimpleNamespace(coordinator=coordinator, name="Router", reset_client_absence=None)
+        store = types.SimpleNamespace(
+            coordinator=coordinator, name="Router", reset_client_absence=None
+        )
         hass = types.SimpleNamespace(registry=Registry(entries))
         entry = types.SimpleNamespace(
-            entry_id="entry", data={}, options={"track_wifi_clients": True},
-            runtime_data=store, async_on_unload=lambda callback: None,
+            entry_id="entry",
+            data={},
+            options={"track_wifi_clients": True},
+            runtime_data=store,
+            async_on_unload=lambda callback: None,
         )
         entities = []
         await trackers.async_setup_entry(hass, entry, entities.extend)
@@ -56,9 +73,13 @@ class RestoreEdgeCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_missing_state_and_existing_sighting_skip_restore(self):
         for restored_state in (
             None,
-            types.SimpleNamespace(state="home", attributes={
-                "host_name": "Old name", "last_seen": START.isoformat(),
-            }),
+            types.SimpleNamespace(
+                state="home",
+                attributes={
+                    "host_name": "Old name",
+                    "last_seen": START.isoformat(),
+                },
+            ),
         ):
             with self.subTest(restored_state=restored_state):
                 entity, client = make_tracker({"hostname": "Live"}, START)
@@ -71,9 +92,14 @@ class RestoreEdgeCaseTests(unittest.IsolatedAsyncioTestCase):
         for invalid in ("not-a-date", "", START, datetime(2026, 1, 1), 123):
             with self.subTest(last_seen=invalid):
                 entity, client = make_tracker()
-                entity.restored_state = types.SimpleNamespace(state="home", attributes={
-                    "host_name": "Old name", "ip": "192.0.2.5", "last_seen": invalid,
-                })
+                entity.restored_state = types.SimpleNamespace(
+                    state="home",
+                    attributes={
+                        "host_name": "Old name",
+                        "ip": "192.0.2.5",
+                        "last_seen": invalid,
+                    },
+                )
                 await entity.async_added_to_hass()
                 self.assertEqual(client.metadata["hostname"], "Old name")
                 self.assertEqual(client.metadata["ip_address"], "192.0.2.5")

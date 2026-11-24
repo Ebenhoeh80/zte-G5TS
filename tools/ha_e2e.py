@@ -84,9 +84,7 @@ class HomeAssistantE2E:
             if result.get("id") != 1 or not result.get("success", True):
                 error = result.get("error")
                 code = error.get("code") if isinstance(error, dict) else None
-                raise RuntimeError(
-                    f"Home Assistant WebSocket command failed: {code or 'unknown'}"
-                )
+                raise RuntimeError(f"Home Assistant WebSocket command failed: {code or 'unknown'}")
             return result.get("result")
 
 
@@ -156,8 +154,12 @@ async def create_entry(
     return entry_id
 
 
+# ASYNC109 does not apply: timeout is a polling deadline, not a library timeout.
 async def wait_for_loaded_entry(
-    client: HomeAssistantE2E, entry_id: str, *, timeout: float = 240
+    client: HomeAssistantE2E,
+    entry_id: str,
+    *,
+    timeout: float = 240,  # noqa: ASYNC109
 ) -> dict:
     loop = asyncio.get_running_loop()
     deadline = loop.time() + timeout
@@ -174,9 +176,7 @@ async def wait_for_loaded_entry(
     raise TimeoutError("Timed out waiting for the integration entry to load")
 
 
-async def integration_entities(
-    client: HomeAssistantE2E, entry_id: str
-) -> list[dict]:
+async def integration_entities(client: HomeAssistantE2E, entry_id: str) -> list[dict]:
     result = await client.websocket_result({"type": "config/entity_registry/list"})
     if not isinstance(result, list):
         raise RuntimeError("Home Assistant returned an invalid entity registry")
@@ -190,9 +190,7 @@ async def integration_entities(
     ]
 
 
-async def available_entity_count(
-    client: HomeAssistantE2E, entities: list[dict]
-) -> int:
+async def available_entity_count(client: HomeAssistantE2E, entities: list[dict]) -> int:
     states = await client.rest("GET", "/api/states")
     if not isinstance(states, list):
         raise RuntimeError("Home Assistant returned an invalid entity state list")
@@ -209,7 +207,8 @@ async def available_entity_count(
     )
 
 
-async def wait_for_api(client: HomeAssistantE2E, *, timeout: float = 300) -> None:
+# ASYNC109 does not apply: timeout is a polling deadline, not a library timeout.
+async def wait_for_api(client: HomeAssistantE2E, *, timeout: float = 300) -> None:  # noqa: ASYNC109
     loop = asyncio.get_running_loop()
     deadline = loop.time() + timeout
     last_error: str | None = None

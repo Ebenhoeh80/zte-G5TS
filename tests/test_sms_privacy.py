@@ -30,11 +30,14 @@ def _load_sensors():
         "homeassistant.components.sensor": {
             "SensorEntity": type("SensorEntity", (), {}),
             "SensorDeviceClass": types.SimpleNamespace(
-                TEMPERATURE="temperature", DATA_RATE="data_rate", DATA_SIZE="data_size",
+                TEMPERATURE="temperature",
+                DATA_RATE="data_rate",
+                DATA_SIZE="data_size",
                 TIMESTAMP="timestamp",
             ),
             "SensorStateClass": types.SimpleNamespace(
-                MEASUREMENT="measurement", TOTAL_INCREASING="total_increasing",
+                MEASUREMENT="measurement",
+                TOTAL_INCREASING="total_increasing",
             ),
         },
         "homeassistant.const": {
@@ -45,10 +48,12 @@ def _load_sensors():
             "UnitOfTemperature": types.SimpleNamespace(CELSIUS="C"),
         },
         "homeassistant.helpers.update_coordinator": {
-            "CoordinatorEntity": CoordinatorEntity, "DataUpdateCoordinator": object,
+            "CoordinatorEntity": CoordinatorEntity,
+            "DataUpdateCoordinator": object,
         },
         "homeassistant.helpers.entity": {
-            "DeviceInfo": dict, "EntityCategory": types.SimpleNamespace(DIAGNOSTIC="diagnostic"),
+            "DeviceInfo": dict,
+            "EntityCategory": types.SimpleNamespace(DIAGNOSTIC="diagnostic"),
         },
         "homeassistant.config_entries": {"ConfigEntry": object},
         "homeassistant.core": {"HomeAssistant": object},
@@ -76,18 +81,34 @@ SECRET = "Your verification code is 424242"
 
 def _message(msg_id, tag="1", number=NUMBER, text=SECRET, date="26,11,16,10,30,00,+4"):
     return {
-        "id": msg_id, "number": number, "date": date, "tag": tag,
-        "mem_store": "nv", "content_decoded": text,
+        "id": msg_id,
+        "number": number,
+        "date": date,
+        "tag": tag,
+        "mem_store": "nv",
+        "content_decoded": text,
     }
 
 
 class SmsEntityPrivacyTests(unittest.TestCase):
     def _sensor(self, messages):
-        data = {"sms": {"messages": messages, "latest": messages[0] if messages else None,
-                        "capacity": {"sms_nv_rev_total": "3"}}}
+        data = {
+            "sms": {
+                "messages": messages,
+                "latest": messages[0] if messages else None,
+                "capacity": {"sms_nv_rev_total": "3"},
+            }
+        }
         coordinator = types.SimpleNamespace(data=data)
         return sensors.ZteNgRouterSensor(
-            coordinator, "entry", "Router", "sms_latest", "Latest SMS", None, None, None,
+            coordinator,
+            "entry",
+            "Router",
+            "sms_latest",
+            "Latest SMS",
+            None,
+            None,
+            None,
         )
 
     def test_state_contains_only_the_timestamp(self):
@@ -121,8 +142,11 @@ class SmsEventDetectionTests(unittest.TestCase):
 
     def test_only_new_incoming_messages_fire_oldest_first(self):
         _, seen = sms_events.collect_new_incoming_sms([_message("1")], None)
-        inbox = [_message("3", date="26,11,16,11,00,00,+4"),
-                 _message("2", date="26,11,16,10,45,00,+4"), _message("1")]
+        inbox = [
+            _message("3", date="26,11,16,11,00,00,+4"),
+            _message("2", date="26,11,16,10,45,00,+4"),
+            _message("1"),
+        ]
         new, seen = sms_events.collect_new_incoming_sms(inbox, seen)
         self.assertEqual([m["id"] for m in new], ["2", "3"])
         again, _ = sms_events.collect_new_incoming_sms(inbox, seen)
@@ -130,8 +154,12 @@ class SmsEventDetectionTests(unittest.TestCase):
 
     def test_sent_failed_and_draft_messages_do_not_fire(self):
         _, seen = sms_events.collect_new_incoming_sms([], None)
-        inbox = [_message("4", tag="2"), _message("5", tag="3"), _message("6", tag="4"),
-                 _message("7", tag="0")]
+        inbox = [
+            _message("4", tag="2"),
+            _message("5", tag="3"),
+            _message("6", tag="4"),
+            _message("7", tag="0"),
+        ]
         new, _ = sms_events.collect_new_incoming_sms(inbox, seen)
         self.assertEqual([m["id"] for m in new], ["7"])
 

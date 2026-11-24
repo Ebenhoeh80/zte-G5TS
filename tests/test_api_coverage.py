@@ -246,7 +246,10 @@ class ConstructionTests(unittest.IsolatedAsyncioTestCase):
             router.build_ubus_call("svc", "method", {"p": 1}),
             {"service": "svc", "method": "method", "params": {"p": 1}},
         )
-        self.assertEqual(router.build_ubus_call("svc", "method"), {"service": "svc", "method": "method", "params": {}})
+        self.assertEqual(
+            router.build_ubus_call("svc", "method"),
+            {"service": "svc", "method": "method", "params": {}},
+        )
         router._mark_session_stale()
         self.assertFalse(router._logged_in)
         self.assertIsNone(router._session_id)
@@ -309,7 +312,9 @@ class ErrorSummaryTests(unittest.TestCase):
                 self.assertIn(expected, ZteRouterApi._safe_exception_summary(exc))
         for name in ("ClientConnectorError", "ClientConnectionError"):
             exc = type(name, (Exception,), {})()
-            self.assertEqual(ZteRouterApi._safe_exception_summary(exc), "could not connect to router")
+            self.assertEqual(
+                ZteRouterApi._safe_exception_summary(exc), "could not connect to router"
+            )
         self.assertEqual(
             ZteRouterApi._safe_exception_summary(json.JSONDecodeError("bad", "", 0)),
             "router returned invalid JSON",
@@ -338,10 +343,15 @@ class ErrorSummaryTests(unittest.TestCase):
             ZteRouterApi._describe_rpc_failure({"kind": "transport", "message": "refused"}),
             "refused",
         )
-        self.assertEqual(ZteRouterApi._describe_rpc_failure({"kind": "transport"}), "transport request failed")
+        self.assertEqual(
+            ZteRouterApi._describe_rpc_failure({"kind": "transport"}), "transport request failed"
+        )
         self.assertEqual(ZteRouterApi._describe_rpc_failure({"status": 404}), "HTTP 404")
         self.assertEqual(ZteRouterApi._describe_rpc_failure({"code": -32002}), "RPC error -32002")
-        self.assertEqual(ZteRouterApi._describe_rpc_failure({"message": "oops"}), "router returned an error without a code")
+        self.assertEqual(
+            ZteRouterApi._describe_rpc_failure({"message": "oops"}),
+            "router returned an error without a code",
+        )
 
     def test_connreset_detection_follows_exception_chain(self):
         direct = ConnectionResetError(104, "reset")
@@ -390,13 +400,19 @@ class SmsHelperTests(unittest.TestCase):
         self.assertEqual(raw.get("sms_nvused_total", 0), 0)
         negative = {"sms_nv_rev_total": -1, "sms_nv_send_total": 2, "sms_nv_draftbox_total": 1}
         self.assertEqual(ZteRouterApi._normalize_sms_capacity(negative), negative)
-        for bad in ({}, {"sms_nv_rev_total": "x"}, {"sms_nv_rev_total": None},
-                    {"sms_nv_rev_total": 10**400}):
+        for bad in (
+            {},
+            {"sms_nv_rev_total": "x"},
+            {"sms_nv_rev_total": None},
+            {"sms_nv_rev_total": 10**400},
+        ):
             with self.subTest(bad=bad):
                 self.assertEqual(ZteRouterApi._normalize_sms_capacity(bad), bad)
 
     def test_parse_sms_compose_input(self):
-        self.assertEqual(ZteRouterApi.parse_sms_compose_input(" +48 123 456 , Hello "), ("+48123456", "Hello"))
+        self.assertEqual(
+            ZteRouterApi.parse_sms_compose_input(" +48 123 456 , Hello "), ("+48123456", "Hello")
+        )
         self.assertEqual(ZteRouterApi.parse_sms_compose_input("123,Hi"), ("123", "Hi"))
         for value, message in (
             ("", "Expected format"),
@@ -447,21 +463,38 @@ class SmsHelperTests(unittest.TestCase):
                 self.assertEqual(router._decrypt_sms_field(invalid), invalid)
         tampered = bytearray(base64.b64decode(seal("hello")))
         tampered[-1] ^= 1
-        self.assertEqual(router._decrypt_sms_field(base64.b64encode(tampered).decode()), base64.b64encode(tampered).decode())
+        self.assertEqual(
+            router._decrypt_sms_field(base64.b64encode(tampered).decode()),
+            base64.b64encode(tampered).decode(),
+        )
         binary = base64.b64encode(b"\x00" * 12 + b"\x00" * 16 + b"\xff\xfe").decode()
         self.assertEqual(router._decrypt_sms_field(binary), binary)
         self.assertEqual(router._decrypt_sms_field(seal("00480069")), "00480069")
 
     def test_parse_sms_message_fields_and_format_detection(self):
         router = make_router()
-        parsed = router._parse_sms_message({
-            "id": 7, "number": "+48123", "date": "26,11,24", "tag": "1",
-            "mem_store": "nv", "content": "00480069",
-        })
-        self.assertEqual(parsed, {
-            "id": 7, "number": "+48123", "date": "26,11,24", "tag": "1",
-            "mem_store": "nv", "content_raw": "00480069", "content_decoded": "Hi",
-        })
+        parsed = router._parse_sms_message(
+            {
+                "id": 7,
+                "number": "+48123",
+                "date": "26,11,24",
+                "tag": "1",
+                "mem_store": "nv",
+                "content": "00480069",
+            }
+        )
+        self.assertEqual(
+            parsed,
+            {
+                "id": 7,
+                "number": "+48123",
+                "date": "26,11,24",
+                "tag": "1",
+                "mem_store": "nv",
+                "content_raw": "00480069",
+                "content_decoded": "Hi",
+            },
+        )
         self.assertEqual(router._sms_encryption, "plain")
         router._sms_encryption = None
         router._parse_sms_message({"content": "not hex"})
@@ -511,19 +544,41 @@ class SmsHelperTests(unittest.TestCase):
 class BandHelperTests(unittest.TestCase):
     def test_lte_earfcn_mapping(self):
         self.assertIsNone(ZteRouterApi._convert_lte_earfcn_to_band(None))
-        for earfcn, band in ((0, 1), (599, 1), (1200, 3), (1950, 4), (2400, 5),
-                             (2750, 7), (3450, 8), (6150, 20), (9210, 28),
-                             (9920, 32), (37750, 38), (38650, 40), (41590, 42),
-                             (43590, 43)):
+        for earfcn, band in (
+            (0, 1),
+            (599, 1),
+            (1200, 3),
+            (1950, 4),
+            (2400, 5),
+            (2750, 7),
+            (3450, 8),
+            (6150, 20),
+            (9210, 28),
+            (9920, 32),
+            (37750, 38),
+            (38650, 40),
+            (41590, 42),
+            (43590, 43),
+        ):
             with self.subTest(earfcn=earfcn):
                 self.assertEqual(ZteRouterApi._convert_lte_earfcn_to_band(earfcn), band)
         self.assertIsNone(ZteRouterApi._convert_lte_earfcn_to_band(999999))
 
     def test_nr_arfcn_mapping(self):
         self.assertIsNone(ZteRouterApi._convert_nr_arfcn_to_band(None))
-        for arfcn, band in ((422000, 1), (361000, 3), (173800, 5), (524000, 7),
-                            (185000, 8), (151600, 28), (460000, 40), (499200, 41),
-                            (286400, 75), (620000, 78), (693334, 79)):
+        for arfcn, band in (
+            (422000, 1),
+            (361000, 3),
+            (173800, 5),
+            (524000, 7),
+            (185000, 8),
+            (151600, 28),
+            (460000, 40),
+            (499200, 41),
+            (286400, 75),
+            (620000, 78),
+            (693334, 79),
+        ):
             with self.subTest(arfcn=arfcn):
                 self.assertEqual(ZteRouterApi._convert_nr_arfcn_to_band(arfcn), band)
         self.assertIsNone(ZteRouterApi._convert_nr_arfcn_to_band(42))
@@ -534,31 +589,47 @@ class BandHelperTests(unittest.TestCase):
         for bad in ("abc", None, ""):
             with self.subTest(bad=bad):
                 self.assertEqual(
-                    router._compute_bands_and_bw({
-                        "lte_action_channel": bad, "lte_bandwidth": bad,
-                        "nr5g_action_channel": bad, "nr5g_bandwidth": bad,
-                    }),
+                    router._compute_bands_and_bw(
+                        {
+                            "lte_action_channel": bad,
+                            "lte_bandwidth": bad,
+                            "nr5g_action_channel": bad,
+                            "nr5g_bandwidth": bad,
+                        }
+                    ),
                     ("-", 0.0),
                 )
         self.assertEqual(
-            router._compute_bands_and_bw({
-                "lte_action_channel": "100", "lte_bandwidth": "20",
-                "nr5g_action_channel": "620000", "nr5g_bandwidth": "100",
-            }),
+            router._compute_bands_and_bw(
+                {
+                    "lte_action_channel": "100",
+                    "lte_bandwidth": "20",
+                    "nr5g_action_channel": "620000",
+                    "nr5g_bandwidth": "100",
+                }
+            ),
             ("B1 + n78", 120.0),
         )
         self.assertEqual(
-            router._compute_bands_and_bw({
-                "lte_action_channel": "100", "lte_bandwidth": 20,
-                "nr5g_action_channel": "620000", "nr5g_bandwidth": 100,
-            }),
+            router._compute_bands_and_bw(
+                {
+                    "lte_action_channel": "100",
+                    "lte_bandwidth": 20,
+                    "nr5g_action_channel": "620000",
+                    "nr5g_bandwidth": 100,
+                }
+            ),
             ("B1 + n78", 120.0),
         )
         self.assertEqual(
-            router._compute_bands_and_bw({
-                "lte_action_channel": "100", "lte_bandwidth": "0",
-                "nr5g_action_channel": "999999", "nr5g_bandwidth": "5",
-            }),
+            router._compute_bands_and_bw(
+                {
+                    "lte_action_channel": "100",
+                    "lte_bandwidth": "0",
+                    "nr5g_action_channel": "999999",
+                    "nr5g_bandwidth": "5",
+                }
+            ),
             ("-", 5.0),
         )
 
@@ -597,23 +668,37 @@ class CellLockTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(ZteRouterApi.suggest_5g_cell_lock_text(None), "")
         self.assertEqual(ZteRouterApi.suggest_5g_cell_lock_text({}), "")
-        self.assertEqual(ZteRouterApi.suggest_5g_cell_lock_text({"lock_nr_cell": "1,2,78"}), "1,2,78")
         self.assertEqual(
-            ZteRouterApi.suggest_5g_cell_lock_text({
-                "nr5g_pci": 3, "nr5g_action_channel": "620000", "nr5g_action_band": "n78",
-            }),
+            ZteRouterApi.suggest_5g_cell_lock_text({"lock_nr_cell": "1,2,78"}), "1,2,78"
+        )
+        self.assertEqual(
+            ZteRouterApi.suggest_5g_cell_lock_text(
+                {
+                    "nr5g_pci": 3,
+                    "nr5g_action_channel": "620000",
+                    "nr5g_action_band": "n78",
+                }
+            ),
             "3,620000,78",
         )
         self.assertEqual(
-            ZteRouterApi.suggest_5g_cell_lock_text({
-                "nr5g_pci": 3, "nr5g_action_channel": "620000", "nr5g_action_band": "oops",
-            }),
+            ZteRouterApi.suggest_5g_cell_lock_text(
+                {
+                    "nr5g_pci": 3,
+                    "nr5g_action_channel": "620000",
+                    "nr5g_action_band": "oops",
+                }
+            ),
             "3,620000,78",
         )
         self.assertEqual(
-            ZteRouterApi.suggest_5g_cell_lock_text({
-                "nr5g_pci": 3, "nr5g_action_channel": "620000", "nr5g_action_band": None,
-            }),
+            ZteRouterApi.suggest_5g_cell_lock_text(
+                {
+                    "nr5g_pci": 3,
+                    "nr5g_action_channel": "620000",
+                    "nr5g_action_band": None,
+                }
+            ),
             "3,620000,78",
         )
         for info in (
@@ -631,8 +716,18 @@ class CellLockTests(unittest.IsolatedAsyncioTestCase):
         for text in (None, "1", "1,2,3", "x,2", "1,x", "-1,2", "1,-2", "504,2"):
             with self.subTest(text=text), self.assertRaises(ValueError):
                 ZteRouterApi.parse_4g_cell_lock_input(text)
-        for text in (None, "1,2", "1,2,3,4", "x,2,3", "1,x,3", "1,2,x",
-                     "-1,2,3", "1,-2,3", "1,2,-3", "1008,2,3"):
+        for text in (
+            None,
+            "1,2",
+            "1,2,3,4",
+            "x,2,3",
+            "1,x,3",
+            "1,2,x",
+            "-1,2,3",
+            "1,-2,3",
+            "1,2,-3",
+            "1008,2,3",
+        ):
             with self.subTest(text=text), self.assertRaises(ValueError):
                 ZteRouterApi.parse_5g_cell_lock_input(text)
 
@@ -642,8 +737,11 @@ class CellLockTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(await router.async_lock_4g_cell("12", 1300))
         self.assertEqual(
             router.async_execute_ubus_action.call_args.args[0],
-            {"service": "zte_nwinfo_api", "method": "nwinfo_lock_lte_cell",
-             "params": {"lock_lte_pci": "12", "lock_lte_earfcn": "1300"}},
+            {
+                "service": "zte_nwinfo_api",
+                "method": "nwinfo_lock_lte_cell",
+                "params": {"lock_lte_pci": "12", "lock_lte_earfcn": "1300"},
+            },
         )
         await router.async_unlock_4g_cell()
         self.assertEqual(
@@ -666,7 +764,10 @@ class CellLockTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(await router.async_set_4g_cell_lock_enabled(False))
         self.assertTrue(await router.async_set_5g_cell_lock_enabled(True, value="3,620000,78"))
         self.assertTrue(await router.async_set_5g_cell_lock_enabled(False))
-        for method in (router.async_set_4g_cell_lock_enabled, router.async_set_5g_cell_lock_enabled):
+        for method in (
+            router.async_set_4g_cell_lock_enabled,
+            router.async_set_5g_cell_lock_enabled,
+        ):
             with self.assertRaisesRegex(ValueError, "Missing value"):
                 await method(True)
             with self.assertRaisesRegex(ValueError, "Missing value"):
@@ -710,9 +811,12 @@ class AuthTests(unittest.IsolatedAsyncioTestCase):
     async def test_ubus_login_accepts_salt_alias(self):
         router = logged_in_router()
         router._logged_in = False
-        router.async_call_ubus = AsyncMock(side_effect=[
-            ok({"salt": "other"}), ok({"ubus_rpc_session": "sid"}),
-        ])
+        router.async_call_ubus = AsyncMock(
+            side_effect=[
+                ok({"salt": "other"}),
+                ok({"ubus_rpc_session": "sid"}),
+            ]
+        )
         router._async_setup_http_encryption = AsyncMock()
         await router._async_ubus_login()
         self.assertEqual(router._session_id, "sid")
@@ -735,17 +839,22 @@ class AuthTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_ubus_login_errors_and_missing_session_id(self):
         router = logged_in_router()
-        router.async_call_ubus = AsyncMock(return_value={
-            "success": False, "error": {"message": "refused", "kind": "transport"},
-        })
+        router.async_call_ubus = AsyncMock(
+            return_value={
+                "success": False,
+                "error": {"message": "refused", "kind": "transport"},
+            }
+        )
         with self.assertRaisesRegex(RuntimeError, "refused"):
             await router._async_ubus_login()
 
         router = logged_in_router()
-        router.async_call_ubus = AsyncMock(side_effect=[
-            ok({"salt": "s"}),
-            {"success": False, "error": {"code": -32002, "message": "denied"}},
-        ])
+        router.async_call_ubus = AsyncMock(
+            side_effect=[
+                ok({"salt": "s"}),
+                {"success": False, "error": {"code": -32002, "message": "denied"}},
+            ]
+        )
         with self.assertRaises(api_module.ZteAuthError):
             await router._async_ubus_login()
 
@@ -831,9 +940,13 @@ class AuthTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_http_encryption_setup_with_public_key_pem(self):
         private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-        pem = private_key.public_key().public_bytes(
-            serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo
-        ).decode()
+        pem = (
+            private_key.public_key()
+            .public_bytes(
+                serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo
+            )
+            .decode()
+        )
         router = logged_in_router()
         router._http_encryption_key = None
         calls = []
@@ -877,7 +990,9 @@ class AuthTests(unittest.IsolatedAsyncioTestCase):
                     await router._async_setup_http_encryption()
             elif patch_parser == "broken":
                 with (
-                    patch.object(serialization, "load_pem_public_key", side_effect=ValueError("bad")),
+                    patch.object(
+                        serialization, "load_pem_public_key", side_effect=ValueError("bad")
+                    ),
                     patch.object(x509, "load_pem_x509_certificate", side_effect=ValueError("bad")),
                 ):
                     await router._async_setup_http_encryption()
@@ -888,24 +1003,32 @@ class AuthTests(unittest.IsolatedAsyncioTestCase):
         compact_router = await run(compact)
         self.assertIsNotNone(compact_router._http_encryption_key)
 
-        certificate_router = await run("-----BEGIN CERTIFICATE-----\nabc\n-----END CERTIFICATE-----", patch_parser="x509")
+        certificate_router = await run(
+            "-----BEGIN CERTIFICATE-----\nabc\n-----END CERTIFICATE-----", patch_parser="x509"
+        )
         self.assertIsNotNone(certificate_router._http_encryption_key)
 
-        broken = await run("-----BEGIN CERTIFICATE-----\nabc\n-----END CERTIFICATE-----", patch_parser="broken")
+        broken = await run(
+            "-----BEGIN CERTIFICATE-----\nabc\n-----END CERTIFICATE-----", patch_parser="broken"
+        )
         self.assertIsNone(broken._http_encryption_key)
 
         pem_router = await run(
-            private_key.public_key().public_bytes(
+            private_key.public_key()
+            .public_bytes(
                 serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo
-            ).decode(),
+            )
+            .decode(),
             set_response={"success": True, "data": {"result": "FAILURE"}},
         )
         self.assertIsNone(pem_router._http_encryption_key)
 
         no_success = await run(
-            private_key.public_key().public_bytes(
+            private_key.public_key()
+            .public_bytes(
                 serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo
-            ).decode(),
+            )
+            .decode(),
             set_response={"success": False},
         )
         self.assertIsNone(no_success._http_encryption_key)
@@ -953,7 +1076,9 @@ class GoFormHttpTests(unittest.IsolatedAsyncioTestCase):
         router = logged_in_router()
         router._async_get_goform_session = AsyncMock(return_value=session)
 
-        session.get.return_value = FakeResponse(content_type="text/html", status_error=RuntimeError("403"))
+        session.get.return_value = FakeResponse(
+            content_type="text/html", status_error=RuntimeError("403")
+        )
         with self.assertRaisesRegex(RuntimeError, "GoForm GET LD failed"):
             await router._async_goform_get("LD", raise_errors=True)
         self.assertEqual(await router._async_goform_get("LD"), {})
@@ -964,7 +1089,9 @@ class GoFormHttpTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(await router._async_goform_get("LD"), {})
 
         session.get.side_effect = json.JSONDecodeError("bad", "", 0)
-        with self.assertRaisesRegex(RuntimeError, "GoForm GET LD failed: router returned invalid JSON"):
+        with self.assertRaisesRegex(
+            RuntimeError, "GoForm GET LD failed: router returned invalid JSON"
+        ):
             await router._async_goform_get("LD", raise_errors=True)
         self.assertEqual(await router._async_goform_get("LD"), {})
 
@@ -1020,9 +1147,11 @@ class GoFormHttpTests(unittest.IsolatedAsyncioTestCase):
         await router._async_goform_login()
         self.assertTrue(router.is_logged_in)
         self.assertEqual(router.login_method, "goform")
-        expected = hashlib.sha256(
-            (hashlib.sha256(b"secret").hexdigest().upper() + "nonce").encode()
-        ).hexdigest().upper()
+        expected = (
+            hashlib.sha256((hashlib.sha256(b"secret").hexdigest().upper() + "nonce").encode())
+            .hexdigest()
+            .upper()
+        )
         self.assertEqual(router._async_goform_set.call_args.args[0]["password"], expected)
         router._async_goform_init_session.assert_awaited_once_with(raise_errors=True)
 
@@ -1037,7 +1166,11 @@ class GoFormHttpTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_goform_field_helpers(self):
         self.assertTrue(ZteRouterApi._goform_has_usable_payload({"network_type": "5G"}))
-        self.assertTrue(ZteRouterApi._goform_has_usable_payload({"ppp_status": "-" , "wifi_chip1_ssid1_ssid": "wifi"}))
+        self.assertTrue(
+            ZteRouterApi._goform_has_usable_payload(
+                {"ppp_status": "-", "wifi_chip1_ssid1_ssid": "wifi"}
+            )
+        )
         for payload in ({}, {"network_type": ""}, {"network_type": None}, {"network_type": "null"}):
             self.assertFalse(ZteRouterApi._goform_has_usable_payload(payload))
 
@@ -1055,37 +1188,70 @@ class GoFormHttpTests(unittest.IsolatedAsyncioTestCase):
     async def test_goform_update_all_maps_payloads(self):
         router = logged_in_router()
         fields = {
-            "network_type": "5G", "network_signalbar": "4", "network_provider_fullname": "Net",
-            "network_rmcc": "260", "network_rmnc": "01", "network_Z5g_CELL_ID": "cell",
-            "lte_pci": "12", "wan_active_channel": "100", "network_lte_ca_pcell_band": "B1",
-            "network_lte_ca_pcell_bandwidth": "20", "network_lte_rsrp": "-80",
-            "lte_rsrq": "-10", "lte_snr": "5", "lte_rssi": "-60",
-            "network_Z5g_PCI": "3", "nr5g_action_band": "n78", "nr5g_action_channel": "620000",
-            "nr5g_nsa_bandwidth": "100", "Z5g_rsrp": "-90", "Z5g_rsrq": "-11",
-            "Z5g_SINR": "7", "Z5g_rssi": "-70", "wifi_onoff_state": "1", "RadioOff": "0",
-            "wifi_chip1_ssid1_ssid": "2g", "wifi_chip2_ssid1_ssid": "5g",
-            "wifi_chip1_ssid1_access_sta_num": "2", "wifi_chip2_ssid1_access_sta_num": "bad",
-            "mwan_wanlan1_link_state": "up", "ppp_status": "connected",
-            "flux_realtime_rx_thrpt": "10", "flux_realtime_tx_thrpt": "20",
-            "flux_realtime_time": "30", "flux_monthly_rx_bytes": "40",
-            "flux_monthly_tx_bytes": "50", "modem_main_state": "online",
-            "hardware_version": "hw", "wa_inner_version": "fw", "device_uptime": "99",
-            "cpu_usage": "15", "cpuUsage": "16", "cpu_load": "17", "cpuload": "18",
-            "hightemp_datalimit_status": "0", "5g_modem_temperature": "40",
+            "network_type": "5G",
+            "network_signalbar": "4",
+            "network_provider_fullname": "Net",
+            "network_rmcc": "260",
+            "network_rmnc": "01",
+            "network_Z5g_CELL_ID": "cell",
+            "lte_pci": "12",
+            "wan_active_channel": "100",
+            "network_lte_ca_pcell_band": "B1",
+            "network_lte_ca_pcell_bandwidth": "20",
+            "network_lte_rsrp": "-80",
+            "lte_rsrq": "-10",
+            "lte_snr": "5",
+            "lte_rssi": "-60",
+            "network_Z5g_PCI": "3",
+            "nr5g_action_band": "n78",
+            "nr5g_action_channel": "620000",
+            "nr5g_nsa_bandwidth": "100",
+            "Z5g_rsrp": "-90",
+            "Z5g_rsrq": "-11",
+            "Z5g_SINR": "7",
+            "Z5g_rssi": "-70",
+            "wifi_onoff_state": "1",
+            "RadioOff": "0",
+            "wifi_chip1_ssid1_ssid": "2g",
+            "wifi_chip2_ssid1_ssid": "5g",
+            "wifi_chip1_ssid1_access_sta_num": "2",
+            "wifi_chip2_ssid1_access_sta_num": "bad",
+            "mwan_wanlan1_link_state": "up",
+            "ppp_status": "connected",
+            "flux_realtime_rx_thrpt": "10",
+            "flux_realtime_tx_thrpt": "20",
+            "flux_realtime_time": "30",
+            "flux_monthly_rx_bytes": "40",
+            "flux_monthly_tx_bytes": "50",
+            "modem_main_state": "online",
+            "hardware_version": "hw",
+            "wa_inner_version": "fw",
+            "device_uptime": "99",
+            "cpu_usage": "15",
+            "cpuUsage": "16",
+            "cpu_load": "17",
+            "cpuload": "18",
+            "hightemp_datalimit_status": "0",
+            "5g_modem_temperature": "40",
             "mwan_wanlan1_ipv6_wan_ipaddr": "2001:db8::1",
         }
         special = {
             "lan_station_list": {"lan_station_list": [{"mac": "x"}]},
             "sms_capacity_info": {
-                "sms_nv_total": "100", "sms_sim_total": "20",
-                "sms_nv_rev_total": "3", "sms_nv_send_total": "4",
-                "sms_nv_draftbox_total": "5", "sms_sim_rev_total": "2",
+                "sms_nv_total": "100",
+                "sms_sim_total": "20",
+                "sms_nv_rev_total": "3",
+                "sms_nv_send_total": "4",
+                "sms_nv_draftbox_total": "5",
+                "sms_sim_rev_total": "2",
             },
-            "sms_data_total": {"messages": [
-                {"id": 1, "number": "+48123", "content": "00480069"},
-                "invalid",
-                {"id": 2, "number": None, "content": None},
-            ]},
+            "sms_data_total": {
+                "messages": [
+                    {"id": 1, "number": "+48123", "content": "00480069"},
+                    "invalid",
+                    {"id": 2, "number": None, "content": None},
+                ]
+            },
         }
 
         async def goform_get(field, extra=None, **kwargs):
@@ -1110,10 +1276,11 @@ class GoFormHttpTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(router._goform_field_cache["wa_inner_version"], "fw")
 
         # Cached static fields are reused; malformed special responses are tolerated.
-        router._async_goform_get = AsyncMock(side_effect=lambda field, extra=None, **kwargs: (
-            {"field": "x"} if field in special else
-            {field: "cached"}
-        ))
+        router._async_goform_get = AsyncMock(
+            side_effect=lambda field, extra=None, **kwargs: (
+                {"field": "x"} if field in special else {field: "cached"}
+            )
+        )
         data2 = await router._async_goform_update_all()
         self.assertEqual(data2["common_config"]["hardware_version"], "hw")
         self.assertEqual(data2["common_config"]["wa_inner_version"], "fw")
@@ -1130,8 +1297,12 @@ class GoFormHttpTests(unittest.IsolatedAsyncioTestCase):
 
         async def goform_get(field, extra=None, **kwargs):
             if field in ("sms_capacity_info", "sms_data_total", "lan_station_list"):
-                return {"sms_nv_rev_total": "bad", "sms_nv_send_total": None,
-                        "sms_data": "bad", "lan_station_list": "bad"}
+                return {
+                    "sms_nv_rev_total": "bad",
+                    "sms_nv_send_total": None,
+                    "sms_data": "bad",
+                    "lan_station_list": "bad",
+                }
             return {field: minimal.get(field)}
 
         router._async_goform_get = AsyncMock(side_effect=goform_get)
@@ -1145,9 +1316,13 @@ class GoFormHttpTests(unittest.IsolatedAsyncioTestCase):
     async def test_goform_update_fast(self):
         router = logged_in_router()
         values = {
-            "flux_realtime_rx_thrpt": "12", "flux_realtime_tx_thrpt": "34",
-            "flux_realtime_time": "56", "ppp_status": "connected",
-            "cpu_usage": "10", "cpu_load": "11", "cpuload": "12",
+            "flux_realtime_rx_thrpt": "12",
+            "flux_realtime_tx_thrpt": "34",
+            "flux_realtime_time": "56",
+            "ppp_status": "connected",
+            "cpu_usage": "10",
+            "cpu_load": "11",
+            "cpuload": "12",
         }
         router._async_goform_get = AsyncMock(side_effect=lambda field: {field: values.get(field)})
         data = await router._async_goform_update_fast()
@@ -1215,7 +1390,6 @@ class UbusCallTests(unittest.IsolatedAsyncioTestCase):
             def get(self, *_args):
                 raise RuntimeError("bad params")
 
-
         await router.async_call_ubus(
             {"service": "uci", "method": "get", "params": BadParams({"x": 1})}, session_id="sid"
         )
@@ -1248,7 +1422,9 @@ class UbusCallTests(unittest.IsolatedAsyncioTestCase):
                 if success:
                     self.assertEqual(result["data"], data)
                 self.assertFalse(router._logged_in) if not success and payload in (
-                    [], {"id": 1, "result": [0]}, ["bad"]
+                    [],
+                    {"id": 1, "result": [0]},
+                    ["bad"],
                 ) else None
 
     async def test_access_denied_retry_and_relogin_failure(self):
@@ -1258,18 +1434,14 @@ class UbusCallTests(unittest.IsolatedAsyncioTestCase):
             FakeResponse(payload=[{"error": {"code": -32002}}]),
             FakeResponse(payload=[{"id": 2, "result": [0, {"ok": True}]}]),
         ]
-        result = await router.async_call_ubus(
-            {"service": "svc", "method": "m"}, session_id="sid"
-        )
+        result = await router.async_call_ubus({"service": "svc", "method": "m"}, session_id="sid")
         self.assertTrue(result["success"])
         self.assertEqual(router._session.post.call_count, 2)
 
         router = logged_in_router()
         install_login(router, fail=True)
         router._session.post.return_value = FakeResponse(payload=[{"error": {"code": -32002}}])
-        result = await router.async_call_ubus(
-            {"service": "svc", "method": "m"}, session_id="sid"
-        )
+        result = await router.async_call_ubus({"service": "svc", "method": "m"}, session_id="sid")
         self.assertFalse(result["success"])
         self.assertEqual(result["error"]["kind"], "transport")
         self.assertEqual(result["error"]["message"], "RuntimeError during router request")
@@ -1290,24 +1462,18 @@ class UbusCallTests(unittest.IsolatedAsyncioTestCase):
             ConnectionResetError(104, "reset"),
             FakeResponse(payload=[{"id": 2, "result": [0, {"ok": 1}]}]),
         ]
-        result = await router.async_call_ubus(
-            {"service": "svc", "method": "m"}, session_id="sid"
-        )
+        result = await router.async_call_ubus({"service": "svc", "method": "m"}, session_id="sid")
         self.assertTrue(result["success"])
 
         router = logged_in_router()
         install_login(router, fail=True)
         router._session.post.side_effect = ConnectionResetError(104, "reset")
-        result = await router.async_call_ubus(
-            {"service": "svc", "method": "m"}, session_id="sid"
-        )
+        result = await router.async_call_ubus({"service": "svc", "method": "m"}, session_id="sid")
         self.assertEqual(result["error"]["kind"], "transport")
 
         router = logged_in_router()
         router._session.post.side_effect = TimeoutError()
-        result = await router.async_call_ubus(
-            {"service": "svc", "method": "m"}, session_id="sid"
-        )
+        result = await router.async_call_ubus({"service": "svc", "method": "m"}, session_id="sid")
         self.assertEqual(result["error"]["message"], "request timed out")
         self.assertFalse(router._logged_in)
 
@@ -1315,9 +1481,7 @@ class UbusCallTests(unittest.IsolatedAsyncioTestCase):
         error.status = 503
         router = logged_in_router()
         router._session.post.side_effect = error
-        result = await router.async_call_ubus(
-            {"service": "svc", "method": "m"}, session_id="sid"
-        )
+        result = await router.async_call_ubus({"service": "svc", "method": "m"}, session_id="sid")
         self.assertEqual(result["error"]["status"], 503)
 
     async def test_batch_response_mapping(self):
@@ -1345,7 +1509,9 @@ class UbusCallTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(out[6]["error"], {"message": "nonzero_result"})
         headers = router._session.post.call_args.kwargs["headers"]
         self.assertEqual(headers["Z-Mode"], "0")
-        self.assertIn("session-id", json.loads(router._session.post.call_args.kwargs["data"])[0]["params"])
+        self.assertIn(
+            "session-id", json.loads(router._session.post.call_args.kwargs["data"])[0]["params"]
+        )
 
     async def test_batch_retries_and_errors(self):
         router = logged_in_router()
@@ -1399,9 +1565,13 @@ class BatchLoggingTests(unittest.TestCase):
     def test_failure_key_variants(self):
         self.assertEqual(ZteRouterApi._batch_failure_key({}), ("None", "None", ()))
         self.assertEqual(
-            ZteRouterApi._batch_failure_key({
-                "service": "uci", "method": "get", "params": {"config": "wireless", "section": "main_2g"},
-            }),
+            ZteRouterApi._batch_failure_key(
+                {
+                    "service": "uci",
+                    "method": "get",
+                    "params": {"config": "wireless", "section": "main_2g"},
+                }
+            ),
             ("uci", "get", (("config", "wireless"), ("section", "main_2g"))),
         )
         unhashable = ZteRouterApi._batch_failure_key({"params": {"a": [1, 2]}})
@@ -1416,7 +1586,11 @@ class BatchLoggingTests(unittest.TestCase):
         )
 
     def test_optional_failure_detection(self):
-        optional = {"service": "uci", "method": "get", "params": {"config": "wireless", "section": "main_2g"}}
+        optional = {
+            "service": "uci",
+            "method": "get",
+            "params": {"config": "wireless", "section": "main_2g"},
+        }
         error = {"ubus_status": 1, "message": "nonzero_result"}
         self.assertTrue(ZteRouterApi._is_optional_batch_failure("core", optional, error))
         self.assertFalse(ZteRouterApi._is_optional_batch_failure("monthly", optional, error))
@@ -1438,7 +1612,11 @@ class BatchLoggingTests(unittest.TestCase):
 
     def test_log_batch_failures(self):
         router = make_router()
-        optional = {"service": "uci", "method": "get", "params": {"config": "wireless", "section": "main_2g"}}
+        optional = {
+            "service": "uci",
+            "method": "get",
+            "params": {"config": "wireless", "section": "main_2g"},
+        }
         calls = [
             optional,
             {"service": "a", "method": "b"},
@@ -1490,69 +1668,111 @@ class ActionTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(await router.async_execute_ubus_action({"service": "s", "method": "m"}))
 
         router.async_call_ubus = AsyncMock(return_value=ok({"result": 1}))
-        self.assertTrue(await router.async_execute_ubus_action(
-            {"service": "s", "method": "m"}, success_key="result"
-        ))
-        router.async_call_ubus = AsyncMock(return_value=ok({}))
-        self.assertFalse(await router.async_execute_ubus_action(
-            {"service": "s", "method": "m"}, success_key="result"
-        ))
-        router.async_call_ubus = AsyncMock(return_value=ok({"result": "ready"}))
-        self.assertTrue(await router.async_execute_ubus_action(
-            {"service": "s", "method": "m"}, success_key="result", success_values={"ready"}
-        ))
-        self.assertFalse(await router.async_execute_ubus_action(
-            {"service": "s", "method": "m"}, success_key="result", success_values={"other"}
-        ))
-        self.assertEqual(
-            router.async_call_ubus.call_args.kwargs["z_mode_override"], None
+        self.assertTrue(
+            await router.async_execute_ubus_action(
+                {"service": "s", "method": "m"}, success_key="result"
+            )
         )
+        router.async_call_ubus = AsyncMock(return_value=ok({}))
+        self.assertFalse(
+            await router.async_execute_ubus_action(
+                {"service": "s", "method": "m"}, success_key="result"
+            )
+        )
+        router.async_call_ubus = AsyncMock(return_value=ok({"result": "ready"}))
+        self.assertTrue(
+            await router.async_execute_ubus_action(
+                {"service": "s", "method": "m"}, success_key="result", success_values={"ready"}
+            )
+        )
+        self.assertFalse(
+            await router.async_execute_ubus_action(
+                {"service": "s", "method": "m"}, success_key="result", success_values={"other"}
+            )
+        )
+        self.assertEqual(router.async_call_ubus.call_args.kwargs["z_mode_override"], None)
 
     async def test_execute_action_def_branches(self):
         router = logged_in_router()
         self.assertFalse(await router.async_execute_action_def({}))
         self.assertFalse(await router.async_execute_action_def({"service": "s"}))
-        self.assertFalse(await router.async_execute_action_def(
-            {"service": "s", "method": "m", "params": "bad"}
-        ))
+        self.assertFalse(
+            await router.async_execute_action_def({"service": "s", "method": "m", "params": "bad"})
+        )
         router.async_call_ubus = AsyncMock(return_value=ok({"result": "done"}))
-        self.assertTrue(await router.async_execute_action_def({
-            "service": "s", "method": "m", "params": {"p": 1},
-            "success_key": "result", "success_values": ["done", "ok"],
-            "z_mode_override": "0",
-        }))
+        self.assertTrue(
+            await router.async_execute_action_def(
+                {
+                    "service": "s",
+                    "method": "m",
+                    "params": {"p": 1},
+                    "success_key": "result",
+                    "success_values": ["done", "ok"],
+                    "z_mode_override": "0",
+                }
+            )
+        )
         self.assertEqual(router.async_call_ubus.call_args.kwargs["z_mode_override"], "0")
-        self.assertTrue(await router.async_execute_action_def({
-            "service": "s", "method": "m", "success_values": "done",
-        }))
+        self.assertTrue(
+            await router.async_execute_action_def(
+                {
+                    "service": "s",
+                    "method": "m",
+                    "success_values": "done",
+                }
+            )
+        )
 
         install_login(router, fail=True)
-        self.assertFalse(await router.async_execute_action_def({
-            "service": "s", "method": "m", "force_relogin": True,
-        }))
+        self.assertFalse(
+            await router.async_execute_action_def(
+                {
+                    "service": "s",
+                    "method": "m",
+                    "force_relogin": True,
+                }
+            )
+        )
         install_login(router)
-        self.assertTrue(await router.async_execute_action_def({
-            "service": "s", "method": "m", "force_relogin": True,
-        }))
+        self.assertTrue(
+            await router.async_execute_action_def(
+                {
+                    "service": "s",
+                    "method": "m",
+                    "force_relogin": True,
+                }
+            )
+        )
         router._async_ensure_logged_in.assert_awaited_once_with(force=True)
 
     async def test_firmware_update_action_choices(self):
         self.assertEqual(
             ZteRouterApi.firmware_update_action({"current_upgrade_state": "download_completed"}),
-            {"service": "zwrt_fota_res.api", "method": "start_update",
-             "params": {"moduleName": "zte_web"}},
+            {
+                "service": "zwrt_fota_res.api",
+                "method": "start_update",
+                "params": {"moduleName": "zte_web"},
+            },
         )
         for state in ("", "idle", "fota_idle", "upgrade_pack_redownload"):
             with self.subTest(state=state):
                 self.assertEqual(
-                    ZteRouterApi.firmware_update_action({
-                        "new_version_state": "version_has_new_optional_software",
-                        "current_upgrade_state": state,
-                    }),
+                    ZteRouterApi.firmware_update_action(
+                        {
+                            "new_version_state": "version_has_new_optional_software",
+                            "current_upgrade_state": state,
+                        }
+                    ),
                     {"service": "zwrt_zte_dm", "method": "confirm_download", "params": {}},
                 )
-        for info in ({}, {"new_version_state": "1", "current_upgrade_state": "upgrading"},
-                     {"new_version_state": "version_has_new_critical_software", "current_upgrade_state": "x"}):
+        for info in (
+            {},
+            {"new_version_state": "1", "current_upgrade_state": "upgrading"},
+            {
+                "new_version_state": "version_has_new_critical_software",
+                "current_upgrade_state": "x",
+            },
+        ):
             with self.subTest(info=info):
                 self.assertIsNone(ZteRouterApi.firmware_update_action(info))
 
@@ -1581,10 +1801,12 @@ class ActionTests(unittest.IsolatedAsyncioTestCase):
         router.async_call_ubus = AsyncMock(return_value={"success": False})
         with self.assertRaisesRegex(ValueError, "Cannot verify"):
             await router.async_start_firmware_update()
-        router.async_call_ubus = AsyncMock(side_effect=[
-            ok({"new_version_state": "1", "current_upgrade_state": "fota_idle"}),
-            ok({"result": "0"}),
-        ])
+        router.async_call_ubus = AsyncMock(
+            side_effect=[
+                ok({"new_version_state": "1", "current_upgrade_state": "fota_idle"}),
+                ok({"result": "0"}),
+            ]
+        )
         self.assertTrue(await router.async_start_firmware_update())
         router.async_call_ubus = AsyncMock(return_value=ok({"current_upgrade_state": "fota_idle"}))
         with self.assertRaisesRegex(ValueError, "No firmware update is ready"):
@@ -1602,15 +1824,24 @@ class ActionTests(unittest.IsolatedAsyncioTestCase):
         router = logged_in_router()
         router._logged_in = False
         install_login(router)
-        router.async_call_ubus_batch = AsyncMock(return_value=[
-            ok({"a": 1}), ok({"b": 2}), ok({"c": 3}),
-        ])
+        router.async_call_ubus_batch = AsyncMock(
+            return_value=[
+                ok({"a": 1}),
+                ok({"b": 2}),
+                ok({"c": 3}),
+            ]
+        )
         data = await router.async_update_fast()
         self.assertEqual(data["wan"], {"a": 1})
         calls = router.async_call_ubus_batch.call_args.args[0]
-        self.assertEqual([c["method"] for c in calls], [
-            "router_get_status", "get_wwandst", "get_device_info",
-        ])
+        self.assertEqual(
+            [c["method"] for c in calls],
+            [
+                "router_get_status",
+                "get_wwandst",
+                "get_device_info",
+            ],
+        )
         router.async_call_ubus_batch = AsyncMock(return_value=[])
         self.assertIsNone(await router.async_update_fast())
 
@@ -1631,28 +1862,51 @@ class ActionTests(unittest.IsolatedAsyncioTestCase):
             if name == "core":
                 payloads = [
                     {"lte_action_channel": 100, "lte_bandwidth": 20},
-                    {"ap": 1}, {"values": {"model": "G5TC"}}, {"temp": 40},
-                    {"model": "G5TC"}, {"imsi": 1}, {"ip": "1.2.3.4"}, counts,
-                    {"values": {"model": "G5TC"}}, {"led": 1}, {}, {},
-                    {"rx": 1}, {"iface": 1},
+                    {"ap": 1},
+                    {"values": {"model": "G5TC"}},
+                    {"temp": 40},
+                    {"model": "G5TC"},
+                    {"imsi": 1},
+                    {"ip": "1.2.3.4"},
+                    counts,
+                    {"values": {"model": "G5TC"}},
+                    {"led": 1},
+                    {},
+                    {},
+                    {"rx": 1},
+                    {"iface": 1},
                 ]
             elif name == "monthly":
                 payloads = [{"month": 1}, {"enable": 0}, {"clearday": 1}]
             elif name == "firmware_gnss":
                 payloads = [{"current_upgrade_state": "fota_idle"}, {"values": {"LAT": "1"}}]
             elif name == "sms":
-                payloads = [{"messages": [{"id": 1, "content": "00480069"}, "invalid"]},
-                            {"sms_nv_rev_total": 1}]
+                payloads = [
+                    {"messages": [{"id": 1, "content": "00480069"}, "invalid"]},
+                    {"sms_nv_rev_total": 1},
+                ]
             else:
                 payloads = [
-                    {"wireless_access_list_info": [
-                        {"mac_address": "aa:bb:cc:dd:ee:ff", "hostname": "phone",
-                         "ip_address": "192.168.1.2", "interface_type": 1},
-                    ]},
-                    {"lan_access_list_info": [
-                        {"mac_address": "aa:bb:cc:dd:ee:ff", "hostname": "phone",
-                         "ipv6_address": "2001:db8::2", "interface_type": "wifi"},
-                    ]},
+                    {
+                        "wireless_access_list_info": [
+                            {
+                                "mac_address": "aa:bb:cc:dd:ee:ff",
+                                "hostname": "phone",
+                                "ip_address": "192.168.1.2",
+                                "interface_type": 1,
+                            },
+                        ]
+                    },
+                    {
+                        "lan_access_list_info": [
+                            {
+                                "mac_address": "aa:bb:cc:dd:ee:ff",
+                                "hostname": "phone",
+                                "ipv6_address": "2001:db8::2",
+                                "interface_type": "wifi",
+                            },
+                        ]
+                    },
                     counts,
                 ]
             return [ok(payload) for payload in payloads]
@@ -1698,8 +1952,15 @@ class NetworkClientTests(unittest.IsolatedAsyncioTestCase):
         for value in ("AA:BB:CC:DD:EE:FF", "aa-bb-cc-dd-ee-ff", "aabb.ccdd.eeff", " aabbccddeeff "):
             with self.subTest(value=value):
                 self.assertEqual(ZteRouterApi.normalize_client_mac(value), "aa:bb:cc:dd:ee:ff")
-        for value in (None, 123, "aa:bb", "gg:bb:cc:dd:ee:ff", "00:00:00:00:00:00",
-                      "01:bb:cc:dd:ee:ff", "aa:bb:cc:dd:ee:ff:00"):
+        for value in (
+            None,
+            123,
+            "aa:bb",
+            "gg:bb:cc:dd:ee:ff",
+            "00:00:00:00:00:00",
+            "01:bb:cc:dd:ee:ff",
+            "aa:bb:cc:dd:ee:ff:00",
+        ):
             with self.subTest(value=value):
                 self.assertIsNone(ZteRouterApi.normalize_client_mac(value))
 
@@ -1713,11 +1974,16 @@ class NetworkClientTests(unittest.IsolatedAsyncioTestCase):
             "ipv6_address": "2001:db8::1",
             "interface_type": 7,
         }
-        self.assertEqual(ZteRouterApi._normalize_network_client(row), {
-            "mac_address": "aa:bb:cc:dd:ee:ff", "hostname": "phone",
-            "ip_address": "192.168.1.2", "ipv6_address": "2001:db8::1",
-            "interface_type": "7",
-        })
+        self.assertEqual(
+            ZteRouterApi._normalize_network_client(row),
+            {
+                "mac_address": "aa:bb:cc:dd:ee:ff",
+                "hostname": "phone",
+                "ip_address": "192.168.1.2",
+                "ipv6_address": "2001:db8::1",
+                "interface_type": "7",
+            },
+        )
         odd = {
             "mac_address": "aa:bb:cc:dd:ee:ff",
             "hostname": "x" * 300,
@@ -1730,10 +1996,14 @@ class NetworkClientTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(normalized["ip_address"])
         self.assertIsNone(normalized["ipv6_address"])
         self.assertEqual(normalized["interface_type"], "lan")
-        unspecified = ZteRouterApi._normalize_network_client({
-            "mac_address": "aa:bb:cc:dd:ee:ff", "ip_address": "0.0.0.0",
-            "ipv6_address": "::", "hostname": 5,
-        })
+        unspecified = ZteRouterApi._normalize_network_client(
+            {
+                "mac_address": "aa:bb:cc:dd:ee:ff",
+                "ip_address": "0.0.0.0",
+                "ipv6_address": "::",
+                "hostname": 5,
+            }
+        )
         self.assertIsNone(unspecified["ip_address"])
         self.assertIsNone(unspecified["ipv6_address"])
         self.assertIsNone(unspecified["hostname"])
@@ -1768,36 +2038,55 @@ class NetworkClientTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(await router._async_read_network_clients_locked(counts))
 
         bad_counts = {"access_total_num": 2, "wireless_num": 2, "lan_num": 0}
-        router.async_call_ubus_batch = AsyncMock(return_value=[
-            ok({"wireless_access_list_info": [{"mac_address": "aa:bb:cc:dd:ee:ff"},
-                                              {"mac_address": "11:22:33:44:55:66"}]}),
-            ok(counts),
-        ])
+        router.async_call_ubus_batch = AsyncMock(
+            return_value=[
+                ok(
+                    {
+                        "wireless_access_list_info": [
+                            {"mac_address": "aa:bb:cc:dd:ee:ff"},
+                            {"mac_address": "11:22:33:44:55:66"},
+                        ]
+                    }
+                ),
+                ok(counts),
+            ]
+        )
         self.assertIsNone(await router._async_read_network_clients_locked(bad_counts))
 
-        router.async_call_ubus_batch = AsyncMock(return_value=[
-            ok({"lan_access_list_info": [{"mac_address": "bad"}]}), ok(counts),
-        ])
+        router.async_call_ubus_batch = AsyncMock(
+            return_value=[
+                ok({"lan_access_list_info": [{"mac_address": "bad"}]}),
+                ok(counts),
+            ]
+        )
         snapshot = await router._async_read_network_clients_locked(counts)
         self.assertFalse(snapshot["complete"])
         self.assertEqual(snapshot["clients"], {})
 
-        router.async_call_ubus_batch = AsyncMock(return_value=[
-            ok({"lan_access_list_info": [{"mac_address": "aa:bb:cc:dd:ee:ff"}]}),
-            ok(counts),
-        ])
+        router.async_call_ubus_batch = AsyncMock(
+            return_value=[
+                ok({"lan_access_list_info": [{"mac_address": "aa:bb:cc:dd:ee:ff"}]}),
+                ok(counts),
+            ]
+        )
         snapshot = await router._async_read_network_clients_locked(counts)
         self.assertTrue(snapshot["complete"])
         self.assertEqual(snapshot["clients"]["aa:bb:cc:dd:ee:ff"]["connection_type"], "lan")
 
-        router.async_call_ubus_batch = AsyncMock(return_value=[
-            {"success": False, "data": None}, ok(counts),
-        ])
+        router.async_call_ubus_batch = AsyncMock(
+            return_value=[
+                {"success": False, "data": None},
+                ok(counts),
+            ]
+        )
         self.assertFalse((await router._async_read_network_clients_locked(counts))["complete"])
 
-        router.async_call_ubus_batch = AsyncMock(return_value=[
-            ok({"lan_access_list_info": [{"mac_address": "aa:bb:cc:dd:ee:ff"}] * 2049}), ok(counts),
-        ])
+        router.async_call_ubus_batch = AsyncMock(
+            return_value=[
+                ok({"lan_access_list_info": [{"mac_address": "aa:bb:cc:dd:ee:ff"}] * 2049}),
+                ok(counts),
+            ]
+        )
         self.assertFalse((await router._async_read_network_clients_locked(counts))["complete"])
 
 
@@ -1813,11 +2102,13 @@ class SmsSendExtraTests(unittest.IsolatedAsyncioTestCase):
                 router._http_encryption_key = OTHER_KEY
 
         router._async_ensure_logged_in = AsyncMock(side_effect=login)
-        router.async_call_ubus = AsyncMock(side_effect=[
-            {"success": False, "error": {"code": -32002}},
-            ok(),
-            ok({"sms_cmd_status_result": "2"}),
-        ])
+        router.async_call_ubus = AsyncMock(
+            side_effect=[
+                {"success": False, "error": {"code": -32002}},
+                ok(),
+                ok({"sms_cmd_status_result": "2"}),
+            ]
+        )
         with patch("asyncio.sleep", new_callable=AsyncMock):
             self.assertFalse(await router.async_send_sms("+48123", "Hi"))
         self.assertEqual(router.async_call_ubus.await_count, 3)
