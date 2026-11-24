@@ -1,7 +1,7 @@
 # Integration quality scale audit (54 rules: Bronze 20, Silver 10, Gold 21, Platinum 3).
 # Status follows https://developers.home-assistant.io/docs/core/integration-quality-scale/rules/
 # "todo" = not implemented or not verified yet; "exempt" = not applicable to this integration.
-# Last reviewed with v2.5.0-beta.4; the last two todo rules closed in beta.3.
+# Last reviewed with v2.5.0-beta.6; the last two todo rules closed in beta.3.
 
 rules:
   # ------------------------------- Bronze ----------------------------------
