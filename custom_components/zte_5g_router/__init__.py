@@ -29,11 +29,13 @@ from .const import (
     DEFAULT_VERIFY_TLS,
     DOMAIN,
 )
+from .coordinator import ZteDataUpdateCoordinator
 from .identity import (
     device_identifier_from_data,
     entry_unique_id,
     should_migrate_unique_id,
 )
+from .repairs import async_create_auth_issue, async_delete_auth_issue
 from .sms_events import EVENT_SMS_RECEIVED, collect_new_incoming_sms
 from .zte_api import ZteAuthError, ZteRouterApi
 
@@ -170,14 +172,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ZteNgRouterConfigEntry) 
             _LOGGER.error("Error updating ZTE router fast data: %s", summary)
             raise UpdateFailed(summary) from err
 
-    coordinator = DataUpdateCoordinator(
+    coordinator = ZteDataUpdateCoordinator(
         hass,
         _LOGGER,
         name=f"zte_5g_router_{name}",
         update_method=_async_update_data,
         update_interval=timedelta(seconds=scan_interval),
     )
-    coordinator_fast = DataUpdateCoordinator(
+    coordinator_fast = ZteDataUpdateCoordinator(
         hass,
         _LOGGER,
         name=f"zte_5g_router_{name}_fast",
@@ -192,8 +194,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ZteNgRouterConfigEntry) 
     )
 
     try:
-        await coordinator.async_config_entry_first_refresh()
-        await coordinator_fast.async_config_entry_first_refresh()
+        try:
+            await coordinator.async_config_entry_first_refresh()
+            await coordinator_fast.async_config_entry_first_refresh()
+        except ConfigEntryAuthFailed:
+            async_create_auth_issue(hass, entry.entry_id, name)
+            raise
+        async_delete_auth_issue(hass, entry.entry_id)
         # Migrate before registering the listener: changing unique_id would
         # otherwise trigger an unnecessary reload right after setup.
         _async_migrate_entry_identity(hass, entry, coordinator.data)

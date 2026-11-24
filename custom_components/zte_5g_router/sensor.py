@@ -18,7 +18,7 @@ from homeassistant.const import (
     UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo, EntityCategory
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
@@ -26,7 +26,7 @@ from homeassistant.helpers.update_coordinator import (
 )
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN
+from .entity import device_info, entity_unique_id
 
 # All router I/O goes through the shared coordinator; serialize entity updates.
 PARALLEL_UPDATES = 1
@@ -974,13 +974,8 @@ class ZteNgRouterSensor(CoordinatorEntity, SensorEntity):
         self._attr_name = name
 
         # unique_id includes entry_id so multiple routers can coexist
-        self._attr_unique_id = f"{entry_id}_{key}"
-
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry_id)},
-            name=router_name,
-            manufacturer="ZTE",
-        )
+        self._attr_unique_id = entity_unique_id(entry_id, key)
+        self._attr_device_info = device_info(entry_id, router_name)
 
         if device_class is not None:
             self._attr_device_class = device_class

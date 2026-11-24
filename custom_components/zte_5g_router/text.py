@@ -8,10 +8,11 @@ from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.text import TextEntity, TextEntityDescription
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo, EntityCategory
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, SMS_COMPOSE_DEFAULT
+from .const import SMS_COMPOSE_DEFAULT
+from .entity import device_info, entity_unique_id
 from .zte_api import ZteRouterApi
 
 # All router I/O goes through the shared coordinator; serialize entity updates.
@@ -113,15 +114,13 @@ class ZteTextEntity(CoordinatorEntity, TextEntity):
         # Unique IDs must match what switch.py expects
         self._attr_translation_key = description.key
         if self._kind == "sms":
-            self._attr_unique_id = f"{entry.entry_id}_sms_compose_text"
+            self._attr_unique_id = entity_unique_id(entry.entry_id, "sms_compose_text")
         else:
-            self._attr_unique_id = f"{entry.entry_id}_cell_lock_{self._kind}_text"
+            self._attr_unique_id = entity_unique_id(
+                entry.entry_id, f"cell_lock_{self._kind}_text"
+            )
 
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            name=device_name,
-            manufacturer="ZTE",
-        )
+        self._attr_device_info = device_info(entry.entry_id, device_name)
 
         # TextEntity settings
         self._attr_mode = "text"

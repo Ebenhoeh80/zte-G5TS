@@ -10,13 +10,13 @@ from typing import TYPE_CHECKING, Any
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_registry import async_get as async_get_entity_registry
 from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
+from .entity import device_info, entity_unique_id
 
 if TYPE_CHECKING:
     from . import ZteNgRouterConfigEntry, ZteNgRouterRuntimeData
@@ -32,7 +32,6 @@ _LOGGER = logging.getLogger(__name__)
 class ZteActionSwitchDef:
     key: str
     name: str
-    icon: str
     state_key: str
     on_value: str
     off_value: str
@@ -45,7 +44,6 @@ SWITCH_DEFS: list[ZteActionSwitchDef] = [
     ZteActionSwitchDef(
         key="odu_led",
         name="LED",
-        icon="mdi:led-on",
         state_key="switch",
         on_value="1",
         off_value="0",
@@ -65,7 +63,6 @@ SWITCH_DEFS: list[ZteActionSwitchDef] = [
     ZteActionSwitchDef(
         key="wifi_master",
         name="WiFi",
-        icon="mdi:wifi",
         state_key="wifi_onoff",
         on_value="1",
         off_value="0",
@@ -85,7 +82,6 @@ SWITCH_DEFS: list[ZteActionSwitchDef] = [
     ZteActionSwitchDef(
         key="wifi_main_2g",
         name="WiFi 2 GHz",
-        icon="mdi:wifi",
         state_key="disabled",
         # UCI uses disabled=0 (enabled) and disabled=1 (disabled)
         on_value="0",
@@ -105,7 +101,6 @@ SWITCH_DEFS: list[ZteActionSwitchDef] = [
     ZteActionSwitchDef(
         key="wifi_main_5g",
         name="WiFi 5 GHz",
-        icon="mdi:wifi",
         state_key="disabled",
         # UCI uses disabled=0 (enabled) and disabled=1 (disabled)
         on_value="0",
@@ -125,7 +120,6 @@ SWITCH_DEFS: list[ZteActionSwitchDef] = [
     ZteActionSwitchDef(
         key="mobile_data",
         name="Mobile Data",
-        icon="mdi:signal-cellular-3",
         state_key="enable",
         on_value="1",
         off_value="0",
@@ -206,14 +200,8 @@ class ZteActionSwitch(CoordinatorEntity, SwitchEntity):
 
         self._attr_name = switch_def.name
         self._attr_translation_key = switch_def.key
-        self._attr_icon = switch_def.icon
-        self._attr_unique_id = f"{entry.entry_id}_{switch_def.key}"
-
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            name=device_name,
-            manufacturer="ZTE",
-        )
+        self._attr_unique_id = entity_unique_id(entry.entry_id, switch_def.key)
+        self._attr_device_info = device_info(entry.entry_id, device_name)
 
     @property
     def is_on(self) -> bool:
@@ -378,14 +366,8 @@ class ZtePausePollingSwitch(SwitchEntity):
 
         self._attr_name = "Pause polling (5 min)"
         self._attr_translation_key = "pause_polling"
-        self._attr_icon = "mdi:pause-circle-outline"
-        self._attr_unique_id = f"{entry.entry_id}_pause_polling"
-
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            name=device_name,
-            manufacturer="ZTE",
-        )
+        self._attr_unique_id = entity_unique_id(entry.entry_id, "pause_polling")
+        self._attr_device_info = device_info(entry.entry_id, device_name)
 
     @property
     def _store(self) -> ZteNgRouterRuntimeData:
@@ -479,14 +461,10 @@ class ZteCellLockSwitch(CoordinatorEntity, SwitchEntity):
 
         self._attr_name = "Cell Lock 4G" if kind == "4g" else "Cell Lock 5G"
         self._attr_translation_key = f"cell_lock_{kind}"
-        self._attr_icon = "mdi:cellphone-lock"
-        self._attr_unique_id = f"{entry.entry_id}_cell_lock_{kind}_enabled"
-
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            name=device_name,
-            manufacturer="ZTE",
+        self._attr_unique_id = entity_unique_id(
+            entry.entry_id, f"cell_lock_{kind}_enabled"
         )
+        self._attr_device_info = device_info(entry.entry_id, device_name)
 
         # Will be resolved lazily via entity registry
         self._text_entity_id: str | None = None

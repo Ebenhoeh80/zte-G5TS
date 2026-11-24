@@ -193,5 +193,21 @@
       "cell_lock_5g_text": { "name": "5G Target Cell (PCI,ARFCN,BAND)" },
       "sms_compose_text": { "name": "SMS Compose" }
     }
+  },
+  "issues": {
+    "auth_failed": {
+      "title": "ZTE router password rejected",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Re-authenticate {name}",
+            "description": "Home Assistant could not log in to {name} with the stored password. Select Submit to enter the current WebUI administrator password."
+          }
+        },
+        "abort": {
+          "reauth_started": "Re-authentication started."
+        }
+      }
+    }
   }
 }

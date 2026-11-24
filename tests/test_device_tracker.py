@@ -35,10 +35,14 @@ def load_trackers():
     registry = types.ModuleType("homeassistant.helpers.entity_registry")
     registry.async_get = lambda hass: hass.registry
     registry.async_entries_for_config_entry = lambda reg, entry_id: reg
+    entity_mod = types.ModuleType("homeassistant.helpers.entity")
+    entity_mod.DeviceInfo = lambda **kwargs: kwargs
     helpers = types.ModuleType("homeassistant.helpers")
     helpers.entity_registry = registry
+    helpers.entity = entity_mod
     modules.update({"homeassistant.helpers": helpers,
-                    "homeassistant.helpers.entity_registry": registry})
+                    "homeassistant.helpers.entity_registry": registry,
+                    "homeassistant.helpers.entity": entity_mod})
     symbols = {
         "homeassistant.components.device_tracker": {
             "ScannerEntity": type("ScannerEntity", (Entity,), {}),
@@ -337,6 +341,20 @@ class TrackerPresenceTests(unittest.TestCase):
         self.assertFalse(tracking.clients[MAC].connected)
 
 
+class Registry(list):
+    """Entity registry stand-in that also supports stale-entry removal."""
+
+    def __init__(self, entries=()):
+        super().__init__(entries)
+        self.removed = []
+
+    def async_get_entity_id(self, domain, platform, unique_id):
+        return None
+
+    def async_remove(self, entity_id):
+        self.removed.append(entity_id)
+
+
 class TrackerPlatformTests(unittest.IsolatedAsyncioTestCase):
     def setup(self, enabled=True, data=None, registry=None):
         listeners = []
@@ -351,7 +369,7 @@ class TrackerPlatformTests(unittest.IsolatedAsyncioTestCase):
             name="Router",
             reset_client_absence=None,
         )
-        hass = types.SimpleNamespace(registry=registry or [])
+        hass = types.SimpleNamespace(registry=registry or Registry())
         unloads = []
         entry = types.SimpleNamespace(entry_id="entry", data={}, options={"track_wifi_clients": enabled},
                                       runtime_data=store, async_on_unload=unloads.append)
@@ -438,8 +456,8 @@ class TrackerPlatformTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(entities), 1)
 
     async def test_offline_registered_trackers_reappear_and_restore_metadata_not_presence(self):
-        registry = [types.SimpleNamespace(domain="device_tracker", platform="zte_5g_router",
-                                         unique_id="entry_wifi_021234567890")]
+        registry = Registry([types.SimpleNamespace(domain="device_tracker", platform="zte_5g_router",
+                                         unique_id="entry_wifi_021234567890")])
         hass, entry, _, _, _, _ = self.setup(data={"network_clients": snapshot(0, False)}, registry=registry)
         entities = []
         await trackers.async_setup_entry(hass, entry, entities.extend)

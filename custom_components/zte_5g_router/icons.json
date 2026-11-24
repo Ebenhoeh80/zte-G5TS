@@ -1,0 +1,39 @@
+{
+  "entity": {
+    "button": {
+      "restart": { "default": "mdi:restart" },
+      "send_sms": { "default": "mdi:send" },
+      "check_firmware_update": { "default": "mdi:update" },
+      "start_firmware_update": { "default": "mdi:cloud-download" }
+    },
+    "switch": {
+      "odu_led": { "default": "mdi:led-on" },
+      "wifi_master": { "default": "mdi:wifi" },
+      "wifi_main_2g": { "default": "mdi:wifi" },
+      "wifi_main_5g": { "default": "mdi:wifi" },
+      "mobile_data": { "default": "mdi:signal-cellular-3" },
+      "pause_polling": { "default": "mdi:pause-circle-outline" },
+      "cell_lock_4g": { "default": "mdi:cellphone-lock" },
+      "cell_lock_5g": { "default": "mdi:cellphone-lock" }
+    },
+    "text": {
+      "cell_lock_4g_text": { "default": "mdi:numeric" },
+      "cell_lock_5g_text": { "default": "mdi:numeric" },
+      "sms_compose_text": { "default": "mdi:message-text-outline" }
+    },
+    "sensor": {
+      "signalbar": { "default": "mdi:signal" },
+      "lte_rsrp": { "default": "mdi:signal" },
+      "nr_rsrp": { "default": "mdi:signal-5g" },
+      "download_rate": { "default": "mdi:download-network" },
+      "upload_rate": { "default": "mdi:upload-network" },
+      "modem_temperature": { "default": "mdi:thermometer" },
+      "5g_modem_temperature": { "default": "mdi:thermometer" },
+      "wan_ipv4": { "default": "mdi:ip-network" },
+      "wan_ipv6": { "default": "mdi:ip-network" },
+      "connected_lan_devices": { "default": "mdi:lan" },
+      "connected_wifi_devices": { "default": "mdi:wifi" },
+      "sms_latest": { "default": "mdi:message-text-outline" }
+    }
+  }
+}

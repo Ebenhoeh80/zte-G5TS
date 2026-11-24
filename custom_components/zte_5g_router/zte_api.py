@@ -114,7 +114,10 @@ class ZteRouterApi:
         else:
             # ZTE write ACL checks depend on the router cookie jar, not only the
             # explicit webtoken header. Home Assistant's shared client session
-            # uses a dummy cookie jar, so use a dedicated router session.
+            # uses a dummy cookie jar and cannot apply our TLS fingerprint
+            # connector, so a dedicated router session is required here. Inject
+            # a session explicitly in tests (``session=...``); ``async_close``
+            # only closes sessions that this client owns.
             connector = aiohttp.TCPConnector(ssl=self._tls_validation())
             jar = CookieJar(unsafe=True)
             self._session = aiohttp.ClientSession(connector=connector, cookie_jar=jar)
