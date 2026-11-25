@@ -286,8 +286,13 @@ Weitergabe von Kopien oder wesentlichen Teilen der Software beizubehalten.
 Wenn sie dir Zeit oder Ärger erspart, hält eine kleine freiwillige Spende das Projekt am Leben und motiviert zu neuen Funktionen.
 Jeder Beitrag, egal wie klein, freut mich riesig. Vielen Dank! 🙏
 
+Sponsoring ist freiwillig und begründet keinen Anspruch auf Support, Funktionen oder Antwortzeiten.
+
+<a href="https://github.com/sponsors/Ebenhoeh80">
+  <img src="https://img.shields.io/badge/%E2%9D%A4%20Auf%20GitHub%20sponsern-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white" alt="GitHub Sponsors" height="42">
+</a>
 <a href="https://www.paypal.com/pool/9p84qTHCFr?sr=wccr">
-  <img src="https://img.shields.io/badge/Spendier%20mir%20einen%20Kaffee-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="Spenden via PayPal" height="42">
+  <img src="https://img.shields.io/badge/%E2%9D%A4%20Spenden%20via%20PayPal-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="Spenden via PayPal" height="42">
 </a>
 
 </div>

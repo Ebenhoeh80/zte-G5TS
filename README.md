@@ -273,8 +273,13 @@ redistributing copies or substantial portions of the software.
 If it saves you time or trouble, a small voluntary tip keeps the project alive and motivates new features.
 Every contribution, however small, is hugely appreciated. Thank you! 🙏
 
+Sponsoring is voluntary and does not buy support, features or response times.
+
+<a href="https://github.com/sponsors/Ebenhoeh80">
+  <img src="https://img.shields.io/badge/%E2%9D%A4%20Sponsor%20on%20GitHub-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white" alt="GitHub Sponsors" height="42">
+</a>
 <a href="https://www.paypal.com/pool/9p84qTHCFr?sr=wccr">
-  <img src="https://img.shields.io/badge/Buy%20me%20a%20coffee-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="Donate via PayPal" height="42">
+  <img src="https://img.shields.io/badge/%E2%9D%A4%20Donate%20via%20PayPal-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="Donate via PayPal" height="42">
 </a>
 
 </div>
