@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+- Stats dashboard (not part of the Home Assistant integration): `vite` 5.4 to 6.4.6 and `@vitejs/plugin-react` to 4.7. Closes eight open Dependabot alerts (path traversal and `server.fs` bypasses, `launch-editor` issues; one high). `npm audit` reports 0 vulnerabilities, `tsc && vite build` passes. Vite 5 no longer receives patches, so the major update was required. A `package-lock.json` is added so that installs and Dependabot are reproducible.
+- `hassfest.yml` limits the `GITHUB_TOKEN` to `contents: read`.
+
 ## [2.5.0] - 2026-11-24
 
 First stable release of the 2.5.0 line. All six beta releases were verified and
