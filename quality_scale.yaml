@@ -111,7 +111,7 @@ rules:
   test-coverage:
     status: done
     comment: >-
-      676 tests plus 619 subtests; total coverage 99.86% with 95% total and
+      677 tests plus 619 subtests; total coverage 99.86% with 95% total and
       per-module CI floors. 14 of 15 modules are at 100%; the four open lines in
       zte_api.py are unreachable defensive fallbacks (pre-validated hex,
       latin-1 decode, base64 length guard).

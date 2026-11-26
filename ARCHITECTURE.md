@@ -91,7 +91,9 @@ default.
 - The live HA test needs `HA_URL`, `HA_TOKEN`, and, for new entry creation,
   `ZTEPWD`. It does not expose token or router payloads. `--restart` additionally
   requires `HA_ALLOW_RESTART=1`.
-- The frontend build is checked separately with TypeScript and Vite.
+- The frontend build is checked by the `Frontend build` CI job (`npm ci`,
+  `npm run build`, `npm audit --audit-level=high`); it is not part of the HACS
+  release zip, which contains only `custom_components/`.
 
 ## Versioning
 
@@ -160,6 +162,12 @@ with this router. Use only a fingerprint verified out of band; do not disable
 certificate verification merely to make authentication succeed. The live test
 validated the real API client but did not exercise an installed Home Assistant
 instance, HA restart, or actual session expiration duration.
+
+> Update 2026-11-24 (v2.5.0): An installed HA 2026.11.2 was checked afterwards:
+> entry `loaded`, session `authenticated`, both pollers successful, 92 entities
+> (91 available), no diagnostics issues and no ZTE errors in the logbook. The
+> numbered findings above remain the historical probe from 2026-11-03; HA
+> restart recovery and actual session-expiry duration are still not verified.
 
 ## External protocol comparison
 

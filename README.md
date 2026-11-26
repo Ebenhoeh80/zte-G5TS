@@ -4,7 +4,8 @@
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.11%2B-blue.svg)](https://www.home-assistant.io/)
 [![Latest release](https://img.shields.io/github/v/release/Ebenhoeh80/zte-G5TS)](https://github.com/Ebenhoeh80/zte-G5TS/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
-[![Donate via PayPal](https://img.shields.io/badge/❤%20Donate-PayPal-00457C.svg?logo=paypal&logoColor=white)](https://www.paypal.com/pool/9p84qTHCFr?sr=wccr)
+[![Donate via PayPal](https://img.shields.io/badge/?%20Donate-PayPal-00457C.svg?logo=paypal&logoColor=white)](https://www.paypal.com/pool/9p84qTHCFr?sr=wccr)
+[![Sponsor on GitHub](https://img.shields.io/badge/Sponsor-GitHub-ea4aaa.svg?logo=github)](https://github.com/sponsors/Ebenhoeh80)
 
 A Home Assistant custom integration for monitoring and controlling supported ZTE
 4G and 5G routers over their local web API.
@@ -24,8 +25,10 @@ This repository is derived from the
 - [Security and privacy](#security-and-privacy)
 - [Diagnostics and tests](#diagnostics-and-tests)
 - [Troubleshooting](#troubleshooting)
+- [Automation examples](#automation-examples)
 - [Support](#support)
-- [License](#license)
+- [Credits and license](#credits-and-license)
+- [Support this project](#support-this-project)
 
 ## Features
 
@@ -37,7 +40,8 @@ This repository is derived from the
 - Optional 4G/5G cell locking.
 - SMS inbox and send controls on supported firmware, plus a
   `zte_5g_router_sms_received` event for every newly received message.
-- Hardware, temperature, firmware, and GNSS information where available.
+- Hardware, temperature, firmware, and GNSS information where available,
+  plus buttons to check for and start firmware updates on supported models.
 - Separate fast and slow polling coordinators. Defaults are 5 seconds and
   60 seconds; both intervals can be changed in the integration options.
 
@@ -263,6 +267,8 @@ license requires preserving that notice and the permission notice when
 redistributing copies or substantial portions of the software.
 
 ---
+
+<a id="support-this-project"></a>
 
 ## ❤️ Support this project
 

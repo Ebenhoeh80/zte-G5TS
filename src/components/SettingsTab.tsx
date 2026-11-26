@@ -59,7 +59,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ config, onConfigSave, 
       <div>
         <h2 className="text-base font-bold text-white">{t.tabSettings}</h2>
         <p className="text-xs text-slate-400">
-          Entspricht den Feldern im Home Assistant Config Flow und Options Flow.
+          {t.settingsIntro}
         </p>
       </div>
 
@@ -68,25 +68,25 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ config, onConfigSave, 
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
           <h3 className="font-bold text-sm text-white flex items-center gap-2 pb-2 border-b border-slate-800">
             <Shield className="w-4 h-4 text-sky-400" />
-            Router-Verbindung & Anmeldedaten
+            {t.settingsConnectionTitle}
           </h3>
 
           <div>
             <label className="block text-xs font-medium text-slate-300 mb-1">
-              Router-URL / IP-Adresse (Host)
+              {t.settingsHost}
             </label>
             <input
               type="text"
               value={form.host}
               onChange={(e) => setForm({ ...form, host: e.target.value })}
               className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 outline-none focus:border-sky-500"
-              placeholder="http://192.168.0.1"
+              placeholder="https://192.168.0.1"
             />
           </div>
 
           <div>
             <label className="block text-xs font-medium text-slate-300 mb-1">
-              WebUI Admin-Passwort
+              {t.settingsPassword}
             </label>
             <input
               type="password"
@@ -99,8 +99,8 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ config, onConfigSave, 
 
           <div className="flex items-center justify-between pt-2">
             <div>
-              <span className="text-xs font-medium text-slate-200">TLS-Zertifikat prüfen</span>
-              <p className="text-[11px] text-slate-400">Nur bei gültigem SSL-Zertifikat aktivieren</p>
+              <span className="text-xs font-medium text-slate-200">{t.settingsVerifyTls}</span>
+              <p className="text-[11px] text-slate-400">{t.settingsVerifyTlsHint}</p>
             </div>
             <input
               type="checkbox"
@@ -119,7 +119,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ config, onConfigSave, 
               className="w-full py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <Play className={`w-3.5 h-3.5 ${testing ? 'animate-spin' : ''}`} />
-              <span>{testing ? 'Teste UBUS/GoForm...' : 'Login-Diagnose testen'}</span>
+              <span>{testing ? t.settingsTesting : t.settingsTestLogin}</span>
             </button>
             {testResult && (
               <div className="mt-2 p-2.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-[11px] font-mono leading-relaxed">
@@ -133,12 +133,12 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ config, onConfigSave, 
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
           <h3 className="font-bold text-sm text-white flex items-center gap-2 pb-2 border-b border-slate-800">
             <Clock className="w-4 h-4 text-cyan-400" />
-            Polling-Intervalle & Tracking
+            {t.settingsPollingTitle}
           </h3>
 
           <div>
             <label className="block text-xs font-medium text-slate-300 mb-1">
-              Schnelles Polling-Intervall (Sekunden)
+              {t.settingsFastInterval}
             </label>
             <input
               type="number"
@@ -149,13 +149,13 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ config, onConfigSave, 
               className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 outline-none focus:border-sky-500"
             />
             <p className="text-[11px] text-slate-400 mt-1">
-              Standard: 5s. Durchsatz (Rx/Tx) und RAM-Auslastung.
+              {t.settingsFastHint}
             </p>
           </div>
 
           <div>
             <label className="block text-xs font-medium text-slate-300 mb-1">
-              Langsames Polling-Intervall (Sekunden)
+              {t.settingsSlowInterval}
             </label>
             <input
               type="number"
@@ -166,15 +166,15 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ config, onConfigSave, 
               className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 outline-none focus:border-sky-500"
             />
             <p className="text-[11px] text-slate-400 mt-1">
-              Standard: 60s. Signalstärke, Funkzellen, Datenlimits und SMS.
+              {t.settingsSlowHint}
             </p>
           </div>
 
           <div className="pt-2 border-t border-slate-800/80">
             <div className="flex items-center justify-between mb-2">
               <div>
-                <span className="text-xs font-medium text-slate-200">Netzwerkgeräte verfolgen</span>
-                <p className="text-[11px] text-slate-400">Erfasst WLAN- und LAN-Clients schreibgeschützt</p>
+                <span className="text-xs font-medium text-slate-200">{t.settingsTrackClients}</span>
+                <p className="text-[11px] text-slate-400">{t.settingsTrackClientsHint}</p>
               </div>
               <input
                 type="checkbox"
@@ -186,7 +186,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ config, onConfigSave, 
 
             <div>
               <label className="block text-xs font-medium text-slate-300 mb-1">
-                Abwesenheitsfrist für Clients (Sekunden)
+                {t.settingsAwayGrace}
               </label>
               <input
                 type="number"
@@ -196,7 +196,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ config, onConfigSave, 
                 onChange={(e) => setForm({ ...form, clientConsiderHome: Number(e.target.value) })}
                 className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 outline-none focus:border-sky-500"
               />
-              <p className="text-[11px] text-slate-400 mt-1">Standard: 180s.</p>
+              <p className="text-[11px] text-slate-400 mt-1">{t.settingsAwayGraceHint}</p>
             </div>
           </div>
 
@@ -205,7 +205,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ config, onConfigSave, 
               type="submit"
               className="w-full py-2.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition shadow-lg shadow-sky-600/20 cursor-pointer"
             >
-              Änderungen übernehmen & speichern
+              {t.settingsApply}
             </button>
           </div>
         </div>

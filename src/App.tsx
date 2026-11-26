@@ -31,9 +31,9 @@ export function App() {
   const [tick, setTick] = useState(0);
 
   const [config, setConfig] = useState<RouterConfig>({
-    host: 'http://192.168.0.1',
+    host: 'https://192.168.0.1',
     password: '',
-    verifyTls: false,
+    verifyTls: true,
     slowScanInterval: 60,
     fastScanInterval: 5,
     trackClients: true,

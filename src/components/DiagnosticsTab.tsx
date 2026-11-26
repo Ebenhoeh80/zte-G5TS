@@ -113,7 +113,7 @@ export const DiagnosticsTab: React.FC<DiagnosticsTabProps> = ({ hardware, lang }
               {t.firmwareStatus}
             </h3>
             <p className="text-xs text-slate-400">
-              Aktuell installierte Softwareversion ist auf dem neuesten Stand. Keine ausstehenden Sicherheitsupdates.
+              {t.firmwareHint}
             </p>
           </div>
 
@@ -121,7 +121,7 @@ export const DiagnosticsTab: React.FC<DiagnosticsTabProps> = ({ hardware, lang }
             <div className="flex items-center gap-2.5">
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
               <span className="text-xs font-semibold text-slate-200">
-                {hardware.firmwareStatus === 'checking' ? 'Prüfe Updates...' : 'Aktuell (Up to date)'}
+                {hardware.firmwareStatus === 'checking' ? t.firmwareChecking : t.firmwareUpToDate}
               </span>
             </div>
             <button
@@ -152,12 +152,12 @@ export const DiagnosticsTab: React.FC<DiagnosticsTabProps> = ({ hardware, lang }
           </div>
 
           <div className="bg-slate-950/60 p-3 rounded-lg border border-slate-800">
-            <span className="text-slate-400">Breitengrad (Latitude):</span>
+            <span className="text-slate-400">{t.latitude}:</span>
             <p className="font-mono font-bold text-slate-100 mt-1">{hardware.gnssLatitude}° N</p>
           </div>
 
           <div className="bg-slate-950/60 p-3 rounded-lg border border-slate-800">
-            <span className="text-slate-400">Längengrad (Longitude):</span>
+            <span className="text-slate-400">{t.longitude}:</span>
             <p className="font-mono font-bold text-slate-100 mt-1">{hardware.gnssLongitude}° E</p>
           </div>
         </div>
