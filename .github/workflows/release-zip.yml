@@ -46,6 +46,6 @@ jobs:
           unzip -l "${ZIP_NAME}" | grep -q "^ *[0-9].*manifest.json$"
 
       - name: Upload zip to GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: zte_5g_router.zip
