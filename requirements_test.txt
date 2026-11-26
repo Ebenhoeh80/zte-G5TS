@@ -12,4 +12,4 @@ cryptography
 aiohttp>=3.14.5
 voluptuous
 ruff>=0.17.6,<0.18
-mypy>=1.14,<3
+mypy>=2.4.1,<3
