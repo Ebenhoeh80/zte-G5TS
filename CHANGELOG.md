@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - CI job `Frontend build` (`npm ci`, `npm run build`, `npm audit --audit-level=high`). The five open major npm PRs were CI-green only because no workflow built the dashboard; local verification showed three `npm ci` ERESOLVE conflicts, a TypeScript 7 `tsc` error and a Tailwind 4 PostCSS error. Those PRs stay open until the build gate passes.
 - Test for a plain `OSError` with `errno = 104` assigned after construction. `OSError(104, ...)` is mapped to `ConnectionResetError` on Linux, which made line 359 platform-dependent (CI 99.83 %, Windows 99.86 %). Coverage is now 99.86 % on both platforms.
-- `pytest>=9.2,<10` so the documented 619 subtests are also reported by CI (built-in subtests plugin); previously CI printed only the 676 tests.
+- `pytest>=9.2,<10` plus `-q` in the CI test step, so the documented 619 subtests are now visible in CI output as well; previously CI printed only the bare test count.
 
 ### Changed
 - Floating action refs pinned to reviewed commit SHAs (`hassfest@master`, `hacs/action@main`) with version comments so Dependabot can still propose updates.
