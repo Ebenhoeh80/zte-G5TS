@@ -4,7 +4,7 @@
 # integration modules with importlib, so it runs on a plain Python interpreter
 # without a running Home Assistant. `cryptography` is required because the SMS
 # encryption tests exercise the real AES-GCM/RSA code paths.
-pytest
+pytest>=9.2,<10
 pytest-cov
 cryptography
 # Needed by test_api_coverage.py for the real owned-session lifecycle test and

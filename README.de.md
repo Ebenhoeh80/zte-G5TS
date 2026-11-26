@@ -4,7 +4,8 @@
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.11%2B-blue.svg)](https://www.home-assistant.io/)
 [![Aktuelles Release](https://img.shields.io/github/v/release/Ebenhoeh80/zte-G5TS)](https://github.com/Ebenhoeh80/zte-G5TS/releases/latest)
 [![Lizenz: MIT](https://img.shields.io/badge/Lizenz-MIT-blue.svg)](./LICENSE)
-[![Spenden via PayPal](https://img.shields.io/badge/❤%20Spenden-PayPal-00457C.svg?logo=paypal&logoColor=white)](https://www.paypal.com/pool/9p84qTHCFr?sr=wccr)
+[![Spenden via PayPal](https://img.shields.io/badge/?%20Spenden-PayPal-00457C.svg?logo=paypal&logoColor=white)](https://www.paypal.com/pool/9p84qTHCFr?sr=wccr)
+[![GitHub Sponsors](https://img.shields.io/badge/Sponsor-GitHub-ea4aaa.svg?logo=github)](https://github.com/sponsors/Ebenhoeh80)
 
 Eine Home-Assistant-Custom-Integration zur Überwachung und Steuerung
 unterstützter ZTE-4G- und 5G-Router über deren lokale Web-API.
@@ -24,8 +25,10 @@ Dieses Repository basiert auf dem
 - [Sicherheit und Datenschutz](#sicherheit-und-datenschutz)
 - [Diagnose und Tests](#diagnose-und-tests)
 - [Fehlerbehebung](#fehlerbehebung)
+- [Automationsbeispiele](#automationsbeispiele)
 - [Support](#support)
-- [Lizenz](#lizenz)
+- [Dank und Lizenz](#dank-und-lizenz)
+- [Projekt unterstützen](#projekt-unterstuetzen)
 
 ## Funktionen
 
@@ -37,7 +40,8 @@ Dieses Repository basiert auf dem
 - Optionale 4G-/5G-Zellenfixierung (Cell Lock).
 - SMS-Posteingang und Versand bei unterstützter Firmware, dazu ein Event
   `zte_5g_router_sms_received` für jede neu empfangene Nachricht.
-- Hardware-, Temperatur-, Firmware- und GNSS-Informationen, soweit verfügbar.
+- Hardware-, Temperatur-, Firmware- und GNSS-Informationen, soweit verfügbar,
+  dazu Buttons für Firmware-Prüfung und -Update bei unterstützten Modellen.
 - Getrennte Koordinatoren für schnelle und langsame Abfragen. Standardmäßig
   5 bzw. 60 Sekunden; beide Intervalle lassen sich in den Integrationsoptionen
   anpassen.
@@ -276,6 +280,8 @@ MIT-Lizenz verlangt, diesen Copyright-Hinweis und den Lizenztext bei der
 Weitergabe von Kopien oder wesentlichen Teilen der Software beizubehalten.
 
 ---
+
+<a id="projekt-unterstuetzen"></a>
 
 ## ❤️ Projekt unterstützen
 

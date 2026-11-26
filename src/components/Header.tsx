@@ -99,13 +99,14 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Mode Switcher */}
           <button
+            disabled
             onClick={onModeToggle}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition disabled:opacity-60 disabled:cursor-not-allowed ${
               isSimulated
                 ? 'bg-sky-500/10 border-sky-500/30 text-sky-400 hover:bg-sky-500/20'
                 : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
             }`}
-            title="Toggle between Interactive Simulator and Real Router IP connection"
+            title={t.demoOnly}
           >
             <Server className="w-3.5 h-3.5" />
             <span>{isSimulated ? t.simulatorActive : t.liveModeActive}</span>

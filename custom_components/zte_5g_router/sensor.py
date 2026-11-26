@@ -372,7 +372,11 @@ def _data_limit_value(data: dict[str, Any], key: str) -> Any:
 
 
 def _ram_usage(meminfo: Any) -> int | None:
-    """Match the WebUI: 100 - Math.round(100 * avaliable / total)."""
+    """Match the WebUI: 100 - Math.round(100 * available / total).
+
+    Router firmware uses the misspelled key ``avaliable``; ``available`` is
+    accepted as a fallback. Both spellings are covered by tests.
+    """
     if not isinstance(meminfo, dict):
         return None
     total = _as_number(meminfo.get("total"))

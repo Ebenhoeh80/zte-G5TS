@@ -41,20 +41,20 @@ export const CellLockTab: React.FC<CellLockTabProps> = ({ controls, radio, lang 
 
   const handleToggle4g = () => {
     if (!controls.cellLock4gEnabled && !isValid4g) {
-      showToast('Ungültiges Format für 4G Cell Lock (Erwartet: PCI,EARFCN)');
+      showToast(t.invalid4gFormat);
       return;
     }
     routerSimulator.toggleCellLock4g(val4g);
-    showToast(`4G Cell Lock: ${!controls.cellLock4gEnabled ? 'Aktiviert' : 'Deaktiviert'}`);
+    showToast(`4G Cell Lock: ${!controls.cellLock4gEnabled ? t.lockEnabled : t.lockDisabled}`);
   };
 
   const handleToggle5g = () => {
     if (!controls.cellLock5gEnabled && !isValid5g) {
-      showToast('Ungültiges Format für 5G Cell Lock (Erwartet: PCI,ARFCN,BAND)');
+      showToast(t.invalid5gFormat);
       return;
     }
     routerSimulator.toggleCellLock5g(val5g);
-    showToast(`5G Cell Lock: ${!controls.cellLock5gEnabled ? 'Aktiviert' : 'Deaktiviert'}`);
+    showToast(`5G Cell Lock: ${!controls.cellLock5gEnabled ? t.lockEnabled : t.lockDisabled}`);
   };
 
   return (

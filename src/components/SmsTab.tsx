@@ -30,11 +30,11 @@ export const SmsTab: React.FC<SmsTabProps> = ({ messages, storage, lang }) => {
   const handleSendSms = (e: React.FormEvent) => {
     e.preventDefault();
     if (!destNumber.trim()) {
-      setToast('Bitte Empfängernummer eingeben');
+      setToast(t.recipientRequired);
       return;
     }
     if (!content.trim()) {
-      setToast('Nachrichtentext darf nicht leer sein');
+      setToast(t.messageRequired);
       return;
     }
 

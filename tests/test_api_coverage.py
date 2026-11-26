@@ -372,6 +372,15 @@ class ErrorSummaryTests(unittest.TestCase):
         self.assertFalse(ZteRouterApi._is_conn_reset_104(a))
         self.assertFalse(ZteRouterApi._is_conn_reset_104(None))
 
+    def test_connreset_detection_accepts_plain_oserror_with_errno(self):
+        # OSError(104, ...) is mapped to ConnectionResetError on Linux, so the
+        # dedicated OSError branch would only be covered on Windows. Transports
+        # can also set errno after construction; cover that case on every OS.
+        exc = OSError("reset")
+        exc.errno = 104
+        self.assertFalse(isinstance(exc, ConnectionResetError))
+        self.assertTrue(ZteRouterApi._is_conn_reset_104(exc))
+
 
 class SmsHelperTests(unittest.TestCase):
     def test_decode_sms_content(self):

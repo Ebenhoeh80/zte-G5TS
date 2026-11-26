@@ -45,12 +45,12 @@ export const IntegrationDocsTab: React.FC<IntegrationDocsTabProps> = ({ lang }) 
     {
       title: 'Modern Entity Registry & DeviceInfo',
       desc: 'Enriched DeviceInfo with model, hardware/software firmware revisions, configuration_url, and proper EntityCategory (Diagnostic/Config).',
-      status: 'Quality Scale Platinum',
+      status: 'Self-audit passed',
     },
     {
       title: 'Safe Absence Grace Period (180s)',
       desc: 'Client tracking requires confirmed consecutive absence snapshots before marking devices away, preventing false triggers during phone sleep.',
-      status: 'Zero False-Positives',
+      status: '180 s confirmed absence',
     },
   ];
 
@@ -67,6 +67,8 @@ export const IntegrationDocsTab: React.FC<IntegrationDocsTabProps> = ({ lang }) 
     { domain: 'switch', key: 'cell_lock_4g / 5g', nameDe: '4G / 5G Zellenfixierung', nameEn: '4G / 5G Cell Lock', type: 'Switch (Radio Lock)', poll: 'Immediate' },
     { domain: 'button', key: 'restart', nameDe: 'Router neu starten', nameEn: 'Restart Router', type: 'Button (UBUS)', poll: 'Immediate' },
     { domain: 'button', key: 'send_sms', nameDe: 'SMS senden', nameEn: 'Send SMS', type: 'Button (SMS Action)', poll: 'Immediate' },
+    { domain: 'button', key: 'check_firmware_update', nameDe: 'Firmware-Prüfung', nameEn: 'Check Firmware Update', type: 'Button (UBUS)', poll: 'Immediate' },
+    { domain: 'button', key: 'start_firmware_update', nameDe: 'Firmware-Update starten', nameEn: 'Start Firmware Update', type: 'Button (UBUS)', poll: 'Immediate' },
     { domain: 'text', key: 'cell_lock_4g / 5g_text', nameDe: 'Zellenfixierung Eingabe', nameEn: 'Cell Lock Config', type: 'Text (PCI,ARFCN,BAND)', poll: 'Entity' },
     { domain: 'device_tracker', key: 'wifi_client', nameDe: 'Netzwerkgerät (WLAN/LAN)', nameEn: 'Network Client Tracker', type: 'Device Tracker', poll: 'Slow (60s)' },
   ];
@@ -89,7 +91,7 @@ export const IntegrationDocsTab: React.FC<IntegrationDocsTabProps> = ({ lang }) 
         </div>
 
         <a
-          href="/README.md"
+          href="https://github.com/Ebenhoeh80/zte-G5TS#readme"
           target="_blank"
           className="px-4 py-2.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition flex items-center gap-2 shadow-lg shadow-sky-600/20 shrink-0 self-start"
         >

@@ -7,10 +7,14 @@ __pycache__/
 .mypy_cache/
 .coverage
 coverage.json
+coverage.xml
+.coverage.*
+htmlcov/
 
 # Node / Frontend build
 node_modules/
 dist/
+*.zip
 
 # Environments and local secrets
 .env

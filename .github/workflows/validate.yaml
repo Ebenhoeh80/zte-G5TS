@@ -14,6 +14,8 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
       - name: HACS validation
-        uses: "hacs/action@main"
+        # Pinned to the main commit reviewed on 2026-11-26; Dependabot can
+        # still propose updates to this SHA.
+        uses: "hacs/action@1ebf01c408f29afcb6406bd431bc98fd8cbb15aa" # main
         with:
           category: "integration"

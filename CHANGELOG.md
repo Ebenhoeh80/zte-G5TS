@@ -7,9 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- CI job `Frontend build` (`npm ci`, `npm run build`, `npm audit --audit-level=high`). The five open major npm PRs were CI-green only because no workflow built the dashboard; local verification showed three `npm ci` ERESOLVE conflicts, a TypeScript 7 `tsc` error and a Tailwind 4 PostCSS error. Those PRs stay open until the build gate passes.
+- Test for a plain `OSError` with `errno = 104` assigned after construction. `OSError(104, ...)` is mapped to `ConnectionResetError` on Linux, which made line 359 platform-dependent (CI 99.83 %, Windows 99.86 %). Coverage is now 99.86 % on both platforms.
+- `pytest>=9.2,<10` plus `-q` in the CI test step, so the documented 619 subtests are now visible in CI output as well; previously CI printed only the bare test count.
+
+### Changed
+- Floating action refs pinned to reviewed commit SHAs (`hassfest@master`, `hacs/action@main`) with version comments so Dependabot can still propose updates.
+- Dashboard translations: hard-coded German messages in Settings, Cell Lock, Diagnostics and SMS now use the existing `translations.ts` dictionaries. The mode indicator is explicitly labelled as demo-only because `src/` never connects to a real router.
+- Architecture and README documentation updated: CI frontend gate, live-installation result from v2.5.0, working table-of-contents anchors, GitHub Sponsors badge in both README headers and an honest quality-scale wording in the dashboard. `.gitignore` now covers release zips and coverage reports.
+
 ### Security
 - Stats dashboard (not part of the Home Assistant integration): `vite` 5.4 to 6.4.6 and `@vitejs/plugin-react` to 4.7. Closes eight open Dependabot alerts (path traversal and `server.fs` bypasses, `launch-editor` issues; one high). `npm audit` reports 0 vulnerabilities, `tsc && vite build` passes. Vite 5 no longer receives patches, so the major update was required. A `package-lock.json` is added so that installs and Dependabot are reproducible.
 - `hassfest.yml` limits the `GITHUB_TOKEN` to `contents: read`.
+
+### Tests
+- 677 tests plus 619 subtests, 99.86 % total coverage on Windows and Linux, Ruff, Full-Strict-Mypy and `tsc && vite build` green. No new release: `custom_components/` changed only in a docstring since v2.5.0, so HACS users would receive an empty version.
 
 ## [2.5.0] - 2026-11-24
 
