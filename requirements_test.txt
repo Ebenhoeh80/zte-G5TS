@@ -11,5 +11,5 @@ cryptography
 # by mypy to see aiohttp's timeout signature (otherwise ignores look unused).
 aiohttp>=3.9
 voluptuous
-ruff>=0.17,<0.18
+ruff>=0.17.6,<0.18
 mypy>=1.14,<3
